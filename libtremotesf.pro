@@ -12,8 +12,8 @@ SOURCES = rpc.cpp serversettings.cpp serverstats.cpp torrent.cpp tracker.cpp
 
 jni {
     INCLUDEPATH += $$(ANDROID_NDK_ROOT)/sysroot/usr/include
-    HEADERS += jnirpc.h
-    SOURCES += jnirpc.cpp libtremotesf_wrap.cxx
+    HEADERS += jni/jnirpc.h
+    SOURCES += jni/jnirpc.cpp jni/libtremotesf_wrap.cxx
 } else {
     CONFIG += static
 }
