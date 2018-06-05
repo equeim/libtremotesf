@@ -240,6 +240,9 @@ namespace libtremotesf
         });
 
         QObject::connect(this, &Rpc::gotTorrentPeers, [=](int torrentId) { onGotTorrentPeers(torrentId); });
+
+        QObject::connect(this, &Rpc::gotDownloadDirFreeSpace, [=](long long bytes) { onGotDownloadDirFreeSpace(bytes); });
+        QObject::connect(this, &Rpc::gotFreeSpaceForPath, [=](const QString& path, bool success, long long bytes) { onGotFreeSpaceForPath(path, success, bytes); });
     }
 
     JniServerSettings* JniRpc::serverSettings() const
@@ -562,6 +565,16 @@ namespace libtremotesf
     }
 
     void JniRpc::onGotTorrentPeers(int torrentId)
+    {
+
+    }
+
+    void JniRpc::onGotDownloadDirFreeSpace(long long bytes)
+    {
+
+    }
+
+    void JniRpc::onGotFreeSpaceForPath(const QString& path, bool success, long long bytes)
     {
 
     }

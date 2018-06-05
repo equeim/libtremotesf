@@ -369,6 +369,10 @@ public class libtremotesfJNI {
   public final static native void JniRpc_onTorrentFileRenamedSwigExplicitJniRpc(long jarg1, JniRpc jarg1_, int jarg2, String jarg3, String jarg4);
   public final static native void JniRpc_onGotTorrentPeers(long jarg1, JniRpc jarg1_, int jarg2);
   public final static native void JniRpc_onGotTorrentPeersSwigExplicitJniRpc(long jarg1, JniRpc jarg1_, int jarg2);
+  public final static native void JniRpc_onGotDownloadDirFreeSpace(long jarg1, JniRpc jarg1_, long jarg2);
+  public final static native void JniRpc_onGotDownloadDirFreeSpaceSwigExplicitJniRpc(long jarg1, JniRpc jarg1_, long jarg2);
+  public final static native void JniRpc_onGotFreeSpaceForPath(long jarg1, JniRpc jarg1_, String jarg2, boolean jarg3, long jarg4);
+  public final static native void JniRpc_onGotFreeSpaceForPathSwigExplicitJniRpc(long jarg1, JniRpc jarg1_, String jarg2, boolean jarg3, long jarg4);
   public final static native void delete_JniRpc(long jarg1);
   public final static native void JniRpc_director_connect(JniRpc obj, long cptr, boolean mem_own, boolean weak_global);
   public final static native void JniRpc_change_ownership(JniRpc obj, long cptr, boolean take_or_release);
@@ -409,6 +413,12 @@ public class libtremotesfJNI {
   }
   public static void SwigDirector_JniRpc_onGotTorrentPeers(JniRpc jself, int torrentId) {
     jself.onGotTorrentPeers(torrentId);
+  }
+  public static void SwigDirector_JniRpc_onGotDownloadDirFreeSpace(JniRpc jself, long bytes) {
+    jself.onGotDownloadDirFreeSpace(bytes);
+  }
+  public static void SwigDirector_JniRpc_onGotFreeSpaceForPath(JniRpc jself, String path, boolean success, long bytes) {
+    jself.onGotFreeSpaceForPath(path, success, bytes);
   }
 
   private final static native void swig_module_init();

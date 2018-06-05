@@ -161,6 +161,9 @@ namespace libtremotesf
         virtual void onTorrentFileRenamed(int torrentId, const QString& filePath, const QString& newName);
 
         virtual void onGotTorrentPeers(int torrentId);
+
+        virtual void onGotDownloadDirFreeSpace(long long bytes);
+        virtual void onGotFreeSpaceForPath(const QString& path, bool success, long long bytes);
     };
 
     class JniWrapper

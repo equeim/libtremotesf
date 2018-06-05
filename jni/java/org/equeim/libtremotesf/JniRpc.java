@@ -280,4 +280,12 @@ public class JniRpc extends BaseRpc {
     if (getClass() == JniRpc.class) libtremotesfJNI.JniRpc_onGotTorrentPeers(swigCPtr, this, torrentId); else libtremotesfJNI.JniRpc_onGotTorrentPeersSwigExplicitJniRpc(swigCPtr, this, torrentId);
   }
 
+  protected void onGotDownloadDirFreeSpace(long bytes) {
+    if (getClass() == JniRpc.class) libtremotesfJNI.JniRpc_onGotDownloadDirFreeSpace(swigCPtr, this, bytes); else libtremotesfJNI.JniRpc_onGotDownloadDirFreeSpaceSwigExplicitJniRpc(swigCPtr, this, bytes);
+  }
+
+  protected void onGotFreeSpaceForPath(String path, boolean success, long bytes) {
+    if (getClass() == JniRpc.class) libtremotesfJNI.JniRpc_onGotFreeSpaceForPath(swigCPtr, this, path, success, bytes); else libtremotesfJNI.JniRpc_onGotFreeSpaceForPathSwigExplicitJniRpc(swigCPtr, this, path, success, bytes);
+  }
+
 }

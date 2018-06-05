@@ -661,7 +661,7 @@ namespace Swig {
 namespace Swig {
   namespace {
     jclass jclass_libtremotesfJNI = NULL;
-    jmethodID director_method_ids[11];
+    jmethodID director_method_ids[13];
   }
 }
 
@@ -1059,6 +1059,63 @@ void SwigDirector_JniRpc::onGotTorrentPeers(int torrentId) {
   if (swigjobj) jenv->DeleteLocalRef(swigjobj);
 }
 
+void SwigDirector_JniRpc::onGotDownloadDirFreeSpace(long long bytes) {
+  JNIEnvWrapper swigjnienv(this) ;
+  JNIEnv * jenv = swigjnienv.getJNIEnv() ;
+  jobject swigjobj = (jobject) NULL ;
+  jlong jbytes  ;
+  
+  if (!swig_override[11]) {
+    libtremotesf::JniRpc::onGotDownloadDirFreeSpace(bytes);
+    return;
+  }
+  swigjobj = swig_get_self(jenv);
+  if (swigjobj && jenv->IsSameObject(swigjobj, NULL) == JNI_FALSE) {
+    jbytes = (jlong) bytes;
+    jenv->CallStaticVoidMethod(Swig::jclass_libtremotesfJNI, Swig::director_method_ids[11], swigjobj, jbytes);
+    jthrowable swigerror = jenv->ExceptionOccurred();
+    if (swigerror) {
+      jenv->ExceptionClear();
+      throw Swig::DirectorException(jenv, swigerror);
+    }
+    
+  } else {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null upcall object in libtremotesf::JniRpc::onGotDownloadDirFreeSpace ");
+  }
+  if (swigjobj) jenv->DeleteLocalRef(swigjobj);
+}
+
+void SwigDirector_JniRpc::onGotFreeSpaceForPath(QString const &path, bool success, long long bytes) {
+  JNIEnvWrapper swigjnienv(this) ;
+  JNIEnv * jenv = swigjnienv.getJNIEnv() ;
+  jobject swigjobj = (jobject) NULL ;
+  jstring jpath = 0 ;
+  jboolean jsuccess  ;
+  jlong jbytes  ;
+  
+  if (!swig_override[12]) {
+    libtremotesf::JniRpc::onGotFreeSpaceForPath(path,success,bytes);
+    return;
+  }
+  swigjobj = swig_get_self(jenv);
+  if (swigjobj && jenv->IsSameObject(swigjobj, NULL) == JNI_FALSE) {
+    jpath = jenv->NewString(reinterpret_cast<const jchar*>((&path)->constData()), (&path)->size());
+    
+    jsuccess = (jboolean) success;
+    jbytes = (jlong) bytes;
+    jenv->CallStaticVoidMethod(Swig::jclass_libtremotesfJNI, Swig::director_method_ids[12], swigjobj, jpath, jsuccess, jbytes);
+    jthrowable swigerror = jenv->ExceptionOccurred();
+    if (swigerror) {
+      jenv->ExceptionClear();
+      throw Swig::DirectorException(jenv, swigerror);
+    }
+    
+  } else {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null upcall object in libtremotesf::JniRpc::onGotFreeSpaceForPath ");
+  }
+  if (swigjobj) jenv->DeleteLocalRef(swigjobj);
+}
+
 void SwigDirector_JniRpc::swig_connect_director(JNIEnv *jenv, jobject jself, jclass jcls, bool swig_mem_own, bool weak_global) {
   static struct {
     const char *mname;
@@ -1097,6 +1154,12 @@ void SwigDirector_JniRpc::swig_connect_director(JNIEnv *jenv, jobject jself, jcl
     },
     {
       "onGotTorrentPeers", "(I)V", NULL 
+    },
+    {
+      "onGotDownloadDirFreeSpace", "(J)V", NULL 
+    },
+    {
+      "onGotFreeSpaceForPath", "(Ljava/lang/String;ZJ)V", NULL 
     }
   };
   
@@ -1109,7 +1172,7 @@ void SwigDirector_JniRpc::swig_connect_director(JNIEnv *jenv, jobject jself, jcl
       baseclass = (jclass) jenv->NewGlobalRef(baseclass);
     }
     bool derived = (jenv->IsSameObject(baseclass, jcls) ? false : true);
-    for (int i = 0; i < 11; ++i) {
+    for (int i = 0; i < 13; ++i) {
       if (!methods[i].base_methid) {
         methods[i].base_methid = jenv->GetMethodID(baseclass, methods[i].mname, methods[i].mdesc);
         if (!methods[i].base_methid) return;
@@ -7761,6 +7824,96 @@ SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_JniRpc_1onG
 }
 
 
+SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_JniRpc_1onGotDownloadDirFreeSpace(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  libtremotesf::JniRpc *arg1 = (libtremotesf::JniRpc *) 0 ;
+  long long arg2 ;
+  SwigDirector_JniRpc *darg = 0;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(libtremotesf::JniRpc **)&jarg1; 
+  arg2 = (long long)jarg2; 
+  darg = dynamic_cast<SwigDirector_JniRpc *>(arg1);
+  (darg)->onGotDownloadDirFreeSpace(arg2);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_JniRpc_1onGotDownloadDirFreeSpaceSwigExplicitJniRpc(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jlong jarg2) {
+  libtremotesf::JniRpc *arg1 = (libtremotesf::JniRpc *) 0 ;
+  long long arg2 ;
+  SwigDirector_JniRpc *darg = 0;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(libtremotesf::JniRpc **)&jarg1; 
+  arg2 = (long long)jarg2; 
+  darg = dynamic_cast<SwigDirector_JniRpc *>(arg1);
+  (darg)->onGotDownloadDirFreeSpaceSwigPublic(arg2);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_JniRpc_1onGotFreeSpaceForPath(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jboolean jarg3, jlong jarg4) {
+  libtremotesf::JniRpc *arg1 = (libtremotesf::JniRpc *) 0 ;
+  QString *arg2 = 0 ;
+  bool arg3 ;
+  long long arg4 ;
+  SwigDirector_JniRpc *darg = 0;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(libtremotesf::JniRpc **)&jarg1; 
+  
+  if(!jarg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null QString");
+    return ;
+  }
+  const jchar* arg2_pstr = jenv->GetStringChars(jarg2, 0);
+  if (!arg2_pstr) return ;
+  jsize arg2_len = jenv->GetStringLength(jarg2);
+  QString arg2_str(QString::fromUtf16(arg2_pstr, arg2_len));
+  arg2 = &arg2_str;
+  jenv->ReleaseStringChars(jarg2, arg2_pstr);
+  
+  arg3 = jarg3 ? true : false; 
+  arg4 = (long long)jarg4; 
+  darg = dynamic_cast<SwigDirector_JniRpc *>(arg1);
+  (darg)->onGotFreeSpaceForPath((QString const &)*arg2,arg3,arg4);
+}
+
+
+SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_JniRpc_1onGotFreeSpaceForPathSwigExplicitJniRpc(JNIEnv *jenv, jclass jcls, jlong jarg1, jobject jarg1_, jstring jarg2, jboolean jarg3, jlong jarg4) {
+  libtremotesf::JniRpc *arg1 = (libtremotesf::JniRpc *) 0 ;
+  QString *arg2 = 0 ;
+  bool arg3 ;
+  long long arg4 ;
+  SwigDirector_JniRpc *darg = 0;
+  
+  (void)jenv;
+  (void)jcls;
+  (void)jarg1_;
+  arg1 = *(libtremotesf::JniRpc **)&jarg1; 
+  
+  if(!jarg2) {
+    SWIG_JavaThrowException(jenv, SWIG_JavaNullPointerException, "null QString");
+    return ;
+  }
+  const jchar* arg2_pstr = jenv->GetStringChars(jarg2, 0);
+  if (!arg2_pstr) return ;
+  jsize arg2_len = jenv->GetStringLength(jarg2);
+  QString arg2_str(QString::fromUtf16(arg2_pstr, arg2_len));
+  arg2 = &arg2_str;
+  jenv->ReleaseStringChars(jarg2, arg2_pstr);
+  
+  arg3 = jarg3 ? true : false; 
+  arg4 = (long long)jarg4; 
+  darg = dynamic_cast<SwigDirector_JniRpc *>(arg1);
+  (darg)->onGotFreeSpaceForPathSwigPublic((QString const &)*arg2,arg3,arg4);
+}
+
+
 SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_delete_1JniRpc(JNIEnv *jenv, jclass jcls, jlong jarg1) {
   libtremotesf::JniRpc *arg1 = (libtremotesf::JniRpc *) 0 ;
   
@@ -7838,7 +7991,7 @@ SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_swig_1modul
   static struct {
     const char *method;
     const char *signature;
-  } methods[11] = {
+  } methods[13] = {
     {
       "SwigDirector_JniRpc_onConnectedChanged", "(Lorg/equeim/libtremotesf/JniRpc;)V" 
     },
@@ -7871,6 +8024,12 @@ SWIGEXPORT void JNICALL Java_org_equeim_libtremotesf_libtremotesfJNI_swig_1modul
     },
     {
       "SwigDirector_JniRpc_onGotTorrentPeers", "(Lorg/equeim/libtremotesf/JniRpc;I)V" 
+    },
+    {
+      "SwigDirector_JniRpc_onGotDownloadDirFreeSpace", "(Lorg/equeim/libtremotesf/JniRpc;J)V" 
+    },
+    {
+      "SwigDirector_JniRpc_onGotFreeSpaceForPath", "(Lorg/equeim/libtremotesf/JniRpc;Ljava/lang/String;ZJ)V" 
     }
   };
   Swig::jclass_libtremotesfJNI = (jclass) jenv->NewGlobalRef(jcls);

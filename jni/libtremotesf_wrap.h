@@ -60,12 +60,20 @@ public:
     virtual void onGotTorrentPeersSwigPublic(int torrentId) {
       libtremotesf::JniRpc::onGotTorrentPeers(torrentId);
     }
+    virtual void onGotDownloadDirFreeSpace(long long bytes);
+    virtual void onGotDownloadDirFreeSpaceSwigPublic(long long bytes) {
+      libtremotesf::JniRpc::onGotDownloadDirFreeSpace(bytes);
+    }
+    virtual void onGotFreeSpaceForPath(QString const &path, bool success, long long bytes);
+    virtual void onGotFreeSpaceForPathSwigPublic(QString const &path, bool success, long long bytes) {
+      libtremotesf::JniRpc::onGotFreeSpaceForPath(path,success,bytes);
+    }
 public:
     bool swig_overrides(int n) {
-      return (n < 11 ? swig_override[n] : false);
+      return (n < 13 ? swig_override[n] : false);
     }
 protected:
-    Swig::BoolArray<11> swig_override;
+    Swig::BoolArray<13> swig_override;
 };
 
 
