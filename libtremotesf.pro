@@ -16,4 +16,8 @@ jni {
     SOURCES += jni/jnirpc.cpp jni/libtremotesf_wrap.cxx
 } else {
     CONFIG += static
+    sailfishos {
+        QT += qml
+        DEFINES += TREMOTESF_SAILFISHOS
+    }
 }
