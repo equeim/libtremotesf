@@ -42,7 +42,6 @@ namespace libtremotesf
         const QString& site() const;
 
         Status status() const;
-        //QString statusString() const;
         QString errorMessage() const;
 
         int peers() const;

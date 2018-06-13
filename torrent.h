@@ -75,7 +75,7 @@ namespace libtremotesf
         Q_PROPERTY(QString name READ name CONSTANT)
 
         Q_PROPERTY(Status status READ status NOTIFY updated)
-        //Q_PROPERTY(QString statusString READ statusString NOTIFY updated)
+        Q_PROPERTY(QString errorString READ errorString NOTIFY updated)
         Q_PROPERTY(int queuePosition READ queuePosition NOTIFY updated)
 
         Q_PROPERTY(long long totalSize READ totalSize NOTIFY updated)
@@ -166,7 +166,6 @@ namespace libtremotesf
         const QString& name() const;
 
         Status status() const;
-        //QString statusString() const;
         QString errorString() const;
         int queuePosition() const;
 

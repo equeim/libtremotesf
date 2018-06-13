@@ -169,37 +169,6 @@ namespace libtremotesf
         return mErrorString;
     }
 
-    /*QString Torrent::statusString() const
-    {
-        switch (mStatus) {
-        case Paused:
-            return qApp->translate("tremotesf", "Paused", "Torrent status");
-        case Downloading:
-#ifdef TREMOTESF_SAILFISHOS
-            return qApp->translate("tremotesf", "Downloading from %n peers", nullptr, mSeeders);
-#endif
-        case StalledDownloading:
-            return qApp->translate("tremotesf", "Downloading", "Torrent status");
-        case Seeding:
-#ifdef TREMOTESF_SAILFISHOS
-            return qApp->translate("tremotesf", "Seeding to %n peers", nullptr, mLeechers);
-#endif
-        case StalledSeeding:
-            return qApp->translate("tremotesf", "Seeding", "Torrent status");
-        case QueuedForDownloading:
-        case QueuedForSeeding:
-            return qApp->translate("tremotesf", "Queued", "Torrent status");
-        case Checking:
-            return qApp->translate("tremotesf", "Checking", "Torrent status");
-        case QueuedForChecking:
-            return qApp->translate("tremotesf", "Queued for checking");
-        case Errored:
-            return mErrorString;
-        }
-
-        return QString();
-    }*/
-
     int Torrent::queuePosition() const
     {
         return mQueuePosition;

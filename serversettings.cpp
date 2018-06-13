@@ -120,7 +120,6 @@ namespace libtremotesf
 
     const QString& ServerSettings::downloadDirectory() const
     {
-        qDebug() << 666 << mDownloadDirectory;
         return mDownloadDirectory;
     }
 

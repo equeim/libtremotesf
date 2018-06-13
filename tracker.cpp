@@ -55,30 +55,6 @@ namespace libtremotesf
         return mErrorMessage;
     }
 
-    /*QString Tracker::statusString() const
-    {
-        switch (mStatus) {
-        case Inactive:
-            //: Tracker status
-            return qApp->translate("tremotesf", "Inactive");
-        case Active:
-            return qApp->translate("tremotesf", "Active", "Tracker status");
-        case Queued:
-            return qApp->translate("tremotesf", "Queued", "Tracker status");
-        case Updating:
-            //: Tracker status
-            return qApp->translate("tremotesf", "Updating");
-        case Error: {
-            if (mErrorMessage.isEmpty()) {
-                return qApp->translate("tremotesf", "Error");
-            }
-            return qApp->translate("tremotesf", "Error: %1").arg(mErrorMessage);
-        }
-        }
-
-        return QString();
-    }*/
-
     int Tracker::peers() const
     {
         return mPeers;
