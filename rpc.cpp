@@ -81,7 +81,6 @@ namespace libtremotesf
           mRpcVersionChecked(false),
           mServerSettingsUpdated(false),
           mTorrentsUpdated(false),
-          mFirstUpdate(true),
           mServerStatsUpdated(false),
           mUpdateTimer(new QTimer(this)),
           mServerSettings(serverSettings ? serverSettings : new ServerSettings(this, this)),
@@ -139,36 +138,6 @@ namespace libtremotesf
     {
         return mStatus;
     }
-
-    /*QString Rpc::statusString() const
-    {
-        switch (mStatus) {
-        case Disconnected:
-            switch (mError) {
-            case NoError:
-                return qApp->translate("tremotesf", "Disconnected");
-            case TimedOut:
-                return qApp->translate("tremotesf", "Timed out");
-            case ConnectionError:
-                return qApp->translate("tremotesf", "Connection error");
-            case AuthenticationError:
-                return qApp->translate("tremotesf", "Authentication error");
-            case ParseError:
-                return qApp->translate("tremotesf", "Parse error");
-            case ServerIsTooNew:
-                return qApp->translate("tremotesf", "Server is too new");
-            case ServerIsTooOld:
-                return qApp->translate("tremotesf", "Server is too old");
-            }
-            break;
-        case Connecting:
-            return qApp->translate("tremotesf", "Connecting...");
-        case Connected:
-            return qApp->translate("tremotesf", "Connected");
-        }
-
-        return QString();
-    }*/
 
     Rpc::Error Rpc::error() const
     {
@@ -645,7 +614,6 @@ namespace libtremotesf
             mRpcVersionChecked = false;
             mServerSettingsUpdated = false;
             mTorrentsUpdated = false;
-            mFirstUpdate = true;
             mServerStatsUpdated = false;
             mTorrents.clear();
             emit connectedChanged();
@@ -781,15 +749,13 @@ namespace libtremotesf
                                 QQmlEngine::setObjectOwnership(torrent.get(), QQmlEngine::CppOwnership);
 #endif
 
-                                if (!mFirstUpdate) {
+                                if (isConnected()) {
                                     emit torrentAdded(torrent);
                                 }
                             }
                             torrents.push_back(std::move(torrent));
                         }
                         mTorrents = std::move(torrents);
-
-                        mFirstUpdate = false;
 
                         checkIfTorrentsUpdated();
                         startUpdateTimer();
