@@ -643,7 +643,10 @@ namespace libtremotesf
             mNetwork->clearAccessCache();
             mAuthenticationRequested = false;
             mRpcVersionChecked = false;
+            mServerSettingsUpdated = false;
+            mTorrentsUpdated = false;
             mFirstUpdate = true;
+            mServerStatsUpdated = false;
             mTorrents.clear();
             emit connectedChanged();
             emit torrentsUpdated();
