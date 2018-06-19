@@ -728,9 +728,9 @@ namespace libtremotesf
 
                             std::shared_ptr<Torrent> torrent(torrentById(id));
                             if (torrent) {
-                                const bool wasFinished = (torrent->percentDone() == 1);
+                                const bool wasFinished = (torrent->isFinished());
                                 torrent->update(torrentMap);
-                                const bool finished = (torrent->percentDone() == 1);
+                                const bool finished = (torrent->isFinished());
 
                                 if (finished && !wasFinished) {
                                     emit torrentFinished(torrent);
