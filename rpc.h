@@ -222,8 +222,8 @@ namespace libtremotesf
 
         void torrentsUpdated();
 
-        void torrentAdded(const std::shared_ptr<Torrent>& torrent);
-        void torrentFinished(const std::shared_ptr<Torrent>& torrent);
+        void torrentAdded(libtremotesf::Torrent* torrent);
+        void torrentFinished(libtremotesf::Torrent* torrent);
 
         void torrentAddDuplicate();
         void torrentAddError();
