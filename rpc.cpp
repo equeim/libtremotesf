@@ -701,6 +701,7 @@ namespace libtremotesf
                                       "            \"peersGettingFromUs\","
                                       "            \"peersSendingToUs\","
                                       "            \"percentDone\","
+                                      "            \"priorities\","
                                       "            \"queuePosition\","
                                       "            \"rateDownload\","
                                       "            \"rateUpload\","
