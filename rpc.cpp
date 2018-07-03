@@ -104,11 +104,6 @@ namespace libtremotesf
         });
     }
 
-    Rpc::~Rpc()
-    {
-        disconnect();
-    }
-
     ServerSettings* Rpc::serverSettings() const
     {
         return mServerSettings;
