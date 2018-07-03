@@ -756,7 +756,6 @@ namespace libtremotesf
                 }
             }
             if (row == -1) {
-                row = mPeers.size();
                 mPeers.push_back(std::make_shared<Peer>(address, peerMap));
             } else {
                 mPeers[row]->update(peerMap);
