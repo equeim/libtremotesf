@@ -121,16 +121,16 @@ namespace libtremotesf
 
     const QString Torrent::idKey(QLatin1String("id"));
 
-    TorrentFile::TorrentFile(const std::vector<QString>& path, long long size)
-        : path(path),
+    TorrentFile::TorrentFile(std::vector<QString>&& path, long long size)
+        : path(std::move(path)),
           size(size),
           changed(false)
     {
 
     }
 
-    Peer::Peer(const QString& address, const QJsonObject& peerMap)
-        : address(address)
+    Peer::Peer(QString&& address, const QJsonObject& peerMap)
+        : address(std::move(address))
     {
         update(peerMap);
     }
@@ -766,7 +766,7 @@ namespace libtremotesf
 
         for (const QJsonValue& peerVariant : peers) {
             const QJsonObject peerMap(peerVariant.toObject());
-            const QString address(peerMap[QLatin1String("address")].toString());
+            QString address(peerMap[QLatin1String("address")].toString());
             int row = -1;
             for (int i = 0, max = mPeers.size(); i < max; ++i) {
                 if (mPeers[i]->address == address) {
@@ -775,7 +775,7 @@ namespace libtremotesf
                 }
             }
             if (row == -1) {
-                mPeers.push_back(std::make_shared<Peer>(address, peerMap));
+                mPeers.push_back(std::make_shared<Peer>(std::move(address), peerMap));
             } else {
                 mPeers[row]->update(peerMap);
             }
