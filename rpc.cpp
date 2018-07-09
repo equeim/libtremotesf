@@ -725,6 +725,7 @@ namespace libtremotesf
                                                                 .toArray());
 
                         std::vector<std::shared_ptr<Torrent>> torrents;
+                        torrents.reserve(torrentsVariants.size());
                         for (const QJsonValue& torrentVariant : torrentsVariants) {
                             const QJsonObject torrentMap(torrentVariant.toObject());
                             const int id = torrentMap.value(Torrent::idKey).toInt();

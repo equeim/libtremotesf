@@ -680,7 +680,9 @@ namespace libtremotesf
         setChanged(mComment, torrentMap[commentKey].toString(), mChanged);
 
         std::vector<std::shared_ptr<Tracker>> trackers;
-        for (const QJsonValue& trackerVariant : torrentMap[trackerStatsKey].toArray()) {
+        const QJsonArray trackersJson(torrentMap[trackerStatsKey].toArray());
+        trackers.reserve(trackersJson.size());
+        for (const QJsonValue& trackerVariant : trackersJson) {
             const QJsonObject trackerMap(trackerVariant.toObject());
             const int id = trackerMap[trackerIdKey].toInt();
 
@@ -714,12 +716,17 @@ namespace libtremotesf
 
         if (!files.isEmpty()) {
             const bool empty = mFiles.empty();
+            if (empty) {
+                mFiles.reserve(files.size());
+            }
             for (int i = 0, max = files.size(); i < max; ++i) {
                 const QJsonObject fileMap(files[i].toObject());
                 const QJsonObject fileStatsMap(fileStats[i].toObject());
                 if (empty) {
                     std::vector<QString> path;
-                    for (QString& part : fileMap["name"].toString().split('/', QString::SkipEmptyParts)) {
+                    QStringList parts(fileMap["name"].toString().split('/', QString::SkipEmptyParts));
+                    path.reserve(parts.size());
+                    for (QString& part : parts) {
                         path.push_back(std::move(part));
                     }
                     mFiles.push_back(std::make_shared<TorrentFile>(std::move(path), fileMap[QLatin1String("length")].toDouble()));
@@ -742,6 +749,7 @@ namespace libtremotesf
         const QJsonArray peers(torrentMap[peersKey].toArray());
 
         std::vector<QString> addresses;
+        addresses.reserve(peers.size());
         for (const QJsonValue& peer : peers) {
             addresses.push_back(peer.toObject()[QLatin1String("address")].toString());
         }
@@ -753,6 +761,8 @@ namespace libtremotesf
                 max--;
             }
         }
+
+        mPeers.reserve(peers.size());
 
         for (const QJsonValue& peerVariant : peers) {
             const QJsonObject peerMap(peerVariant.toObject());
