@@ -15,7 +15,7 @@ android {
     HEADERS += jni/jnirpc.h
     SOURCES += jni/jnirpc.cpp jni/libtremotesf_wrap.cxx
 } else {
-    CONFIG += c++11 static
+    CONFIG += c++14 static
     sailfishos {
         QT += qml
         DEFINES += TREMOTESF_SAILFISHOS
