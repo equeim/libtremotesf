@@ -61,12 +61,12 @@ namespace libtremotesf
 
         QJsonObject getReplyArguments(const QJsonObject& parseResult)
         {
-            return parseResult[QLatin1String("arguments")].toObject();
+            return parseResult.value(QLatin1String("arguments")].toObject();
         }
 
         bool isResultSuccessful(const QJsonObject& parseResult)
         {
-            return (parseResult[QLatin1String("result")].toString() == QLatin1String("success"));
+            return (parseResult.value(QLatin1String("result")).toString() == QLatin1String("success"));
         }
     }
 
@@ -553,8 +553,8 @@ namespace libtremotesf
                             const std::shared_ptr<Torrent> torrent(torrentById(torrentId));
                             if (torrent) {
                                 const QJsonObject arguments(getReplyArguments(parseResult));
-                                const QString path(arguments[QLatin1String("path")].toString());
-                                const QString newName(arguments[QLatin1String("name")].toString());
+                                const QString path(arguments.value(QLatin1String("path")).toString());
+                                const QString newName(arguments.value(QLatin1String("name")).toString());
                                 emit torrent->fileRenamed(path, newName);
                                 emit torrentFileRenamed(torrentId, path, newName);
                                 updateData();
@@ -575,7 +575,7 @@ namespace libtremotesf
                         "    \"method\": \"session-get\""
                         "}",
                         [=](const QJsonObject& parseResult) {
-                            emit gotDownloadDirFreeSpace(getReplyArguments(parseResult).value("download-dir-free-space").toDouble());
+                            emit gotDownloadDirFreeSpace(getReplyArguments(parseResult).value(QLatin1String("download-dir-free-space")).toDouble());
                         });
         }
     }
@@ -586,7 +586,9 @@ namespace libtremotesf
             postRequest(makeRequestData(QLatin1String("free-space"),
                                         {{QLatin1String("path"), path}}),
                         [=](const QJsonObject& parseResult) {
-                            emit gotFreeSpaceForPath(path, isResultSuccessful(parseResult), getReplyArguments(parseResult).value("size-bytes").toDouble());
+                            emit gotFreeSpaceForPath(path,
+                                                     isResultSuccessful(parseResult),
+                                                     getReplyArguments(parseResult).value(QLatin1String("size-bytes")).toDouble());
                         });
         }
     }
