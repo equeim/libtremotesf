@@ -587,7 +587,17 @@ namespace libtremotesf
         setChanged(mTotalDownloaded, static_cast<long long>(torrentMap[totalDownloadedKey].toDouble()), mChanged);
         setChanged(mTotalUploaded, static_cast<long long>(torrentMap[totalUploadedKey].toDouble()), mChanged);
         setChanged(mRatio, torrentMap[ratioKey].toDouble(), mChanged);
-        setChanged(mRatioLimitMode, static_cast<RatioLimitMode>(torrentMap[ratioLimitModeKey].toInt()), mChanged);
+
+        setChanged(mRatioLimitMode, [&]() {
+            switch (int mode = torrentMap[ratioLimitModeKey].toInt()) {
+            case GlobalRatioLimit:
+            case SingleRatioLimit:
+            case UnlimitedRatio:
+                return static_cast<RatioLimitMode>(mode);
+            default:
+                return GlobalRatioLimit;
+            }
+        }(), mChanged);
         setChanged(mRatioLimit, torrentMap[ratioLimitKey].toDouble(), mChanged);
 
         setChanged(mSeeders, torrentMap[seedersKey].toInt(), mChanged);
@@ -657,8 +667,26 @@ namespace libtremotesf
         }
 
         setChanged(mHonorSessionLimits, torrentMap[honorSessionLimitsKey].toBool(), mChanged);
-        setChanged(mBandwidthPriority, static_cast<Priority>(torrentMap[bandwidthPriorityKey].toInt()), mChanged);
-        setChanged(mIdleSeedingLimitMode, static_cast<IdleSeedingLimitMode>(torrentMap[idleSeedingLimitModeKey].toInt()), mChanged);
+        setChanged(mBandwidthPriority, [&]() {
+            switch (int priority = torrentMap[bandwidthPriorityKey].toInt()) {
+            case LowPriority:
+            case NormalPriority:
+            case HighPriority:
+                return static_cast<Priority>(priority);
+            default:
+                return NormalPriority;
+            }
+        }(), mChanged);
+        setChanged(mIdleSeedingLimitMode, [&]() {
+            switch (int mode = torrentMap[idleSeedingLimitModeKey].toInt()) {
+            case GlobalIdleSeedingLimit:
+            case SingleIdleSeedingLimit:
+            case UnlimitedIdleSeeding:
+                return static_cast<IdleSeedingLimitMode>(mode);
+            default:
+                return GlobalIdleSeedingLimit;
+            }
+        }(), mChanged);
         setChanged(mIdleSeedingLimit, torrentMap[idleSeedingLimitKey].toInt(), mChanged);
         setChanged(mDownloadDirectory, torrentMap[downloadDirectoryKey].toString(), mChanged);
         setChanged(mSingleFile, torrentMap[prioritiesKey].toArray().size() == 1, mChanged);
@@ -735,7 +763,16 @@ namespace libtremotesf
                 file->changed = false;
                 setChanged(file->completedSize, static_cast<long long>(fileStatsMap[QLatin1String("bytesCompleted")].toDouble()), file->changed);
                 setChanged(file->wanted, fileStatsMap["wanted"].toBool(), file->changed);
-                setChanged(file->priority, static_cast<TorrentFile::Priority>(fileStatsMap["priority"].toInt()), file->changed);
+                setChanged(file->priority, [&]() {
+                    switch (int priority = fileStatsMap.value(QLatin1String("priority")).toInt()) {
+                    case TorrentFile::LowPriority:
+                    case TorrentFile::NormalPriority:
+                    case TorrentFile::HighPriority:
+                        return static_cast<TorrentFile::Priority>(priority);
+                    default:
+                        return TorrentFile::NormalPriority;
+                    }
+                }(), file->changed);
             }
         }
 
