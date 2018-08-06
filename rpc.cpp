@@ -464,11 +464,11 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::setTorrentLocation(int id, const QString& location, bool moveFiles)
+    void Rpc::setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles)
     {
         if (isConnected()) {
             postRequest(makeRequestData(QLatin1String("torrent-set-location"),
-                                        {{QLatin1String("ids"), QVariantList{id}},
+                                        {{QLatin1String("ids"), ids},
                                          {QLatin1String("location"), location},
                                          {QLatin1String("move"), moveFiles}}),
                         [=](const QJsonObject& parseResult) {
