@@ -61,7 +61,7 @@ namespace libtremotesf
 
         QJsonObject getReplyArguments(const QJsonObject& parseResult)
         {
-            return parseResult.value(QLatin1String("arguments")].toObject();
+            return parseResult.value(QLatin1String("arguments")).toObject();
         }
 
         bool isResultSuccessful(const QJsonObject& parseResult)
