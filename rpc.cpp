@@ -95,13 +95,7 @@ namespace libtremotesf
         mUpdateTimer->setSingleShot(true);
         QObject::connect(mUpdateTimer, &QTimer::timeout, this, &Rpc::updateData);
 
-        QObject::connect(mNetwork, &QNetworkAccessManager::sslErrors, this, [=](QNetworkReply* reply, const QList<QSslError>& errors) {
-            /*if (mSelfSignedCertificate) {
-                if (errors.length() == 1 && errors.first().error() == QSslError::HostNameMismatch) {
-                    reply->ignoreSslErrors(errors);
-                    return;
-                }
-            }*/
+        QObject::connect(mNetwork, &QNetworkAccessManager::sslErrors, this, [=](QNetworkReply*, const QList<QSslError>& errors) {
             qWarning() << errors;
         });
     }
