@@ -431,6 +431,14 @@ namespace libtremotesf
         }
     }
 
+    void Rpc::reannounceTorrents(const QVariantList& ids)
+    {
+        if (isConnected()) {
+            postRequest(makeRequestData(QLatin1String("torrent-reannounce"),
+                                        {{QLatin1String("ids"), ids}}));
+        }
+    }
+
     void Rpc::setSessionProperty(const QString& property, const QVariant& value)
     {
         if (isConnected()) {
