@@ -620,35 +620,44 @@ namespace libtremotesf
         emit statusChanged();
         emit statusStringChanged();
 
-        if (isConnected()) {
-            emit connectedChanged();
-            emit torrentsUpdated();
-        } else if (wasConnected) {
+        switch (mStatus) {
+        case Disconnected:
+        {
+            qDebug() << "disconnected";
+
             mNetwork->clearAccessCache();
+
             for (QNetworkReply* reply : mNetworkRequests) {
                 reply->abort();
             }
             mNetworkRequests.clear();
+
             mAuthenticationRequested = false;
             mRpcVersionChecked = false;
             mServerSettingsUpdated = false;
             mTorrentsUpdated = false;
             mServerStatsUpdated = false;
-            mTorrents.clear();
-            emit connectedChanged();
-            emit torrentsUpdated();
-            mUpdateTimer->stop();
-        }
 
-        switch (mStatus) {
-        case Disconnected:
-            qDebug() << "disconnected";
+            mTorrents.clear();
+
+            if (wasConnected) {
+                mUpdateTimer->stop();
+                emit connectedChanged();
+                emit torrentsUpdated();
+            }
+
             break;
+        }
         case Connecting:
             qDebug() << "connecting";
             break;
         case Connected:
+        {
             qDebug() << "connected";
+            emit connectedChanged();
+            emit torrentsUpdated();
+            break;
+        }
         }
     }
 
