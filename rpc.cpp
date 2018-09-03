@@ -167,9 +167,8 @@ namespace libtremotesf
             const int interval = [=]() {
                 if (background) {
                     return mBackgroundUpdateInterval;
-                } else {
-                    return mUpdateInterval;
                 }
+                return mUpdateInterval;
             }();
             if (mUpdateTimer->isActive()) {
                 mUpdateTimer->stop();
@@ -248,14 +247,9 @@ namespace libtremotesf
                 hostName == QHostInfo::localHostName()) {
                 return true;
             }
-
             const QHostAddress ipAddress(hostName);
-            if (!ipAddress.isNull() &&
-                (ipAddress.isLoopback() || QNetworkInterface::allAddresses().contains(ipAddress))) {
-                return true;
-            }
-
-            return false;
+            return !ipAddress.isNull() &&
+                    (ipAddress.isLoopback() || QNetworkInterface::allAddresses().contains(ipAddress));
         }();
 
         if (wasConnected) {
@@ -624,7 +618,6 @@ namespace libtremotesf
 
         mStatus = status;
         emit statusChanged();
-        emit statusStringChanged();
 
         switch (mStatus) {
         case Disconnected:
@@ -671,7 +664,6 @@ namespace libtremotesf
     {
         if (error != mError) {
             mError = error;
-            emit statusStringChanged();
             emit errorChanged();
         }
     }
