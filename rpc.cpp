@@ -307,7 +307,7 @@ namespace libtremotesf
                                         {QLatin1String("priority-high"), std::move(highPriorityFiles)},
                                         {QLatin1String("priority-normal"), std::move(normalPriorityFiles)},
                                         {QLatin1String("priority-low"), std::move(lowPriorityFiles)},
-                                        {QLatin1String("bandwidthPriority"), std::move(bandwidthPriority)},
+                                        {QLatin1String("bandwidthPriority"), bandwidthPriority},
                                         {QLatin1String("paused"), !start}});
             });
             auto watcher = new QFutureWatcher<QByteArray>(this);
