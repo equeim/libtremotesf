@@ -641,24 +641,28 @@ namespace libtremotesf
 
         const long long activityDate = torrentMap.value(activityDateKey).toDouble() * 1000;
         if (activityDate > 0) {
-            if (activityDate != mActivityDate.toMSecsSinceEpoch()) {
+            if (activityDate != mActivityDateTime) {
+                mActivityDateTime = activityDate;
                 mActivityDate.setMSecsSinceEpoch(activityDate);
                 mChanged = true;
             }
         } else {
             if (!mActivityDate.isNull()) {
+                mActivityDateTime = -1;
                 mActivityDate = QDateTime();
                 mChanged = true;
             }
         }
         const long long doneDate = torrentMap.value(doneDateKey).toDouble() * 1000;
         if (doneDate > 0) {
-            if (doneDate != mDoneDate.toMSecsSinceEpoch()) {
+            if (doneDate != mDoneDateTime) {
+                mDoneDateTime = doneDate;
                 mDoneDate.setMSecsSinceEpoch(doneDate);
                 mChanged = true;
             }
         } else {
             if (!mDoneDate.isNull()) {
+                mDoneDateTime = -1;
                 mDoneDate = QDateTime();
                 mChanged = true;
             }
@@ -692,12 +696,14 @@ namespace libtremotesf
 
         const long long creationDate = torrentMap.value(creationDateKey).toDouble() * 1000;
         if (creationDate > 0) {
-            if (creationDate != mCreationDate.toMSecsSinceEpoch()) {
+            if (creationDate != mCreationDateTime) {
+                mCreationDateTime = creationDate;
                 mCreationDate.setMSecsSinceEpoch(creationDate);
                 mChanged = true;
             }
         } else {
             if (!mCreationDate.isNull()) {
+                mCreationDateTime = -1;
                 mCreationDate = QDateTime();
                 mChanged = true;
             }
