@@ -109,12 +109,9 @@ namespace libtremotesf
 
         mPeers = trackerMap.value(QLatin1String("lastAnnouncePeerCount")).toInt();
 
-        const long long nextUpdateTime = trackerMap.value(QLatin1String("nextAnnounceTime")).toDouble();
-        const long long currentTime = QDateTime::currentMSecsSinceEpoch();
-        if (nextUpdateTime < currentTime) {
+        mNextUpdate = static_cast<long long>(trackerMap.value(QLatin1String("nextAnnounceTime")).toDouble()) - QDateTime::currentMSecsSinceEpoch() / 1000;
+        if (mNextUpdate < 0) {
             mNextUpdate = -1;
-        } else {
-            mNextUpdate = nextUpdateTime - currentTime;
         }
     }
 }
