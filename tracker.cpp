@@ -68,13 +68,15 @@ namespace libtremotesf
 
     void Tracker::update(const QJsonObject& trackerMap)
     {
-        mAnnounce = trackerMap.value(QLatin1String("announce")).toString();
-
-        const QUrl url(mAnnounce);
-        mSite = url.host();
-        const QString topLevelDomain(url.topLevelDomain());
-        if (!topLevelDomain.isEmpty()) {
-            mSite = mSite.mid(mSite.lastIndexOf('.', -topLevelDomain.size() - 1) + 1);
+        const QString announce(trackerMap.value(QLatin1String("announce")).toString());
+        if (announce != mAnnounce) {
+            mAnnounce = announce;
+            const QUrl url(mAnnounce);
+            mSite = url.host();
+            const int topLevelDomainSize = url.topLevelDomain().size();
+            if (topLevelDomainSize > 0) {
+                mSite.remove(0, mSite.lastIndexOf('.', -1 - topLevelDomainSize) + 1);
+            }
         }
 
         const bool scrapeError = (!trackerMap.value(QLatin1String("lastScrapeSucceeded")).toBool() &&
