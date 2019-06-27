@@ -756,7 +756,7 @@ namespace libtremotesf
                 const QJsonObject fileStatsMap(fileStats[i].toObject());
                 if (empty) {
                     std::vector<QString> path;
-                    QStringList parts(fileMap.value(QLatin1String("name")).toString().split('/', QString::SkipEmptyParts));
+                    QStringList parts(fileMap.value(QLatin1String("name")).toString().split(QLatin1Char('/'), QString::SkipEmptyParts));
                     path.reserve(parts.size());
                     for (QString& part : parts) {
                         path.push_back(std::move(part));

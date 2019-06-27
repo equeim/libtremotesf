@@ -75,7 +75,7 @@ namespace libtremotesf
             mSite = url.host();
             const int topLevelDomainSize = url.topLevelDomain().size();
             if (topLevelDomainSize > 0) {
-                mSite.remove(0, mSite.lastIndexOf('.', -1 - topLevelDomainSize) + 1);
+                mSite.remove(0, mSite.lastIndexOf(QLatin1Char('.'), -1 - topLevelDomainSize) + 1);
             }
         }
 
