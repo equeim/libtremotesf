@@ -787,27 +787,34 @@ namespace libtremotesf
 
     void Torrent::updatePeers(const QJsonObject& torrentMap)
     {
-        const QJsonArray peers(torrentMap.value(peersKey).toArray());
-
         std::vector<QString> addresses;
-        addresses.reserve(peers.size());
-        for (const QJsonValue& peer : peers) {
-            addresses.push_back(peer.toObject().value(QLatin1String("address")).toString());
-        }
+        const std::vector<QJsonObject> peers([&]() {
+            std::vector<QJsonObject> p;
+            const QJsonArray peerValues(torrentMap.value(peersKey).toArray());
+            p.reserve(peerValues.size());
+            addresses.reserve(peerValues.size());
 
-        for (std::size_t i = 0, max = mPeers.size(); i < max; ++i) {
+            for (const QJsonValue& peerValue : peerValues) {
+                QJsonObject peerMap(peerValue.toObject());
+                addresses.push_back(peerMap.value(QLatin1String("address")).toString());
+                p.push_back(std::move(peerMap));
+            }
+
+            return p;
+        }());
+
+        for (int i = mPeers.size() - 1; i >= 0; --i) {
             if (!tremotesf::contains(addresses, mPeers[i]->address)) {
                 mPeers.erase(mPeers.begin() + i);
-                i--;
-                max--;
             }
         }
 
         mPeers.reserve(peers.size());
 
-        for (const QJsonValue& peerVariant : peers) {
-            const QJsonObject peerMap(peerVariant.toObject());
-            QString address(peerMap.value(QLatin1String("address")).toString());
+        for (int i = 0, max = peers.size(); i < max; ++i) {
+            const QJsonObject& peerMap = peers[i];
+            QString& address = addresses[i];
+
             int row = -1;
             for (int i = 0, max = mPeers.size(); i < max; ++i) {
                 if (mPeers[i]->address == address) {
