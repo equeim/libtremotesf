@@ -47,11 +47,11 @@ namespace libtremotesf
 
         std::vector<QString> path;
         long long size;
-        long long completedSize;
-        bool wanted;
-        Priority priority;
+        long long completedSize = 0;
+        bool wanted = false;
+        Priority priority = NormalPriority;
 
-        bool changed;
+        bool changed = false;
     };
 
     struct Peer
