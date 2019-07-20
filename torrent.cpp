@@ -121,12 +121,33 @@ namespace libtremotesf
 
     const QLatin1String Torrent::idKey("id");
 
-    TorrentFile::TorrentFile(std::vector<QString>&& path, long long size)
-        : path(std::move(path)),
-          size(size)
+    TorrentFile::TorrentFile(const QJsonObject& fileMap, const QJsonObject& fileStatsMap)
+        : size(fileMap.value(QLatin1String("length")).toDouble())
     {
-
+        QStringList p(fileMap.value(QLatin1String("name")).toString().split(QLatin1Char('/'), QString::SkipEmptyParts));
+        path.reserve(p.size());
+        for (QString& part : p) {
+            path.push_back(std::move(part));
+        }
+        update(fileStatsMap);
     }
+
+    void TorrentFile::update(const QJsonObject& fileStatsMap)
+    {
+        changed = false;
+        setChanged(completedSize, static_cast<long long>(fileStatsMap.value(QLatin1String("bytesCompleted")).toDouble()), changed);
+        setChanged(wanted, fileStatsMap.value(QLatin1String("wanted")).toBool(), changed);
+        setChanged(priority, [&]() {
+            switch (int priority = fileStatsMap.value(QLatin1String("priority")).toInt()) {
+            case TorrentFile::LowPriority:
+            case TorrentFile::NormalPriority:
+            case TorrentFile::HighPriority:
+                return static_cast<TorrentFile::Priority>(priority);
+            default:
+                return TorrentFile::NormalPriority;
+            }
+        }(), changed);
+     }
 
     Peer::Peer(QString&& address, const QJsonObject& peerMap)
         : address(std::move(address))
@@ -742,40 +763,19 @@ namespace libtremotesf
 
     void Torrent::updateFiles(const QJsonObject& torrentMap)
     {
-        const QJsonArray files(torrentMap.value(filesKey).toArray());
         const QJsonArray fileStats(torrentMap.value(fileStatsKey).toArray());
 
-        if (!files.isEmpty()) {
-            const bool empty = mFiles.empty();
-            if (empty) {
-                mFiles.reserve(files.size());
-            }
-            for (int i = 0, max = files.size(); i < max; ++i) {
-                const QJsonObject fileMap(files[i].toObject());
-                const QJsonObject fileStatsMap(fileStats[i].toObject());
-                if (empty) {
-                    std::vector<QString> path;
-                    QStringList parts(fileMap.value(QLatin1String("name")).toString().split(QLatin1Char('/'), QString::SkipEmptyParts));
-                    path.reserve(parts.size());
-                    for (QString& part : parts) {
-                        path.push_back(std::move(part));
-                    }
-                    mFiles.push_back(std::make_shared<TorrentFile>(std::move(path), fileMap.value(QLatin1String("length")).toDouble()));
+        if (!fileStats.isEmpty()) {
+            if (mFiles.empty()) {
+                const QJsonArray files(torrentMap.value(filesKey).toArray());
+                mFiles.reserve(fileStats.size());
+                for (int i = 0, max = fileStats.size(); i < max; ++i) {
+                    mFiles.push_back(std::make_shared<TorrentFile>(files[i].toObject(), fileStats[i].toObject()));
                 }
-                TorrentFile* file = mFiles[i].get();
-                file->changed = false;
-                setChanged(file->completedSize, static_cast<long long>(fileStatsMap.value(QLatin1String("bytesCompleted")).toDouble()), file->changed);
-                setChanged(file->wanted, fileStatsMap.value(QLatin1String("wanted")).toBool(), file->changed);
-                setChanged(file->priority, [&]() {
-                    switch (int priority = fileStatsMap.value(QLatin1String("priority")).toInt()) {
-                    case TorrentFile::LowPriority:
-                    case TorrentFile::NormalPriority:
-                    case TorrentFile::HighPriority:
-                        return static_cast<TorrentFile::Priority>(priority);
-                    default:
-                        return TorrentFile::NormalPriority;
-                    }
-                }(), file->changed);
+            } else {
+                for (int i = 0, max = fileStats.size(); i < max; ++i) {
+                    mFiles[i]->update(fileStats[i].toObject());
+                }
             }
         }
 

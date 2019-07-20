@@ -43,7 +43,8 @@ namespace libtremotesf
             HighPriority
         };
 
-        explicit TorrentFile(std::vector<QString>&& path, long long size);
+        explicit TorrentFile(const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
+        void update(const QJsonObject& fileStatsMap);
 
         std::vector<QString> path;
         long long size;
