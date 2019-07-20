@@ -838,9 +838,9 @@ namespace libtremotesf
             QString& address = addresses[i];
 
             int row = -1;
-            for (int i = 0, max = mPeers.size(); i < max; ++i) {
-                if (mPeers[i]->address == address) {
-                    row = i;
+            for (int j = 0, max = mPeers.size(); j < max; ++j) {
+                if (mPeers[j]->address == address) {
+                    row = j;
                     break;
                 }
             }
