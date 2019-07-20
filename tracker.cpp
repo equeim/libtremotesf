@@ -68,9 +68,9 @@ namespace libtremotesf
 
     void Tracker::update(const QJsonObject& trackerMap)
     {
-        const QString announce(trackerMap.value(QLatin1String("announce")).toString());
+        QString announce(trackerMap.value(QLatin1String("announce")).toString());
         if (announce != mAnnounce) {
-            mAnnounce = announce;
+            mAnnounce = std::move(announce);
             const QUrl url(mAnnounce);
             mSite = url.host();
             const int topLevelDomainSize = url.topLevelDomain().size();
