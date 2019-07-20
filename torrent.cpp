@@ -18,6 +18,8 @@
 
 #include "torrent.h"
 
+#include <type_traits>
+
 #include <QCoreApplication>
 #include <QJsonArray>
 #include <QJsonObject>
@@ -101,8 +103,8 @@ namespace libtremotesf
         const QString replaceTrackerKey(QLatin1String("trackerReplace"));
         const QString removeTrackerKey(QLatin1String("trackerRemove"));
 
-        template<typename T>
-        void setChanged(T& value, const T& newValue, bool& changed)
+        template<typename T, typename std::enable_if<std::is_scalar<T>::value && !std::is_floating_point<T>::value, int>::type = 0>
+        void setChanged(T& value, T newValue, bool& changed)
         {
             if (newValue != value) {
                 value = newValue;
@@ -110,10 +112,20 @@ namespace libtremotesf
             }
         }
 
-        void setChanged(double& value, double newValue, bool& changed)
+        template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+        void setChanged(T& value, T newValue, bool& changed)
         {
             if (!qFuzzyCompare(newValue, value)) {
                 value = newValue;
+                changed = true;
+            }
+        }
+
+        template<typename T, typename std::enable_if<!std::is_scalar<T>::value, int>::type = 0>
+        void setChanged(T& value, T&& newValue, bool& changed)
+        {
+            if (newValue != value) {
+                value = std::forward<T>(newValue);
                 changed = true;
             }
         }
