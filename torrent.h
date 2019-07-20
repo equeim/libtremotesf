@@ -44,7 +44,7 @@ namespace libtremotesf
         };
 
         explicit TorrentFile(const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
-        void update(const QJsonObject& fileStatsMap);
+        bool update(const QJsonObject& fileStatsMap);
 
         std::vector<QString> path;
         long long size;
@@ -230,12 +230,14 @@ namespace libtremotesf
         bool isFilesLoaded() const;
         Q_INVOKABLE void setFilesEnabled(bool enabled);
         const std::vector<std::shared_ptr<TorrentFile>>& files() const;
+        bool isFilesChanged();
 
         Q_INVOKABLE void setFilesWanted(const QVariantList& files, bool wanted);
         Q_INVOKABLE void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
         Q_INVOKABLE void renameFile(const QString& path, const QString& newName);
 
         const std::vector<std::shared_ptr<Tracker>>& trackers() const;
+        bool isTrackersAddedOrRemoved() const;
         Q_INVOKABLE void addTracker(const QString& announce);
         Q_INVOKABLE void setTracker(int trackerId, const QString& announce);
         Q_INVOKABLE void removeTrackers(const QVariantList& ids);
@@ -308,6 +310,7 @@ namespace libtremotesf
         bool mFilesEnabled = false;
         bool mFilesLoaded = false;
         bool mFilesUpdated = false;
+        bool mFilesChanged = false;
         std::vector<std::shared_ptr<TorrentFile>> mFiles;
 
         bool mPeersEnabled = false;
@@ -316,6 +319,7 @@ namespace libtremotesf
         std::vector<std::shared_ptr<Peer>> mPeers;
 
         std::vector<std::shared_ptr<Tracker>> mTrackers;
+        bool mTrackersAddedOrRemoved = false;
 
         Rpc* mRpc;
 

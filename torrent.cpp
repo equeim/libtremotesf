@@ -144,7 +144,7 @@ namespace libtremotesf
         update(fileStatsMap);
     }
 
-    void TorrentFile::update(const QJsonObject& fileStatsMap)
+    bool TorrentFile::update(const QJsonObject& fileStatsMap)
     {
         changed = false;
         setChanged(completedSize, static_cast<long long>(fileStatsMap.value(QLatin1String("bytesCompleted")).toDouble()), changed);
@@ -159,6 +159,8 @@ namespace libtremotesf
                 return TorrentFile::NormalPriority;
             }
         }(), changed);
+
+        return changed;
      }
 
     Peer::Peer(QString&& address, const QJsonObject& peerMap)
@@ -490,6 +492,11 @@ namespace libtremotesf
         return mFiles;
     }
 
+    bool Torrent::isFilesChanged()
+    {
+        return mFilesChanged;
+    }
+
     void Torrent::setFilesWanted(const QVariantList& files, bool wanted)
     {
         mRpc->setTorrentProperty(mId,
@@ -523,6 +530,11 @@ namespace libtremotesf
     const std::vector<std::shared_ptr<Tracker>>& Torrent::trackers() const
     {
         return mTrackers;
+    }
+
+    bool Torrent::isTrackersAddedOrRemoved() const
+    {
+        return mTrackersAddedOrRemoved;
     }
 
     void Torrent::addTracker(const QString& announce)
@@ -733,6 +745,7 @@ namespace libtremotesf
 
         setChanged(mComment, torrentMap.value(commentKey).toString(), mChanged);
 
+        mTrackersAddedOrRemoved = false;
         std::vector<std::shared_ptr<Tracker>> trackers;
         const QJsonArray trackersJson(torrentMap.value(trackerStatsKey).toArray());
         trackers.reserve(trackersJson.size());
@@ -751,9 +764,13 @@ namespace libtremotesf
                 tracker->update(trackerMap);
             } else {
                 tracker = std::make_shared<Tracker>(id, trackerMap);
+                mTrackersAddedOrRemoved = true;
             }
 
             trackers.push_back(std::move(tracker));
+        }
+        if (trackers.size() != mTrackers.size()) {
+            mTrackersAddedOrRemoved = true;
         }
         mTrackers = std::move(trackers);
 
@@ -765,10 +782,12 @@ namespace libtremotesf
 
     void Torrent::updateFiles(const QJsonObject& torrentMap)
     {
-        const QJsonArray fileStats(torrentMap.value(fileStatsKey).toArray());
+        mFilesChanged = false;
 
+        const QJsonArray fileStats(torrentMap.value(fileStatsKey).toArray());
         if (!fileStats.isEmpty()) {
             if (mFiles.empty()) {
+                mFilesChanged = true;
                 const QJsonArray files(torrentMap.value(filesKey).toArray());
                 mFiles.reserve(fileStats.size());
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
@@ -776,7 +795,9 @@ namespace libtremotesf
                 }
             } else {
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
-                    mFiles[i]->update(fileStats[i].toObject());
+                    if (mFiles[i]->update(fileStats[i].toObject())) {
+                        mFilesChanged = true;
+                    }
                 }
             }
         }
