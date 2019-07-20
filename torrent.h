@@ -229,7 +229,6 @@ namespace libtremotesf
         bool isFilesEnabled() const;
         bool isFilesLoaded() const;
         Q_INVOKABLE void setFilesEnabled(bool enabled);
-        bool isFilesUpdated() const;
         const std::vector<std::shared_ptr<TorrentFile>>& files() const;
 
         Q_INVOKABLE void setFilesWanted(const QVariantList& files, bool wanted);
@@ -244,7 +243,6 @@ namespace libtremotesf
         bool isPeersEnabled() const;
         Q_INVOKABLE void setPeersEnabled(bool enabled);
         bool isPeersLoaded() const;
-        bool isPeersUpdated() const;
         const std::vector<std::shared_ptr<Peer>>& peers() const;
 
         bool isUpdated() const;

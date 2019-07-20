@@ -485,11 +485,6 @@ namespace libtremotesf
         }
     }
 
-    bool Torrent::isFilesUpdated() const
-    {
-        return mFilesUpdated;
-    }
-
     const std::vector<std::shared_ptr<TorrentFile>>& Torrent::files() const
     {
         return mFiles;
@@ -566,11 +561,6 @@ namespace libtremotesf
     bool Torrent::isPeersLoaded() const
     {
         return mPeersLoaded;
-    }
-
-    bool Torrent::isPeersUpdated() const
-    {
-        return mPeersUpdated;
     }
 
     const std::vector<std::shared_ptr<Peer>>& Torrent::peers() const
