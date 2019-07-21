@@ -25,6 +25,8 @@
 #include <QDateTime>
 #include <QObject>
 
+#include "stdutils.h"
+
 class QJsonObject;
 
 namespace libtremotesf
@@ -161,7 +163,7 @@ namespace libtremotesf
         };
         Q_ENUM(IdleSeedingLimitMode)
 
-        static const QLatin1String idKey;
+        static const QJsonKeyString idKey;
 
         explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc);
 
