@@ -432,12 +432,12 @@ namespace libtremotesf
         }
     }
 
-    const QTime& ServerSettings::alternativeSpeedLimitsBeginTime() const
+    QTime ServerSettings::alternativeSpeedLimitsBeginTime() const
     {
         return mAlternativeSpeedLimitsBeginTime;
     }
 
-    void ServerSettings::setAlternativeSpeedLimitsBeginTime(const QTime& time)
+    void ServerSettings::setAlternativeSpeedLimitsBeginTime(QTime time)
     {
         mAlternativeSpeedLimitsBeginTime = time;
         if (mSaveOnSet) {
@@ -445,12 +445,12 @@ namespace libtremotesf
         }
     }
 
-    const QTime& ServerSettings::alternativeSpeedLimitsEndTime() const
+    QTime ServerSettings::alternativeSpeedLimitsEndTime() const
     {
         return mAlternativeSpeedLimitsEndTime;
     }
 
-    void ServerSettings::setAlternativeSpeedLimitsEndTime(const QTime& time)
+    void ServerSettings::setAlternativeSpeedLimitsEndTime(QTime time)
     {
         mAlternativeSpeedLimitsEndTime = time;
         if (mSaveOnSet) {
