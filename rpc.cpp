@@ -224,7 +224,7 @@ namespace libtremotesf
                 if (disabled) {
                     mUpdateTimer->stop();
                 } else {
-                    startUpdateTimer();
+                    updateData();
                 }
             }
             emit updateDisabledChanged();
