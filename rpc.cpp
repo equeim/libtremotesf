@@ -71,6 +71,22 @@ namespace libtremotesf
         {
             return (parseResult.value(QJsonKeyStringInit("result")).toString() == QLatin1String("success"));
         }
+
+        bool isAddressLocal(const QString& address)
+        {
+            if (address == QHostInfo::localHostName()) {
+                return true;
+            }
+
+            const QHostAddress ipAddress(address);
+
+            if (ipAddress.isNull()) {
+                return address == QHostInfo::fromName(QHostAddress(QHostAddress::LocalHost).toString()).hostName() ||
+                       address == QHostInfo::fromName(QHostAddress(QHostAddress::LocalHostIPv6).toString()).hostName();
+            }
+
+            return ipAddress.isLoopback() || QNetworkInterface::allAddresses().contains(ipAddress);
+        }
     }
 
     Rpc::Rpc(bool createServerSettings, QObject* parent)
@@ -254,16 +270,7 @@ namespace libtremotesf
         mBackgroundUpdateInterval = server.backgroundUpdateInterval * 1000; // msecs
         mUpdateTimer->setInterval(mUpdateInterval);
 
-        mLocal = [=]() {
-            const QString hostName = mServerUrl.host();
-            if (hostName == QLatin1String("localhost") ||
-                hostName == QHostInfo::localHostName()) {
-                return true;
-            }
-            const QHostAddress ipAddress(hostName);
-            return !ipAddress.isNull() &&
-                    (ipAddress.isLoopback() || QNetworkInterface::allAddresses().contains(ipAddress));
-        }();
+        mLocal = isAddressLocal(server.address);
 
         if (wasConnected) {
             connect();
