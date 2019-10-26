@@ -95,6 +95,7 @@ namespace libtremotesf
           mAuthenticationRequested(false),
           mBackgroundUpdate(false),
           mUpdateDisabled(false),
+          mUpdating(false),
           mAuthentication(false),
           mUpdateInterval(0),
           mBackgroundUpdateInterval(0),
@@ -294,7 +295,7 @@ namespace libtremotesf
 
     void Rpc::connect()
     {
-        if (!mServerUrl.isEmpty()) {
+        if (mStatus == Disconnected && !mServerUrl.isEmpty()) {
             setError(NoError);
             setStatus(Connecting);
             getServerSettings();
@@ -629,15 +630,19 @@ namespace libtremotesf
 
     void Rpc::updateData()
     {
-        mServerSettingsUpdated = false;
-        mTorrentsUpdated = false;
-        mServerStatsUpdated = false;
+        if (isConnected() && !mUpdating) {
+            mServerSettingsUpdated = false;
+            mTorrentsUpdated = false;
+            mServerStatsUpdated = false;
 
-        mUpdateTimer->stop();
+            mUpdateTimer->stop();
 
-        getServerSettings();
-        getTorrents();
-        getServerStats();
+            mUpdating = true;
+
+            getServerSettings();
+            getTorrents();
+            getServerStats();
+        }
     }
 
     void Rpc::setStatus(Status status)
@@ -667,6 +672,8 @@ namespace libtremotesf
             }
             mNetworkRequests.clear();
 
+            mUpdating = false;
+
             mAuthenticationRequested = false;
             mRpcVersionChecked = false;
             mServerSettingsUpdated = false;
@@ -685,6 +692,7 @@ namespace libtremotesf
         }
         case Connecting:
             qDebug() << "connecting";
+            mUpdating = true;
             break;
         case Connected:
         {
@@ -859,6 +867,7 @@ namespace libtremotesf
             if (!mUpdateDisabled) {
                 mUpdateTimer->start();
             }
+            mUpdating = false;
         }
     }
 
