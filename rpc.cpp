@@ -234,9 +234,6 @@ namespace libtremotesf
     void Rpc::setServer(const Server& server)
     {
         mNetwork->clearAccessCache();
-
-        const bool wasConnected = (mStatus != Disconnected);
-
         disconnect();
 
         mServerUrl.setHost(server.address);
@@ -272,10 +269,6 @@ namespace libtremotesf
         mUpdateTimer->setInterval(mUpdateInterval);
 
         mLocal = isAddressLocal(server.address);
-
-        if (wasConnected) {
-            connect();
-        }
     }
 
     void Rpc::resetServer()
