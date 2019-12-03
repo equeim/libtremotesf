@@ -871,9 +871,9 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::postRequest(const QByteArray& data,
-                          const std::function<void(const QJsonObject&)>& callOnSuccessParse,
-                          const std::function<void()>& callOnSuccess)
+    void Rpc::postRequestImpl(const QByteArray& data,
+                              const std::function<void()>& callOnSuccess,
+                              const std::function<void(const QJsonObject&)>& callOnSuccessParse)
     {
         QNetworkRequest request(mServerUrl);
         static const QVariant contentType(QLatin1String("application/json"));
@@ -933,7 +933,7 @@ namespace libtremotesf
                     if (reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt() == 409 &&
                         reply->hasRawHeader(sessionIdHeader)) {
                         mSessionId = reply->rawHeader(sessionIdHeader);
-                        postRequest(data, callOnSuccessParse);
+                        postRequestImpl(data, callOnSuccess, callOnSuccessParse);
                     } else {
                         qWarning() << reply->error() << reply->errorString();
                         setError(ConnectionError, reply->errorString());
@@ -958,14 +958,14 @@ namespace libtremotesf
         timer->start();
     }
 
-    void Rpc::postRequest(const QByteArray& data, const std::function<void(const QJsonObject&)>& callOnSuccess)
-    {
-        postRequest(data, callOnSuccess, nullptr);
-    }
-
     void Rpc::postRequest(const QByteArray& data, const std::function<void()>& callOnSuccess)
     {
-        postRequest(data, nullptr, callOnSuccess);
+        postRequestImpl(data, callOnSuccess, nullptr);
+    }
+
+    void Rpc::postRequest(const QByteArray& data, const std::function<void(const QJsonObject&)>& callOnSuccessParse)
+    {
+        postRequestImpl(data, nullptr, callOnSuccessParse);
     }
 
     std::shared_ptr<Torrent> Rpc::torrentById(int id) const
