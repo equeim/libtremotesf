@@ -307,15 +307,15 @@ namespace libtremotesf
                              bool start)
     {
         if (isConnected()) {
-            const auto future = QtConcurrent::run([=]() mutable {
+            const auto future = QtConcurrent::run([=]() {
                 return makeRequestData(QLatin1String("torrent-add"),
                                        {{QLatin1String("metainfo"), fileData.toBase64()},
-                                        {QLatin1String("download-dir"), std::move(downloadDirectory)},
-                                        {QLatin1String("files-wanted"), std::move(wantedFiles)},
-                                        {QLatin1String("files-unwanted"), std::move(unwantedFiles)},
-                                        {QLatin1String("priority-high"), std::move(highPriorityFiles)},
-                                        {QLatin1String("priority-normal"), std::move(normalPriorityFiles)},
-                                        {QLatin1String("priority-low"), std::move(lowPriorityFiles)},
+                                        {QLatin1String("download-dir"), downloadDirectory},
+                                        {QLatin1String("files-wanted"), wantedFiles},
+                                        {QLatin1String("files-unwanted"), unwantedFiles},
+                                        {QLatin1String("priority-high"), highPriorityFiles},
+                                        {QLatin1String("priority-normal"), normalPriorityFiles},
+                                        {QLatin1String("priority-low"), lowPriorityFiles},
                                         {QLatin1String("bandwidthPriority"), bandwidthPriority},
                                         {QLatin1String("paused"), !start}});
             });
