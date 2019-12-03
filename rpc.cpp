@@ -194,12 +194,7 @@ namespace libtremotesf
     {
         if (background != mBackgroundUpdate) {
             mBackgroundUpdate = background;
-            const int interval = [=]() {
-                if (background) {
-                    return mBackgroundUpdateInterval;
-                }
-                return mUpdateInterval;
-            }();
+            const int interval = background ? mBackgroundUpdateInterval : mUpdateInterval;
             if (mUpdateTimer->isActive()) {
                 mUpdateTimer->stop();
                 mUpdateTimer->setInterval(interval);
