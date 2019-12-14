@@ -62,6 +62,10 @@ namespace libtremotesf
         explicit Peer(QString&& address, const QJsonObject& peerMap);
         void update(const QJsonObject& peerMap);
 
+        inline bool operator==(const Peer& other) const {
+            return address == other.address;
+        }
+
         QString address;
         long long downloadSpeed;
         long long uploadSpeed;
@@ -247,7 +251,7 @@ namespace libtremotesf
         bool isPeersEnabled() const;
         Q_INVOKABLE void setPeersEnabled(bool enabled);
         bool isPeersLoaded() const;
-        const std::vector<std::shared_ptr<Peer>>& peers() const;
+        const std::vector<Peer>& peers() const;
 
         bool isUpdated() const;
 
@@ -318,7 +322,7 @@ namespace libtremotesf
         bool mPeersEnabled = false;
         bool mPeersLoaded = false;
         bool mPeersUpdated = false;
-        std::vector<std::shared_ptr<Peer>> mPeers;
+        std::vector<Peer> mPeers;
 
         std::vector<std::shared_ptr<Tracker>> mTrackers;
         bool mTrackersAddedOrRemoved = false;
@@ -330,7 +334,7 @@ namespace libtremotesf
         void updated();
         void filesUpdated(const std::vector<TorrentFile>& files);
         void fileRenamed(const QString& filePath, const QString& newName);
-        void peersUpdated(const std::vector<std::shared_ptr<Peer>>& peers);
+        void peersUpdated(const std::vector<Peer>& peers);
         void limitsEdited();
     };
 }

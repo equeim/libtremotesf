@@ -567,7 +567,7 @@ namespace libtremotesf
         return mPeersLoaded;
     }
 
-    const std::vector<std::shared_ptr<Peer>>& Torrent::peers() const
+    const std::vector<Peer>& Torrent::peers() const
     {
         return mPeers;
     }
@@ -818,28 +818,25 @@ namespace libtremotesf
         }());
 
         for (int i = mPeers.size() - 1; i >= 0; --i) {
-            if (!tremotesf::contains(addresses, mPeers[i]->address)) {
+            if (!tremotesf::contains(addresses, mPeers[i].address)) {
                 mPeers.erase(mPeers.begin() + i);
             }
         }
 
         mPeers.reserve(peers.size());
 
-        for (int i = 0, max = peers.size(); i < max; ++i) {
+        for (size_t i = 0, max = peers.size(); i < max; ++i) {
             const QJsonObject& peerMap = peers[i];
             QString& address = addresses[i];
 
-            int row = -1;
-            for (int j = 0, max = mPeers.size(); j < max; ++j) {
-                if (mPeers[j]->address == address) {
-                    row = j;
-                    break;
-                }
-            }
-            if (row == -1) {
-                mPeers.push_back(std::make_shared<Peer>(std::move(address), peerMap));
+            const auto found(std::find_if(mPeers.begin(), mPeers.end(), [&](const Peer& peer) {
+                return peer.address == address;
+            }));
+
+            if (found == mPeers.end()) {
+                mPeers.emplace_back(std::move(address), peerMap);
             } else {
-                mPeers[row]->update(peerMap);
+                found->update(peerMap);
             }
         }
 
