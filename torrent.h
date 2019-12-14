@@ -231,7 +231,7 @@ namespace libtremotesf
         bool isFilesEnabled() const;
         bool isFilesLoaded() const;
         Q_INVOKABLE void setFilesEnabled(bool enabled);
-        const std::vector<std::shared_ptr<TorrentFile>>& files() const;
+        const std::vector<TorrentFile>& files() const;
         bool isFilesChanged();
 
         Q_INVOKABLE void setFilesWanted(const QVariantList& files, bool wanted);
@@ -313,7 +313,7 @@ namespace libtremotesf
         bool mFilesLoaded = false;
         bool mFilesUpdated = false;
         bool mFilesChanged = false;
-        std::vector<std::shared_ptr<TorrentFile>> mFiles;
+        std::vector<TorrentFile> mFiles;
 
         bool mPeersEnabled = false;
         bool mPeersLoaded = false;
@@ -328,7 +328,7 @@ namespace libtremotesf
         bool mChanged;
     signals:
         void updated();
-        void filesUpdated(const std::vector<std::shared_ptr<TorrentFile>>& files);
+        void filesUpdated(const std::vector<TorrentFile>& files);
         void fileRenamed(const QString& filePath, const QString& newName);
         void peersUpdated(const std::vector<std::shared_ptr<Peer>>& peers);
         void limitsEdited();

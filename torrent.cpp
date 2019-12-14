@@ -479,7 +479,7 @@ namespace libtremotesf
         }
     }
 
-    const std::vector<std::shared_ptr<TorrentFile>>& Torrent::files() const
+    const std::vector<TorrentFile>& Torrent::files() const
     {
         return mFiles;
     }
@@ -783,11 +783,11 @@ namespace libtremotesf
                 const QJsonArray files(torrentMap.value(QJsonKeyStringInit("files")).toArray());
                 mFiles.reserve(fileStats.size());
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
-                    mFiles.push_back(std::make_shared<TorrentFile>(files[i].toObject(), fileStats[i].toObject()));
+                    mFiles.emplace_back(files[i].toObject(), fileStats[i].toObject());
                 }
             } else {
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
-                    if (mFiles[i]->update(fileStats[i].toObject())) {
+                    if (mFiles[i].update(fileStats[i].toObject())) {
                         mFilesChanged = true;
                     }
                 }
