@@ -519,7 +519,7 @@ namespace libtremotesf
         mRpc->renameTorrentFile(mId, path, newName);
     }
 
-    const std::vector<std::shared_ptr<Tracker>>& Torrent::trackers() const
+    const std::vector<Tracker>& Torrent::trackers() const
     {
         return mTrackers;
     }
@@ -738,28 +738,24 @@ namespace libtremotesf
         setChanged(mComment, torrentMap.value(commentKey).toString(), mChanged);
 
         mTrackersAddedOrRemoved = false;
-        std::vector<std::shared_ptr<Tracker>> trackers;
+        std::vector<Tracker> trackers;
         const QJsonArray trackersJson(torrentMap.value(QJsonKeyStringInit("trackerStats")).toArray());
         trackers.reserve(trackersJson.size());
         for (const QJsonValue& trackerVariant : trackersJson) {
             const QJsonObject trackerMap(trackerVariant.toObject());
             const int id = trackerMap.value(QJsonKeyStringInit("id")).toInt();
 
-            std::shared_ptr<Tracker> tracker;
-            for (const std::shared_ptr<Tracker>& existingTracker : mTrackers) {
-                if (existingTracker->id() == id) {
-                    tracker = existingTracker;
-                    break;
-                }
-            }
-            if (tracker) {
-                tracker->update(trackerMap);
-            } else {
-                tracker = std::make_shared<Tracker>(id, trackerMap);
-                mTrackersAddedOrRemoved = true;
-            }
+            const auto found(std::find_if(mTrackers.begin(), mTrackers.end(), [&](const Tracker& tracker) {
+                return tracker.id() == id;
+            }));
 
-            trackers.push_back(std::move(tracker));
+            if (found == mTrackers.end()) {
+                trackers.emplace_back(id, trackerMap);
+                mTrackersAddedOrRemoved = true;
+            } else {
+                found->update(trackerMap);
+                trackers.push_back(std::move(*found));
+            }
         }
         if (trackers.size() != mTrackers.size()) {
             mTrackersAddedOrRemoved = true;

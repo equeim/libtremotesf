@@ -19,22 +19,19 @@
 #ifndef LIBTREMOTESF_TORRENT_H
 #define LIBTREMOTESF_TORRENT_H
 
-#include <memory>
 #include <vector>
 
 #include <QDateTime>
 #include <QObject>
 
 #include "stdutils.h"
+#include "tracker.h"
 
 class QJsonObject;
 
 namespace libtremotesf
 {
     class Rpc;
-    class Tracker;
-
-    struct Peer;
 
     struct TorrentFile
     {
@@ -242,7 +239,7 @@ namespace libtremotesf
         Q_INVOKABLE void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
         Q_INVOKABLE void renameFile(const QString& path, const QString& newName);
 
-        const std::vector<std::shared_ptr<Tracker>>& trackers() const;
+        const std::vector<Tracker>& trackers() const;
         bool isTrackersAddedOrRemoved() const;
         Q_INVOKABLE void addTracker(const QString& announce);
         Q_INVOKABLE void setTracker(int trackerId, const QString& announce);
@@ -324,7 +321,7 @@ namespace libtremotesf
         bool mPeersUpdated = false;
         std::vector<Peer> mPeers;
 
-        std::vector<std::shared_ptr<Tracker>> mTrackers;
+        std::vector<Tracker> mTrackers;
         bool mTrackersAddedOrRemoved = false;
 
         Rpc* mRpc;
