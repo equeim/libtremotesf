@@ -675,11 +675,6 @@ namespace libtremotesf
         return mFilesEnabled;
     }
 
-    bool Torrent::isFilesLoaded() const
-    {
-        return mFilesLoaded;
-    }
-
     void Torrent::setFilesEnabled(bool enabled)
     {
         if (enabled != mFilesEnabled) {
@@ -688,7 +683,6 @@ namespace libtremotesf
                 mRpc->getTorrentFiles(id(), false);
             } else {
                 mFiles.clear();
-                mFilesLoaded = false;
             }
         }
     }
@@ -746,14 +740,8 @@ namespace libtremotesf
                 mRpc->getTorrentPeers(id(), false);
             } else {
                 mPeers.clear();
-                mPeersLoaded = false;
             }
         }
-    }
-
-    bool Torrent::isPeersLoaded() const
-    {
-        return mPeersLoaded;
     }
 
     const std::vector<Peer>& Torrent::peers() const
@@ -804,7 +792,6 @@ namespace libtremotesf
         }
 
         mFilesUpdated = true;
-        mFilesLoaded = true;
         emit filesUpdated(mFiles);
     }
 
@@ -850,7 +837,6 @@ namespace libtremotesf
         }
 
         mPeersUpdated = true;
-        mPeersLoaded = true;
         emit peersUpdated(mPeers);
     }
 }

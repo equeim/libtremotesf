@@ -309,7 +309,6 @@ namespace libtremotesf
         const TorrentData& data() const;
 
         bool isFilesEnabled() const;
-        bool isFilesLoaded() const;
         Q_INVOKABLE void setFilesEnabled(bool enabled);
         const std::vector<TorrentFile>& files() const;
         bool isFilesChanged();
@@ -320,7 +319,6 @@ namespace libtremotesf
 
         bool isPeersEnabled() const;
         Q_INVOKABLE void setPeersEnabled(bool enabled);
-        bool isPeersLoaded() const;
         const std::vector<Peer>& peers() const;
 
         bool isUpdated() const;
@@ -335,13 +333,11 @@ namespace libtremotesf
 
         std::vector<TorrentFile> mFiles;
         bool mFilesEnabled = false;
-        bool mFilesLoaded = false;
         bool mFilesUpdated = false;
         bool mFilesChanged = false;
 
         std::vector<Peer> mPeers;
         bool mPeersEnabled = false;
-        bool mPeersLoaded = false;
         bool mPeersUpdated = false;
 
     signals:
