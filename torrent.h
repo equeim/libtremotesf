@@ -120,8 +120,8 @@ namespace libtremotesf
         QString hashString;
         QString name;
 
-        Status status = Paused;
         QString errorString;
+        Status status = Paused;
         int queuePosition = 0;
 
         long long totalSize = 0;
@@ -143,8 +143,8 @@ namespace libtremotesf
         long long totalDownloaded = 0;
         long long totalUploaded = 0;
         double ratio = 0.0;
-        RatioLimitMode ratioLimitMode = GlobalRatioLimit;
         double ratioLimit = 0.0;
+        RatioLimitMode ratioLimitMode = GlobalRatioLimit;
 
         int seeders = 0;
         int leechers = 0;
@@ -156,21 +156,22 @@ namespace libtremotesf
         QDateTime doneDate;
         long long doneDateTime = -1;
 
-        bool honorSessionLimits = false;
-        Priority bandwidthPriority = NormalPriority;
         IdleSeedingLimitMode idleSeedingLimitMode = GlobalIdleSeedingLimit;
         int idleSeedingLimit = 0;
         QString downloadDirectory;
-        bool singleFile = false;
         QString comment;
         QString creator;
         QDateTime creationDate;
         long long creationDateTime = -1;
+        Priority bandwidthPriority = NormalPriority;
+        bool honorSessionLimits = false;
+        bool singleFile = false;
 
-        std::vector<Tracker> trackers;
         bool trackersAddedOrRemoved = false;
 
         bool changed;
+
+        std::vector<Tracker> trackers;
     };
 
     class Torrent : public QObject
