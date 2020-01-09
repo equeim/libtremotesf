@@ -21,8 +21,7 @@
 
 #include <functional>
 
-#include <QHash>
-#include <QString>
+#include <QHashFunctions>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
 /*
