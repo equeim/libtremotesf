@@ -20,7 +20,6 @@
 #define TREMOTESF_STDUTILS_H
 
 #include <functional>
-#include <memory>
 
 #include <QHash>
 #include <QString>
@@ -74,11 +73,6 @@ namespace tremotesf
     template<class C, class V>
     inline void erase_one(C& container, const V& value) {
         container.erase(std::find(container.begin(), container.end(), value));
-    }
-
-    template<class T>
-    inline bool operator==(const std::shared_ptr<T>& shared, const T* raw) {
-        return shared.get() == raw;
     }
 }
 
