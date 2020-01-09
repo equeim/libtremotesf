@@ -20,6 +20,7 @@
 #define TREMOTESF_STDUTILS_H
 
 #include <functional>
+#include <iterator>
 
 #include <QHashFunctions>
 
