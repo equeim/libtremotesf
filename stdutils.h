@@ -67,8 +67,8 @@ namespace tremotesf
         return contains_impl(container, value, 0);
     }
     template<class C, class V>
-    inline typename C::difference_type index_of(const C& container, const V& value) {
-        return std::find(container.cbegin(), container.cend(), value) - container.cbegin();
+    inline typename C::size_type index_of(const C& container, const V& value) {
+        return static_cast<typename C::size_type>(std::find(container.cbegin(), container.cend(), value) - container.cbegin());
     }
 
     template<class C, class V>
