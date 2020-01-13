@@ -21,7 +21,9 @@
 
 #include <functional>
 #include <iterator>
+#include <type_traits>
 
+#include <QtGlobal>
 #include <QHashFunctions>
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 14, 0)
@@ -85,6 +87,34 @@ namespace tremotesf
     template<class C, class V>
     inline void erase_one(C& container, const V& value) {
         container.erase(std::find(container.begin(), container.end(), value));
+    }
+
+
+    template<typename T, typename std::enable_if<std::is_scalar<T>::value && !std::is_floating_point<T>::value, int>::type = 0>
+    inline void setChanged(T& value, T newValue, bool& changed)
+    {
+        if (newValue != value) {
+            value = newValue;
+            changed = true;
+        }
+    }
+
+    template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+    inline void setChanged(T& value, T newValue, bool& changed)
+    {
+        if (!qFuzzyCompare(newValue, value)) {
+            value = newValue;
+            changed = true;
+        }
+    }
+
+    template<typename T, typename std::enable_if<!std::is_scalar<T>::value, int>::type = 0>
+    inline void setChanged(T& value, T&& newValue, bool& changed)
+    {
+        if (newValue != value) {
+            value = std::forward<T>(newValue);
+            changed = true;
+        }
     }
 }
 

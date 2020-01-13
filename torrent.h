@@ -22,10 +22,11 @@
 #include <vector>
 
 #include <QDateTime>
-#include <QDebug>
 #include <QObject>
 
+#include "peer.h"
 #include "stdutils.h"
+#include "torrentfile.h"
 #include "tracker.h"
 
 class QJsonObject;
@@ -33,44 +34,6 @@ class QJsonObject;
 namespace libtremotesf
 {
     class Rpc;
-
-    struct TorrentFile
-    {
-        enum Priority
-        {
-            LowPriority = -1,
-            NormalPriority,
-            HighPriority
-        };
-
-        explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
-        bool update(const QJsonObject& fileStatsMap);
-
-        int id;
-
-        std::vector<QString> path;
-        long long size;
-        long long completedSize = 0;
-        Priority priority = NormalPriority;
-        bool wanted = false;
-    };
-
-    struct Peer
-    {
-        explicit Peer(QString&& address, const QJsonObject& peerMap);
-        bool update(const QJsonObject& peerMap);
-
-        bool operator==(const Peer& other) const {
-            return address == other.address;
-        }
-
-        QString address;
-        QString client;
-        long long downloadSpeed;
-        long long uploadSpeed;
-        double progress;
-        QString flags;
-    };
 
     struct TorrentData
     {
@@ -346,13 +309,6 @@ namespace libtremotesf
         void fileRenamed(const QString& filePath, const QString& newName);
         void limitsEdited();
     };
-}
-
-QDebug operator<<(QDebug debug, const libtremotesf::Torrent& torrent);
-
-inline QDebug operator<<(QDebug debug, const libtremotesf::Torrent* torrent)
-{
-    return operator<<(debug, *torrent);
 }
 
 #endif // LIBTREMOTESF_TORRENT_H
