@@ -851,3 +851,10 @@ namespace libtremotesf
         emit mRpc->torrentPeersUpdated(mData.id, changed, added, removed);
     }
 }
+
+QDebug operator<<(QDebug debug, const libtremotesf::Torrent& torrent)
+{
+    QDebugStateSaver saver(debug);
+    debug.nospace() << "Torrent(id=" << torrent.id() << ", name=" << torrent.name() << ")";
+    return debug;
+}

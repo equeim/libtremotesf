@@ -22,6 +22,7 @@
 #include <vector>
 
 #include <QDateTime>
+#include <QDebug>
 #include <QObject>
 
 #include "stdutils.h"
@@ -345,6 +346,13 @@ namespace libtremotesf
         void fileRenamed(const QString& filePath, const QString& newName);
         void limitsEdited();
     };
+}
+
+QDebug operator<<(QDebug debug, const libtremotesf::Torrent& torrent);
+
+inline QDebug operator<<(QDebug debug, const libtremotesf::Torrent* torrent)
+{
+    return operator<<(debug, *torrent);
 }
 
 #endif // LIBTREMOTESF_TORRENT_H
