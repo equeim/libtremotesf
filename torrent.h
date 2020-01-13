@@ -42,33 +42,33 @@ namespace libtremotesf
             HighPriority
         };
 
-        explicit TorrentFile(const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
+        explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
         bool update(const QJsonObject& fileStatsMap);
+
+        int id;
 
         std::vector<QString> path;
         long long size;
         long long completedSize = 0;
         Priority priority = NormalPriority;
         bool wanted = false;
-
-        bool changed = false;
     };
 
     struct Peer
     {
         explicit Peer(QString&& address, const QJsonObject& peerMap);
-        void update(const QJsonObject& peerMap);
+        bool update(const QJsonObject& peerMap);
 
         bool operator==(const Peer& other) const {
             return address == other.address;
         }
 
         QString address;
+        QString client;
         long long downloadSpeed;
         long long uploadSpeed;
         double progress;
         QString flags;
-        QString client;
     };
 
     struct TorrentData
@@ -311,7 +311,6 @@ namespace libtremotesf
         bool isFilesEnabled() const;
         Q_INVOKABLE void setFilesEnabled(bool enabled);
         const std::vector<TorrentFile>& files() const;
-        bool isFilesChanged();
 
         Q_INVOKABLE void setFilesWanted(const QVariantList& files, bool wanted);
         Q_INVOKABLE void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
@@ -334,7 +333,6 @@ namespace libtremotesf
         std::vector<TorrentFile> mFiles;
         bool mFilesEnabled = false;
         bool mFilesUpdated = false;
-        bool mFilesChanged = false;
 
         std::vector<Peer> mPeers;
         bool mPeersEnabled = false;
@@ -342,9 +340,9 @@ namespace libtremotesf
 
     signals:
         void updated();
-        void filesUpdated(const std::vector<TorrentFile>& files);
+        void filesUpdated(const std::vector<const libtremotesf::TorrentFile*>& changed);
+        void peersUpdated(const std::vector<const libtremotesf::Peer*>& changed, const std::vector<const libtremotesf::Peer*>& added, const std::vector<int>& removed);
         void fileRenamed(const QString& filePath, const QString& newName);
-        void peersUpdated(const std::vector<Peer>& peers);
         void limitsEdited();
     };
 }
