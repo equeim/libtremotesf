@@ -37,11 +37,11 @@ class QTimer;
 
 namespace libtremotesf
 {
-    class Peer;
+    struct Peer;
     class ServerSettings;
     class ServerStats;
     class Torrent;
-    class TorrentFile;
+    struct TorrentFile;
 
     struct Server
     {
