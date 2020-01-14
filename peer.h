@@ -21,12 +21,16 @@
 
 #include <QString>
 
+#include "stdutils.h"
+
 class QJsonObject;
 
 namespace libtremotesf
 {
     struct Peer
     {
+        static const QJsonKeyString addressKey;
+
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
 

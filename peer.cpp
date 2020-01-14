@@ -20,10 +20,10 @@
 
 #include <QJsonObject>
 
-#include "stdutils.h"
-
 namespace libtremotesf
 {
+    const QJsonKeyString Peer::addressKey(QJsonKeyStringInit("address"));
+
     Peer::Peer(QString&& address, const QJsonObject& peerJson)
         : address(std::move(address)),
           client(peerJson.value(QJsonKeyStringInit("clientName")).toString())

@@ -732,7 +732,7 @@ namespace libtremotesf
 
             for (const QJsonValue& peerValue : peerValues) {
                 QJsonObject peerMap(peerValue.toObject());
-                addresses.push_back(peerMap.value(QJsonKeyStringInit("address")).toString());
+                addresses.push_back(peerMap.value(Peer::addressKey).toString());
                 p.push_back(std::move(peerMap));
             }
 
