@@ -40,8 +40,8 @@ namespace libtremotesf
     {
         bool changed = false;
 
-        tremotesf::setChanged(completedSize, static_cast<long long>(fileStatsMap.value(QJsonKeyStringInit("bytesCompleted")).toDouble()), changed);
-        tremotesf::setChanged(priority, [&]() {
+        setChanged(completedSize, static_cast<long long>(fileStatsMap.value(QJsonKeyStringInit("bytesCompleted")).toDouble()), changed);
+        setChanged(priority, [&]() {
             switch (int priority = fileStatsMap.value(QJsonKeyStringInit("priority")).toInt()) {
             case TorrentFile::LowPriority:
             case TorrentFile::NormalPriority:
@@ -51,7 +51,7 @@ namespace libtremotesf
                 return TorrentFile::NormalPriority;
             }
         }(), changed);
-        tremotesf::setChanged(wanted, fileStatsMap.value(QJsonKeyStringInit("wanted")).toBool(), changed);
+        setChanged(wanted, fileStatsMap.value(QJsonKeyStringInit("wanted")).toBool(), changed);
 
         return changed;
     }

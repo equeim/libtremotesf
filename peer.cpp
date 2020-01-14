@@ -34,10 +34,10 @@ namespace libtremotesf
     bool Peer::update(const QJsonObject& peerJson)
     {
         bool changed = false;
-        tremotesf::setChanged(downloadSpeed, static_cast<long long>(peerJson.value(QJsonKeyStringInit("rateToClient")).toDouble()), changed);
-        tremotesf::setChanged(uploadSpeed, static_cast<long long>(peerJson.value(QJsonKeyStringInit("rateToPeer")).toDouble()), changed);
-        tremotesf::setChanged(progress, peerJson.value(QJsonKeyStringInit("progress")).toDouble(), changed);
-        tremotesf::setChanged(flags, peerJson.value(QJsonKeyStringInit("flagStr")).toString(), changed);
+        setChanged(downloadSpeed, static_cast<long long>(peerJson.value(QJsonKeyStringInit("rateToClient")).toDouble()), changed);
+        setChanged(uploadSpeed, static_cast<long long>(peerJson.value(QJsonKeyStringInit("rateToPeer")).toDouble()), changed);
+        setChanged(progress, peerJson.value(QJsonKeyStringInit("progress")).toDouble(), changed);
+        setChanged(flags, peerJson.value(QJsonKeyStringInit("flagStr")).toString(), changed);
         return changed;
     }
 }

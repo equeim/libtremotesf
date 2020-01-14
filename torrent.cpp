@@ -101,31 +101,31 @@ namespace libtremotesf
     {
         changed = false;
 
-        tremotesf::setChanged(name, torrentMap.value(nameKey).toString(), changed);
+        setChanged(name, torrentMap.value(nameKey).toString(), changed);
 
-        tremotesf::setChanged(errorString, torrentMap.value(errorStringKey).toString(), changed);
-        tremotesf::setChanged(queuePosition, torrentMap.value(queuePositionKey).toInt(), changed);
-        tremotesf::setChanged(totalSize, static_cast<long long>(torrentMap.value(totalSizeKey).toDouble()), changed);
-        tremotesf::setChanged(completedSize, static_cast<long long>(torrentMap.value(completedSizeKey).toDouble()), changed);
-        tremotesf::setChanged(leftUntilDone, static_cast<long long>(torrentMap.value(leftUntilDoneKey).toDouble()), changed);
-        tremotesf::setChanged(sizeWhenDone, static_cast<long long>(torrentMap.value(sizeWhenDoneKey).toDouble()), changed);
-        tremotesf::setChanged(percentDone, torrentMap.value(percentDoneKey).toDouble(), changed);
-        tremotesf::setChanged(recheckProgress, torrentMap.value(recheckProgressKey).toDouble(), changed);
-        tremotesf::setChanged(eta, torrentMap.value(etaKey).toInt(), changed);
+        setChanged(errorString, torrentMap.value(errorStringKey).toString(), changed);
+        setChanged(queuePosition, torrentMap.value(queuePositionKey).toInt(), changed);
+        setChanged(totalSize, static_cast<long long>(torrentMap.value(totalSizeKey).toDouble()), changed);
+        setChanged(completedSize, static_cast<long long>(torrentMap.value(completedSizeKey).toDouble()), changed);
+        setChanged(leftUntilDone, static_cast<long long>(torrentMap.value(leftUntilDoneKey).toDouble()), changed);
+        setChanged(sizeWhenDone, static_cast<long long>(torrentMap.value(sizeWhenDoneKey).toDouble()), changed);
+        setChanged(percentDone, torrentMap.value(percentDoneKey).toDouble(), changed);
+        setChanged(recheckProgress, torrentMap.value(recheckProgressKey).toDouble(), changed);
+        setChanged(eta, torrentMap.value(etaKey).toInt(), changed);
 
-        tremotesf::setChanged(downloadSpeed, static_cast<long long>(torrentMap.value(downloadSpeedKey).toDouble()), changed);
-        tremotesf::setChanged(uploadSpeed, static_cast<long long>(torrentMap.value(uploadSpeedKey).toDouble()), changed);
+        setChanged(downloadSpeed, static_cast<long long>(torrentMap.value(downloadSpeedKey).toDouble()), changed);
+        setChanged(uploadSpeed, static_cast<long long>(torrentMap.value(uploadSpeedKey).toDouble()), changed);
 
-        tremotesf::setChanged(downloadSpeedLimited, torrentMap.value(downloadSpeedLimitedKey).toBool(), changed);
-        tremotesf::setChanged(downloadSpeedLimit, rpc->serverSettings()->toKibiBytes(torrentMap.value(downloadSpeedLimitKey).toInt()), changed);
-        tremotesf::setChanged(uploadSpeedLimited, torrentMap.value(uploadSpeedLimitedKey).toBool(), changed);
-        tremotesf::setChanged(uploadSpeedLimit, rpc->serverSettings()->toKibiBytes(torrentMap.value(uploadSpeedLimitKey).toInt()), changed);
+        setChanged(downloadSpeedLimited, torrentMap.value(downloadSpeedLimitedKey).toBool(), changed);
+        setChanged(downloadSpeedLimit, rpc->serverSettings()->toKibiBytes(torrentMap.value(downloadSpeedLimitKey).toInt()), changed);
+        setChanged(uploadSpeedLimited, torrentMap.value(uploadSpeedLimitedKey).toBool(), changed);
+        setChanged(uploadSpeedLimit, rpc->serverSettings()->toKibiBytes(torrentMap.value(uploadSpeedLimitKey).toInt()), changed);
 
-        tremotesf::setChanged(totalDownloaded, static_cast<long long>(torrentMap.value(totalDownloadedKey).toDouble()), changed);
-        tremotesf::setChanged(totalUploaded, static_cast<long long>(torrentMap.value(totalUploadedKey).toDouble()), changed);
-        tremotesf::setChanged(ratio, torrentMap.value(ratioKey).toDouble(), changed);
+        setChanged(totalDownloaded, static_cast<long long>(torrentMap.value(totalDownloadedKey).toDouble()), changed);
+        setChanged(totalUploaded, static_cast<long long>(torrentMap.value(totalUploadedKey).toDouble()), changed);
+        setChanged(ratio, torrentMap.value(ratioKey).toDouble(), changed);
 
-        tremotesf::setChanged(ratioLimitMode, [&]() {
+        setChanged(ratioLimitMode, [&]() {
             switch (int mode = torrentMap.value(ratioLimitModeKey).toInt()) {
             case GlobalRatioLimit:
             case SingleRatioLimit:
@@ -135,48 +135,48 @@ namespace libtremotesf
                 return GlobalRatioLimit;
             }
         }(), changed);
-        tremotesf::setChanged(ratioLimit, torrentMap.value(ratioLimitKey).toDouble(), changed);
+        setChanged(ratioLimit, torrentMap.value(ratioLimitKey).toDouble(), changed);
 
-        tremotesf::setChanged(seeders, torrentMap.value(seedersKey).toInt(), changed);
-        tremotesf::setChanged(leechers, torrentMap.value(leechersKey).toInt(), changed);
+        setChanged(seeders, torrentMap.value(seedersKey).toInt(), changed);
+        setChanged(leechers, torrentMap.value(leechersKey).toInt(), changed);
 
         const bool stalled = (seeders == 0 && leechers == 0);
         if (torrentMap.value(errorKey).toInt() == 0) {
             switch (torrentMap.value(statusKey).toInt()) {
             case 0:
-                tremotesf::setChanged(status, Paused, changed);
+                setChanged(status, Paused, changed);
                 break;
             case 1:
-                tremotesf::setChanged(status, QueuedForChecking, changed);
+                setChanged(status, QueuedForChecking, changed);
                 break;
             case 2:
-                tremotesf::setChanged(status, Checking, changed);
+                setChanged(status, Checking, changed);
                 break;
             case 3:
-                tremotesf::setChanged(status, QueuedForDownloading, changed);
+                setChanged(status, QueuedForDownloading, changed);
                 break;
             case 4:
                 if (stalled) {
-                    tremotesf::setChanged(status, StalledDownloading, changed);
+                    setChanged(status, StalledDownloading, changed);
                 } else {
-                    tremotesf::setChanged(status, Downloading, changed);
+                    setChanged(status, Downloading, changed);
                 }
                 break;
             case 5:
-                tremotesf::setChanged(status, QueuedForSeeding, changed);
+                setChanged(status, QueuedForSeeding, changed);
                 break;
             case 6:
                 if (stalled) {
-                    tremotesf::setChanged(status, StalledSeeding, changed);
+                    setChanged(status, StalledSeeding, changed);
                 } else {
-                    tremotesf::setChanged(status, Seeding, changed);
+                    setChanged(status, Seeding, changed);
                 }
             }
         } else {
-            tremotesf::setChanged(status, Errored, changed);
+            setChanged(status, Errored, changed);
         }
 
-        tremotesf::setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
+        setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
 
         const long long newActivityDateTime = torrentMap.value(activityDateKey).toDouble() * 1000;
         if (newActivityDateTime > 0) {
@@ -207,8 +207,8 @@ namespace libtremotesf
             }
         }
 
-        tremotesf::setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
-        tremotesf::setChanged(bandwidthPriority, [&]() {
+        setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
+        setChanged(bandwidthPriority, [&]() {
             switch (int priority = torrentMap.value(bandwidthPriorityKey).toInt()) {
             case LowPriority:
             case NormalPriority:
@@ -218,7 +218,7 @@ namespace libtremotesf
                 return NormalPriority;
             }
         }(), changed);
-        tremotesf::setChanged(idleSeedingLimitMode, [&]() {
+        setChanged(idleSeedingLimitMode, [&]() {
             switch (int mode = torrentMap.value(idleSeedingLimitModeKey).toInt()) {
             case GlobalIdleSeedingLimit:
             case SingleIdleSeedingLimit:
@@ -228,10 +228,10 @@ namespace libtremotesf
                 return GlobalIdleSeedingLimit;
             }
         }(), changed);
-        tremotesf::setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
-        tremotesf::setChanged(downloadDirectory, torrentMap.value(downloadDirectoryKey).toString(), changed);
-        tremotesf::setChanged(singleFile, torrentMap.value(prioritiesKey).toArray().size() == 1, changed);
-        tremotesf::setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
+        setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
+        setChanged(downloadDirectory, torrentMap.value(downloadDirectoryKey).toString(), changed);
+        setChanged(singleFile, torrentMap.value(prioritiesKey).toArray().size() == 1, changed);
+        setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
 
         const long long newCreationDateTime = torrentMap.value(creationDateKey).toDouble() * 1000;
         if (newCreationDateTime > 0) {
@@ -248,7 +248,7 @@ namespace libtremotesf
             }
         }
 
-        tremotesf::setChanged(comment, torrentMap.value(commentKey).toString(), changed);
+        setChanged(comment, torrentMap.value(commentKey).toString(), changed);
 
         trackersAddedOrRemoved = false;
         std::vector<Tracker> newTrackers;
@@ -741,7 +741,7 @@ namespace libtremotesf
 
         std::vector<int> removed;
         for (int i = mPeers.size() - 1; i >= 0; --i) {
-            if (!tremotesf::contains(addresses, mPeers[i].address)) {
+            if (!contains(addresses, mPeers[i].address)) {
                 mPeers.erase(mPeers.begin() + i);
                 removed.push_back(i);
             }

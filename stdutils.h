@@ -60,7 +60,7 @@ QT_SPECIALIZE_STD_HASH_TO_CALL_QHASH_BY_CREF(QString)
 QT_SPECIALIZE_STD_HASH_TO_CALL_QHASH_BY_CREF(QByteArray)
 #endif
 
-namespace tremotesf
+namespace libtremotesf
 {
     template<class C, class V>
     inline auto contains_impl(const C& container, const V& value, int) -> decltype(container.find(value), true)
@@ -116,6 +116,14 @@ namespace tremotesf
             changed = true;
         }
     }
+}
+
+namespace tremotesf
+{
+    using libtremotesf::contains;
+    using libtremotesf::index_of;
+    using libtremotesf::erase_one;
+    using libtremotesf::setChanged;
 }
 
 #if QT_VERSION < QT_VERSION_CHECK(5, 7, 0)
