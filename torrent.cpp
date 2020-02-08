@@ -693,23 +693,23 @@ namespace libtremotesf
 
     void Torrent::updateFiles(const QJsonObject &torrentMap)
     {
-        std::vector<const TorrentFile*> changed;
+        std::vector<int> changed;
 
         const QJsonArray fileStats(torrentMap.value(QJsonKeyStringInit("fileStats")).toArray());
         if (!fileStats.isEmpty()) {
             if (mFiles.empty()) {
                 const QJsonArray fileJsons(torrentMap.value(QJsonKeyStringInit("files")).toArray());
-                mFiles.reserve(fileStats.size());
-                changed.reserve(fileStats.size());
+                mFiles.reserve(static_cast<size_t>(fileStats.size()));
+                changed.reserve(static_cast<size_t>(fileStats.size()));
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
                     mFiles.emplace_back(i, fileJsons[i].toObject(), fileStats[i].toObject());
-                    changed.push_back(&mFiles.back());
+                    changed.push_back(i);
                 }
             } else {
                 for (int i = 0, max = fileStats.size(); i < max; ++i) {
-                    TorrentFile& file = mFiles[i];
+                    TorrentFile& file = mFiles[static_cast<size_t>(i)];
                     if (file.update(fileStats[i].toObject())) {
-                        changed.push_back(&file);
+                        changed.push_back(i);
                     }
                 }
             }
@@ -718,7 +718,7 @@ namespace libtremotesf
         mFilesUpdated = true;
 
         emit filesUpdated(changed);
-        emit mRpc->torrentFilesUpdated(mData.id, changed);
+        emit mRpc->torrentFilesUpdated(this, changed);
     }
 
     void Torrent::updatePeers(const QJsonObject &torrentMap)

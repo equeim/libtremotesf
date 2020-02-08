@@ -304,7 +304,7 @@ namespace libtremotesf
 
     signals:
         void updated();
-        void filesUpdated(const std::vector<const libtremotesf::TorrentFile*>& changed);
+        void filesUpdated(const std::vector<int>& changed);
         void peersUpdated(const std::vector<int>& removed, const std::vector<int>& changed, int added);
         void fileRenamed(const QString& filePath, const QString& newName);
         void limitsEdited();
