@@ -63,7 +63,7 @@ namespace libtremotesf
         return mPeers;
     }
 
-    int Tracker::nextUpdate() const
+    long long Tracker::nextUpdate() const
     {
         return mNextUpdate;
     }
@@ -111,11 +111,6 @@ namespace libtremotesf
 
         mPeers = trackerMap.value(QJsonKeyStringInit("lastAnnouncePeerCount")).toInt();
 
-        const long long nextUpdate = static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble()) - QDateTime::currentMSecsSinceEpoch() / 1000;
-        if (nextUpdate < 0 || nextUpdate > std::numeric_limits<int>::max()) {
-            mNextUpdate = -1;
-        } else {
-            mNextUpdate = nextUpdate;
-        }
+        mNextUpdate = static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble());
     }
 }

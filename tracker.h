@@ -47,7 +47,7 @@ namespace libtremotesf
         QString errorMessage() const;
 
         int peers() const;
-        int nextUpdate() const;
+        long long nextUpdate() const;
 
         void update(const QJsonObject& trackerMap);
 
@@ -64,7 +64,7 @@ namespace libtremotesf
         Status mStatus = Inactive;
         QString mErrorMessage;
         int mPeers = 0;
-        int mNextUpdate = 0;
+        long long mNextUpdate = 0;
     };
 }
 
