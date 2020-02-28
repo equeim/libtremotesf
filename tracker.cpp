@@ -27,6 +27,22 @@
 
 namespace libtremotesf
 {
+    namespace
+    {
+        Tracker::Status statusFromInt(int status)
+        {
+            switch (status) {
+            case Tracker::Inactive:
+            case Tracker::Active:
+            case Tracker::Queued:
+            case Tracker::Updating:
+            case Tracker::Error:
+                return static_cast<Tracker::Status>(status);
+            }
+            return Tracker::Inactive;
+        }
+    }
+
     Tracker::Tracker(int id, const QJsonObject& trackerMap)
         : mId(id)
     {
@@ -101,7 +117,7 @@ namespace libtremotesf
             case Queued:
             case Updating:
             case Error:
-                mStatus = static_cast<Status>(status);
+                mStatus = statusFromInt(status);
                 break;
             default:
                 mStatus = Error;
