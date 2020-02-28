@@ -57,14 +57,17 @@ namespace libtremotesf
         }
 
     private:
-        int mId;
         QString mAnnounce;
         QString mSite;
 
         Status mStatus = Inactive;
         QString mErrorMessage;
-        int mPeers = 0;
+
         long long mNextUpdate = 0;
+
+        int mPeers = 0;
+
+        int mId;
     };
 }
 
