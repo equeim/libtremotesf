@@ -19,6 +19,7 @@
 #include "tracker.h"
 
 #include <QCoreApplication>
+#include <QDateTime>
 #include <QJsonObject>
 #include <QUrl>
 
@@ -78,9 +79,14 @@ namespace libtremotesf
         return mPeers;
     }
 
-    long long Tracker::nextUpdate() const
+    long long Tracker::nextUpdateTime() const
     {
-        return mNextUpdate;
+        return mNextUpdateTime;
+    }
+
+    int Tracker::nextUpdateEta() const
+    {
+        return mNextUpdateEta;
     }
 
     bool Tracker::update(const QJsonObject& trackerMap)
@@ -133,7 +139,17 @@ namespace libtremotesf
 
         setChanged(mPeers, trackerMap.value(QJsonKeyStringInit("lastAnnouncePeerCount")).toInt(), changed);
 
-        setChanged(mNextUpdate, static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble()), changed);
+        const long long nextUpdateTime = static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble());
+        if (nextUpdateTime != mNextUpdateTime) {
+            mNextUpdateTime = nextUpdateTime;
+            changed = true;
+        }
+        const long long nextUpdateEta = nextUpdateTime - QDateTime::currentMSecsSinceEpoch() / 1000;
+        if (nextUpdateEta < 0 || nextUpdateEta > std::numeric_limits<int>::max()) {
+            mNextUpdateEta = -1;
+        } else {
+            mNextUpdateEta = static_cast<int>(nextUpdateEta);
+        }
 
         return changed;
     }

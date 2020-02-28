@@ -47,7 +47,8 @@ namespace libtremotesf
         QString errorMessage() const;
 
         int peers() const;
-        long long nextUpdate() const;
+        long long nextUpdateTime() const;
+        int nextUpdateEta() const;
 
         bool update(const QJsonObject& trackerMap);
 
@@ -60,10 +61,11 @@ namespace libtremotesf
         QString mAnnounce;
         QString mSite;
 
-        Status mStatus = Inactive;
         QString mErrorMessage;
+        Status mStatus = Inactive;
 
-        long long mNextUpdate = 0;
+        int mNextUpdateEta = -1;
+        long long mNextUpdateTime = 0;
 
         int mPeers = 0;
 
