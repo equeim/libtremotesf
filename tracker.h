@@ -49,7 +49,7 @@ namespace libtremotesf
         int peers() const;
         long long nextUpdate() const;
 
-        void update(const QJsonObject& trackerMap);
+        bool update(const QJsonObject& trackerMap);
 
         inline bool operator==(const Tracker& other) const
         {

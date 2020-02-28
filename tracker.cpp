@@ -84,10 +84,13 @@ namespace libtremotesf
         return mNextUpdate;
     }
 
-    void Tracker::update(const QJsonObject& trackerMap)
+    bool Tracker::update(const QJsonObject& trackerMap)
     {
+        bool changed = false;
+
         QString announce(trackerMap.value(QJsonKeyStringInit("announce")).toString());
         if (announce != mAnnounce) {
+            changed = true;
             mAnnounce = std::move(announce);
             const QUrl url(mAnnounce);
             mSite = url.host();
@@ -104,11 +107,11 @@ namespace libtremotesf
                                     trackerMap.value(QJsonKeyStringInit("lastAnnounceTime")).toInt() != 0);
 
         if (scrapeError || announceError) {
-            mStatus = Error;
+            setChanged(mStatus, Error, changed);
             if (scrapeError) {
-                mErrorMessage = trackerMap.value(QJsonKeyStringInit("lastScrapeResult")).toString();
+                setChanged(mErrorMessage, trackerMap.value(QJsonKeyStringInit("lastScrapeResult")).toString(), changed);
             } else {
-                mErrorMessage = trackerMap.value(QJsonKeyStringInit("lastAnnounceResult")).toString();
+                setChanged(mErrorMessage, trackerMap.value(QJsonKeyStringInit("lastAnnounceResult")).toString(), changed);
             }
         } else {
             switch (int status = trackerMap.value(QJsonKeyStringInit("announceState")).toInt()) {
@@ -117,16 +120,22 @@ namespace libtremotesf
             case Queued:
             case Updating:
             case Error:
-                mStatus = statusFromInt(status);
+                setChanged(mStatus, statusFromInt(status), changed);
                 break;
             default:
-                mStatus = Error;
+                setChanged(mStatus, Error, changed);
+                break;
+            }
+            if (!mErrorMessage.isEmpty()) {
+                changed = true;
             }
             mErrorMessage.clear();
         }
 
-        mPeers = trackerMap.value(QJsonKeyStringInit("lastAnnouncePeerCount")).toInt();
+        setChanged(mPeers, trackerMap.value(QJsonKeyStringInit("lastAnnouncePeerCount")).toInt(), changed);
 
-        mNextUpdate = static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble());
+        setChanged(mNextUpdate, static_cast<long long>(trackerMap.value(QJsonKeyStringInit("nextAnnounceTime")).toDouble()), changed);
+
+        return changed;
     }
 }
