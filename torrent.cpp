@@ -689,6 +689,9 @@ namespace libtremotesf
         mFilesUpdated = false;
         mPeersUpdated = false;
         emit updated();
+        if (mData.changed) {
+            emit changed();
+        }
     }
 
     void Torrent::updateFiles(const QJsonObject &torrentMap)
