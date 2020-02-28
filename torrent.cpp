@@ -266,12 +266,17 @@ namespace libtremotesf
                 newTrackers.emplace_back(id, trackerMap);
                 trackersAddedOrRemoved = true;
             } else {
-                found->update(trackerMap);
+                if (found->update(trackerMap)) {
+                    changed = true;
+                }
                 newTrackers.push_back(std::move(*found));
             }
         }
         if (newTrackers.size() != trackers.size()) {
             trackersAddedOrRemoved = true;
+        }
+        if (trackersAddedOrRemoved) {
+            changed = true;
         }
         trackers = std::move(newTrackers);
     }
