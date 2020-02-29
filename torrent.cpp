@@ -97,9 +97,9 @@ namespace libtremotesf
 
     const QJsonKeyString Torrent::idKey(QJsonKeyStringInit("id"));
 
-    void TorrentData::update(const QJsonObject& torrentMap, const Rpc* rpc)
+    bool TorrentData::update(const QJsonObject& torrentMap, const Rpc* rpc)
     {
-        changed = false;
+        bool changed = false;
 
         setChanged(name, torrentMap.value(nameKey).toString(), changed);
 
@@ -279,6 +279,8 @@ namespace libtremotesf
             changed = true;
         }
         trackers = std::move(newTrackers);
+
+        return changed;
     }
 
     Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc)
@@ -592,11 +594,6 @@ namespace libtremotesf
         mRpc->setTorrentProperty(id(), removeTrackerKey, ids, true);
     }
 
-    bool Torrent::isChanged() const
-    {
-        return mData.changed;
-    }
-
     const TorrentData& Torrent::data() const
     {
         return mData;
@@ -688,15 +685,16 @@ namespace libtremotesf
         return updated;
     }
 
-    void Torrent::update(const QJsonObject& torrentMap)
+    bool Torrent::update(const QJsonObject& torrentMap)
     {
-        mData.update(torrentMap, mRpc);
         mFilesUpdated = false;
         mPeersUpdated = false;
+        const bool c = mData.update(torrentMap, mRpc);
         emit updated();
-        if (mData.changed) {
+        if (c) {
             emit changed();
         }
+        return c;
     }
 
     void Torrent::updateFiles(const QJsonObject &torrentMap)

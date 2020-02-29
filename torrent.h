@@ -78,7 +78,7 @@ namespace libtremotesf
         };
         Q_ENUM(IdleSeedingLimitMode)
 
-        void update(const QJsonObject& torrentMap, const Rpc* rpc);
+        bool update(const QJsonObject& torrentMap, const Rpc* rpc);
 
         int id = 0;
         QString hashString;
@@ -132,8 +132,6 @@ namespace libtremotesf
         bool singleFile = false;
 
         bool trackersAddedOrRemoved = false;
-
-        bool changed;
 
         std::vector<Tracker> trackers;
     };
@@ -268,8 +266,6 @@ namespace libtremotesf
         Q_INVOKABLE void setTracker(int trackerId, const QString& announce);
         Q_INVOKABLE void removeTrackers(const QVariantList& ids);
 
-        bool isChanged() const;
-
         const TorrentData& data() const;
 
         bool isFilesEnabled() const;
@@ -286,7 +282,7 @@ namespace libtremotesf
 
         bool isUpdated() const;
 
-        void update(const QJsonObject& torrentMap);
+        bool update(const QJsonObject& torrentMap);
         void updateFiles(const QJsonObject& torrentMap);
         void updatePeers(const QJsonObject& torrentMap);
     private:

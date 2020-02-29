@@ -849,8 +849,7 @@ namespace libtremotesf
                                     std::get<2>(*found) = true;
 
                                     const bool wasFinished = torrent->isFinished();
-                                    torrent->update(std::get<0>(*found));
-                                    if (torrent->isChanged()) {
+                                    if (torrent->update(std::get<0>(*found))) {
                                         changed.push_back(i);
                                         if (!wasFinished && torrent->isFinished()) {
                                             emit torrentFinished(torrent.get());
