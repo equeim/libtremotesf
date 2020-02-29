@@ -49,6 +49,8 @@ namespace libtremotesf
         const auto recheckProgressKey(QJsonKeyStringInit("recheckProgress"));
         const auto etaKey(QJsonKeyStringInit("eta"));
 
+        const auto metadataCompleteKey(QJsonKeyStringInit("metadataPercentComplete"));
+
         const auto downloadSpeedKey(QJsonKeyStringInit("rateDownload"));
         const auto uploadSpeedKey(QJsonKeyStringInit("rateUpload"));
 
@@ -112,6 +114,8 @@ namespace libtremotesf
         setChanged(percentDone, torrentMap.value(percentDoneKey).toDouble(), changed);
         setChanged(recheckProgress, torrentMap.value(recheckProgressKey).toDouble(), changed);
         setChanged(eta, torrentMap.value(etaKey).toInt(), changed);
+
+        setChanged(metadataComplete, torrentMap.value(metadataCompleteKey).toInt() == 1, changed);
 
         setChanged(downloadSpeed, static_cast<long long>(torrentMap.value(downloadSpeedKey).toDouble()), changed);
         setChanged(uploadSpeed, static_cast<long long>(torrentMap.value(uploadSpeedKey).toDouble()), changed);
@@ -230,7 +234,6 @@ namespace libtremotesf
         }(), changed);
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
         setChanged(downloadDirectory, torrentMap.value(downloadDirectoryKey).toString(), changed);
-        setChanged(singleFile, torrentMap.value(prioritiesKey).toArray().size() == 1, changed);
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
 
         const long long newCreationDateTime = torrentMap.value(creationDateKey).toDouble() * 1000;
@@ -360,6 +363,11 @@ namespace libtremotesf
     int Torrent::eta() const
     {
         return mData.eta;
+    }
+
+    bool Torrent::isMetadataComplete() const
+    {
+        return mData.metadataComplete;
     }
 
     long long Torrent::downloadSpeed() const
@@ -682,6 +690,9 @@ namespace libtremotesf
         if (mPeersEnabled && !mPeersUpdated) {
             updated = false;
         }
+        if (mCheckingSingleFile) {
+            updated = false;
+        }
         return updated;
     }
 
@@ -785,5 +796,16 @@ namespace libtremotesf
 
         emit peersUpdated(removed, changed, added);
         emit mRpc->torrentPeersUpdated(this, removed, changed, added);
+    }
+
+    void Torrent::startCheckingSingleFile()
+    {
+        mCheckingSingleFile = true;
+    }
+
+    void Torrent::checkSingleFile(const QJsonObject& torrentMap)
+    {
+        mData.singleFile = (torrentMap.value(prioritiesKey).toArray().size() == 1);
+        mCheckingSingleFile = false;
     }
 }
