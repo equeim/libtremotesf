@@ -178,7 +178,7 @@ namespace libtremotesf
 
     int Rpc::torrentsCount() const
     {
-        return mTorrents.size();
+        return static_cast<int>(mTorrents.size());
     }
 
     bool Rpc::backgroundUpdate() const
@@ -660,7 +660,7 @@ namespace libtremotesf
                         "}"),
                         [=](const QJsonObject& parseResult, bool success) {
                             if (success) {
-                                emit gotDownloadDirFreeSpace(getReplyArguments(parseResult).value(QJsonKeyStringInit("download-dir-free-space")).toDouble());
+                                emit gotDownloadDirFreeSpace(static_cast<long long>(getReplyArguments(parseResult).value(QJsonKeyStringInit("download-dir-free-space")).toDouble()));
                             }
                         });
         }
@@ -674,7 +674,7 @@ namespace libtremotesf
                         [=](const QJsonObject& parseResult, bool success) {
                             emit gotFreeSpaceForPath(path,
                                                      success,
-                                                     getReplyArguments(parseResult).value(QJsonKeyStringInit("size-bytes")).toDouble());
+                                                     success ? static_cast<long long>(getReplyArguments(parseResult).value(QJsonKeyStringInit("size-bytes")).toDouble()) : 0);
                         });
         }
     }
