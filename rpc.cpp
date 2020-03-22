@@ -672,11 +672,9 @@ namespace libtremotesf
             postRequest(QLatin1String("free-space"),
                         {{QLatin1String("path"), path}},
                         [=](const QJsonObject& parseResult, bool success) {
-                            if (success) {
-                                emit gotFreeSpaceForPath(path,
-                                                         isResultSuccessful(parseResult),
-                                                         getReplyArguments(parseResult).value(QJsonKeyStringInit("size-bytes")).toDouble());
-                            }
+                            emit gotFreeSpaceForPath(path,
+                                                     success,
+                                                     getReplyArguments(parseResult).value(QJsonKeyStringInit("size-bytes")).toDouble());
                         });
         }
     }
