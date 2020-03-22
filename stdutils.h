@@ -135,7 +135,7 @@ namespace libtremotesf
             if (removedIndexes) {
                 removedIndexes->push_back(index);
             }
-            if (endIndex == -1) {
+            if (beginIndex == -1) {
                 reset(index);
             } else {
                 if (index == (beginIndex - 1)) {
@@ -148,32 +148,34 @@ namespace libtremotesf
         }
 
         void doRemove() {
-            items.erase(begin + beginIndex, begin + endIndex + 1);
-            if (indexesToShift && !indexesToShift->empty()) {
-                const int shift = static_cast<int>(endIndex - beginIndex + 1);
-                for (int& index : *indexesToShift) {
-                    if (index < beginIndex) {
-                        break;
+            if (beginIndex != -1) {
+                items.erase(begin + beginIndex, begin + endIndex + 1);
+                if (indexesToShift && !indexesToShift->empty()) {
+                    const int shift = static_cast<int>(endIndex - beginIndex + 1);
+                    for (int& index : *indexesToShift) {
+                        if (index < beginIndex) {
+                            break;
+                        }
+                        index -= shift;
                     }
-                    index -= shift;
                 }
             }
         }
 
     private:
         void reset(int index) {
-            endIndex = index;
             beginIndex = index;
+            endIndex = index;
         }
 
         std::vector<T>& items;
-        std::vector<int> *const removedIndexes;
-        std::vector<int> *const indexesToShift;
+        std::vector<int>* const removedIndexes;
+        std::vector<int>* const indexesToShift;
 
         const typename std::vector<T>::iterator begin = items.begin();
 
+        int beginIndex = -1;
         int endIndex = -1;
-        int beginIndex = 0;
     };
 }
 
