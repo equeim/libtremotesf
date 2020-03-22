@@ -60,7 +60,7 @@ namespace libtremotesf
         {
             return QJsonDocument::fromVariant(QVariantMap{{QStringLiteral("method"), method},
                                                           {QStringLiteral("arguments"), arguments}})
-                .toJson();
+                .toJson(QJsonDocument::Compact);
         }
 
         inline QJsonObject getReplyArguments(const QJsonObject& parseResult)
