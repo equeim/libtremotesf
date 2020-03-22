@@ -577,7 +577,7 @@ namespace libtremotesf
                             const QJsonArray torrentsVariants(getReplyArguments(parseResult)
                                                                     .value(torrentsKey)
                                                                     .toArray());
-                            const std::shared_ptr<Torrent> torrent(torrentById(id));
+                            Torrent* torrent = torrentById(id);
                             if (!torrentsVariants.isEmpty() && torrent) {
                                 if (torrent->isFilesEnabled()) {
                                     torrent->updateFiles(torrentsVariants.first().toObject());
@@ -608,7 +608,7 @@ namespace libtremotesf
                             const QJsonArray torrentsVariants(getReplyArguments(parseResult)
                                                                     .value(torrentsKey)
                                                                     .toArray());
-                            const std::shared_ptr<Torrent> torrent(torrentById(id));
+                            Torrent* torrent = torrentById(id);
                             if (!torrentsVariants.isEmpty() && torrent) {
                                 if (torrent->isPeersEnabled()) {
                                     torrent->updatePeers(torrentsVariants.first().toObject());
@@ -631,7 +631,7 @@ namespace libtremotesf
                          {QLatin1String("name"), newName}},
                         [=](const QJsonObject& parseResult, bool success) {
                             if (success) {
-                                const std::shared_ptr<Torrent> torrent(torrentById(torrentId));
+                                Torrent* torrent = torrentById(torrentId);
                                 if (torrent) {
                                     const QJsonObject arguments(getReplyArguments(parseResult));
                                     const QString path(arguments.value(QLatin1String("path")).toString());
@@ -696,6 +696,15 @@ namespace libtremotesf
             getTorrents();
             getServerStats();
         }
+    }
+
+    Torrent* Rpc::torrentById(int id) const
+    {
+        const auto end(mTorrents.end());
+        const auto found(std::find_if(mTorrents.begin(), mTorrents.end(), [id](const std::shared_ptr<Torrent>& torrent) {
+            return (torrent->id() == id);
+        }));
+        return (found == end) ? nullptr : found->get();
     }
 
     void Rpc::setStatus(Status status)
@@ -965,8 +974,7 @@ namespace libtremotesf
                             const QJsonArray torrentsVariants(getReplyArguments(parseResult)
                                                                     .value(torrentsKey)
                                                                     .toArray());
-                            const std::shared_ptr<Torrent> torrent(torrentById(torrentId));
-
+                            Torrent* torrent = torrentById(torrentId);
                             if (!torrentsVariants.isEmpty() && torrent) {
                                 torrent->checkSingleFile(torrentsVariants.first().toObject());
                                 checkIfTorrentsUpdated();
@@ -1117,16 +1125,5 @@ namespace libtremotesf
     void Rpc::postRequest(const QLatin1String& method, const QVariantMap& arguments, const std::function<void (const QJsonObject&, bool)>& callOnSuccessParse)
     {
         postRequest(method, makeRequestData(method, arguments), callOnSuccessParse);
-    }
-
-    std::shared_ptr<Torrent> Rpc::torrentById(int id) const
-    {
-        const auto found = std::find_if(mTorrents.cbegin(), mTorrents.cend(), [id](const std::shared_ptr<Torrent>& torrent) {
-            return (torrent->id() == id);
-        });
-        if (found != mTorrents.cend()) {
-            return *found;
-        }
-        return {};
     }
 }
