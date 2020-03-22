@@ -128,10 +128,10 @@ namespace libtremotesf
     class VectorBatchRemover
     {
     public:
-        explicit VectorBatchRemover(std::vector<T>& items, std::vector<int>* removedIndexes = nullptr, std::vector<int>* indexesToShift = nullptr)
+        inline explicit VectorBatchRemover(std::vector<T>& items, std::vector<int>* removedIndexes = nullptr, std::vector<int>* indexesToShift = nullptr)
             : items(items), removedIndexes(removedIndexes), indexesToShift(indexesToShift) {}
 
-        void remove(int index) {
+        inline void remove(int index) {
             if (removedIndexes) {
                 removedIndexes->push_back(index);
             }
@@ -147,7 +147,7 @@ namespace libtremotesf
             }
         }
 
-        void doRemove() {
+        inline void doRemove() {
             if (beginIndex != -1) {
                 items.erase(begin + beginIndex, begin + endIndex + 1);
                 if (indexesToShift && !indexesToShift->empty()) {
@@ -163,7 +163,7 @@ namespace libtremotesf
         }
 
     private:
-        void reset(int index) {
+        inline void reset(int index) {
             beginIndex = index;
             endIndex = index;
         }
