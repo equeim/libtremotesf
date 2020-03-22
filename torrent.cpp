@@ -589,17 +589,22 @@ namespace libtremotesf
 
     void Torrent::addTracker(const QString& announce)
     {
-        mRpc->setTorrentProperty(id(), addTrackerKey, QVariantList{announce}, true);
+        addTrackers(QStringList{announce});
     }
 
     void Torrent::addTrackers(const std::vector<QString>& announceUrls)
     {
-        QVariantList list;
+        QStringList list;
         list.reserve(static_cast<int>(announceUrls.size()));
         for (const QString& url : announceUrls) {
             list.push_back(url);
         }
-        mRpc->setTorrentProperty(id(), addTrackerKey, list, true);
+        addTrackers(list);
+    }
+
+    void Torrent::addTrackers(const QStringList& announceUrls)
+    {
+        mRpc->setTorrentProperty(id(), addTrackerKey, announceUrls, true);
     }
 
     void Torrent::setTracker(int trackerId, const QString& announce)
