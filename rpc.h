@@ -197,15 +197,13 @@ namespace libtremotesf
 
         void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator);
 
-        void postRequestImpl(const QByteArray& data,
-                             const std::function<void()>& callOnSuccess,
-                             const std::function<void(const QJsonObject&)>& callOnSuccessParse);
+        void postRequest(const QLatin1String& method,
+                         const QByteArray& data,
+                         const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
 
-        void postRequest(const QByteArray& data,
-                         const std::function<void()>& callOnSuccess = nullptr);
-
-        void postRequest(const QByteArray& data,
-                         const std::function<void(const QJsonObject&)>& callOnSuccessParse);
+        void postRequest(const QLatin1String& method,
+                         const QVariantMap& arguments,
+                         const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
 
         QNetworkAccessManager* mNetwork;
         std::unordered_set<QNetworkReply*> mNetworkRequests;
