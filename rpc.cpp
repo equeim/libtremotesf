@@ -151,6 +151,15 @@ namespace libtremotesf
         return nullptr;
     }
 
+    Torrent* Rpc::torrentById(int id) const
+    {
+        const auto end(mTorrents.end());
+        const auto found(std::find_if(mTorrents.begin(), mTorrents.end(), [id](const std::shared_ptr<Torrent>& torrent) {
+            return (torrent->id() == id);
+        }));
+        return (found == end) ? nullptr : found->get();
+    }
+
     bool Rpc::isConnected() const
     {
         return (mStatus == Connected);
@@ -694,15 +703,6 @@ namespace libtremotesf
             getTorrents();
             getServerStats();
         }
-    }
-
-    Torrent* Rpc::torrentById(int id) const
-    {
-        const auto end(mTorrents.end());
-        const auto found(std::find_if(mTorrents.begin(), mTorrents.end(), [id](const std::shared_ptr<Torrent>& torrent) {
-            return (torrent->id() == id);
-        }));
-        return (found == end) ? nullptr : found->get();
     }
 
     void Rpc::setStatus(Status status)
