@@ -705,9 +705,6 @@ namespace libtremotesf
         if (mPeersEnabled && !mPeersUpdated) {
             updated = false;
         }
-        if (mCheckingSingleFile) {
-            updated = false;
-        }
         return updated;
     }
 
@@ -813,14 +810,8 @@ namespace libtremotesf
         emit mRpc->torrentPeersUpdated(this, removed, changed, added);
     }
 
-    void Torrent::startCheckingSingleFile()
-    {
-        mCheckingSingleFile = true;
-    }
-
     void Torrent::checkSingleFile(const QJsonObject& torrentMap)
     {
         mData.singleFile = (torrentMap.value(prioritiesKey).toArray().size() == 1);
-        mCheckingSingleFile = false;
     }
 }

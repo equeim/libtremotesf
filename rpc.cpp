@@ -907,7 +907,6 @@ namespace libtremotesf
                                             emit torrentFinished(torrent.get());
                                         }
                                         if (!metadataWasComplete && torrent->isMetadataComplete()) {
-                                            torrent->startCheckingSingleFile();
                                             checkTorrentSingleFile(id);
                                         }
                                     }
@@ -943,7 +942,6 @@ namespace libtremotesf
                                     }
 
                                     if (torrent->isMetadataComplete()) {
-                                        torrent->startCheckingSingleFile();
                                         checkTorrentSingleFile(id);
                                     }
                                 }

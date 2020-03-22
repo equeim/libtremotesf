@@ -294,7 +294,6 @@ namespace libtremotesf
         void updateFiles(const QJsonObject& torrentMap);
         void updatePeers(const QJsonObject& torrentMap);
 
-        void startCheckingSingleFile();
         void checkSingleFile(const QJsonObject& torrentMap);
     private:
         Rpc* mRpc;
@@ -308,8 +307,6 @@ namespace libtremotesf
         std::vector<Peer> mPeers;
         bool mPeersEnabled = false;
         bool mPeersUpdated = false;
-
-        bool mCheckingSingleFile = false;
 
     signals:
         void updated();
