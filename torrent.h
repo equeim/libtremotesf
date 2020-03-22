@@ -118,6 +118,7 @@ namespace libtremotesf
         int peersLimit = 0;
 
         QDateTime addedDate;
+        long long addedDateTime = -1;
         QDateTime activityDate;
         long long activityDateTime = -1;
         QDateTime doneDate;

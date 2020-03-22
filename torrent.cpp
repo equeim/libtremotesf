@@ -291,7 +291,9 @@ namespace libtremotesf
     {
         mData.id = id;
         mData.hashString = torrentMap.value(hashStringKey).toString();
-        mData.addedDate = QDateTime::fromMSecsSinceEpoch(static_cast<qint64>(torrentMap.value(addedDateKey).toDouble()) * 1000);
+        const auto date = static_cast<long long>(torrentMap.value(addedDateKey).toDouble()) * 1000;
+        mData.addedDate = QDateTime::fromMSecsSinceEpoch(date);
+        mData.addedDateTime = date;
         update(torrentMap);
     }
 
