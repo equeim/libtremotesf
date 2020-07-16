@@ -267,7 +267,7 @@ namespace libtremotesf
             }));
 
             if (found == trackers.end()) {
-                newTrackers.emplace_back(id, trackerMap);
+                newTrackers.emplace_back(trackerId, trackerMap);
                 trackersAddedOrRemoved = true;
             } else {
                 if (found->update(trackerMap)) {
