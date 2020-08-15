@@ -72,8 +72,9 @@ namespace libtremotesf
             case ServerSettingsData::Weekends:
             case ServerSettingsData::All:
                 return static_cast<ServerSettingsData::AlternativeSpeedLimitsDays>(days);
+            default:
+                return ServerSettingsData::All;
             }
-            return ServerSettingsData::All;
         }
 
         const auto peerPortKey(QJsonKeyStringInit("peer-port"));
