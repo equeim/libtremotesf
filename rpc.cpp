@@ -34,6 +34,7 @@
 #include <QTimer>
 #include <QSslCertificate>
 #include <QSslKey>
+#include <QStandardPaths>
 #include <QtConcurrentRun>
 
 #ifdef TREMOTESF_SAILFISHOS
@@ -57,6 +58,14 @@ namespace libtremotesf
         const QByteArray sessionIdHeader(QByteArrayLiteral("X-Transmission-Session-Id"));
         const auto torrentsKey(QJsonKeyStringInit("torrents"));
         const QLatin1String torrentDuplicateKey("torrent-duplicate");
+
+#ifdef Q_OS_WIN
+        constexpr auto sessionIdFileLocation = QStandardPaths::GenericDataLocation;
+        const QLatin1String sessionIdFilePrefix("Transmission/tr_session_id_");
+#else
+        constexpr auto sessionIdFileLocation = QStandardPaths::TempLocation;
+        const QLatin1String sessionIdFilePrefix("tr_session_id_");
+#endif
 
         inline QByteArray makeRequestData(const QString& method, const QVariantMap& arguments)
         {
@@ -289,8 +298,6 @@ namespace libtremotesf
         mUpdateInterval = server.updateInterval * 1000; // msecs
         mBackgroundUpdateInterval = server.backgroundUpdateInterval * 1000; // msecs
         mUpdateTimer->setInterval(mUpdateInterval);
-
-        mLocal = isAddressLocal(server.address);
     }
 
     void Rpc::resetServer()
@@ -784,6 +791,7 @@ namespace libtremotesf
                                 startUpdateTimer();
                             } else {
                                 mRpcVersionChecked = true;
+
                                 if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
                                     setError(ServerIsTooNew);
                                     setStatus(Disconnected);
@@ -791,6 +799,11 @@ namespace libtremotesf
                                     setError(ServerIsTooOld);
                                     setStatus(Disconnected);
                                 } else {
+                                    mLocal = isSessionIdFileExists();
+                                    if (!mLocal) {
+                                        mLocal = isAddressLocal(mServerUrl.host());
+                                    }
+
                                     getTorrents();
                                     getServerStats();
                                 }
@@ -1179,6 +1192,16 @@ namespace libtremotesf
     void Rpc::postRequest(const QLatin1String& method, const QVariantMap& arguments, const std::function<void (const QJsonObject&, bool)>& callOnSuccessParse)
     {
         postRequest(method, makeRequestData(method, arguments), callOnSuccessParse);
+    }
+
+    bool Rpc::isSessionIdFileExists() const
+    {
+#ifndef Q_OS_ANDROID
+        if (mServerSettings->hasSessionIdFile()) {
+            return !QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId).isEmpty();
+        }
+#endif
+        return false;
     }
 
     void Rpc::Request::setSessionId(const QByteArray& sessionId)
