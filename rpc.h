@@ -22,9 +22,11 @@
 #include <functional>
 #include <memory>
 #include <vector>
+#include <unordered_map>
 #include <unordered_set>
 
 #include <QByteArray>
+#include <QNetworkRequest>
 #include <QObject>
 #include <QSslConfiguration>
 #include <QUrl>
@@ -184,6 +186,16 @@ namespace libtremotesf
         Q_INVOKABLE void updateData();
 
     private:
+        struct Request
+        {
+            QLatin1String method;
+            QNetworkRequest request;
+            QByteArray data;
+            std::function<void(const QJsonObject&, bool)> callOnSuccessParse;
+
+            void setSessionId(const QByteArray& sessionId);
+        };
+
         void setStatus(Status status);
         void setError(Error error, const QString& errorMessage = QString());
 
@@ -197,6 +209,11 @@ namespace libtremotesf
 
         void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator);
 
+        QNetworkReply* postRequest(Request&& request);
+
+        bool retryRequest(Request&& request,
+                          QNetworkReply* previousAttempt);
+
         void postRequest(const QLatin1String& method,
                          const QByteArray& data,
                          const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
@@ -206,7 +223,8 @@ namespace libtremotesf
                          const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
 
         QNetworkAccessManager* mNetwork;
-        std::unordered_set<QNetworkReply*> mNetworkRequests;
+        std::unordered_set<QNetworkReply*> mActiveNetworkRequests;
+        std::unordered_map<QNetworkReply*, int> mRetryingNetworkRequests;
 
         bool mAuthenticationRequested;
         QByteArray mSessionId;
