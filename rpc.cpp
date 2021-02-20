@@ -1035,10 +1035,10 @@ namespace libtremotesf
                             }
                         }
 
-                        emit torrentsUpdated(removed, changed, added);
-
                         checkIfTorrentsUpdated();
                         startUpdateTimer();
+
+                        emit torrentsUpdated(removed, changed, added);
 
                         if (!checkSingleFileIds.isEmpty()) {
                             checkTorrentsSingleFile(checkSingleFileIds);
