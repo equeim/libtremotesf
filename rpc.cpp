@@ -990,10 +990,18 @@ namespace libtremotesf
                                     std::get<2>(*found) = true;
 
                                     const bool wasFinished = torrent->isFinished();
+                                    const bool wasPaused = (torrent->status() == Torrent::Status::Paused);
+                                    const auto oldSizeWhenDone = torrent->sizeWhenDone();
                                     const bool metadataWasComplete = torrent->isMetadataComplete();
                                     if (torrent->update(std::get<0>(*found))) {
                                         changed.push_back(i);
-                                        if (!wasFinished && torrent->isFinished()) {
+                                        if (!wasFinished
+                                                && torrent->isFinished()
+                                                && !wasPaused
+                                                // Don't emit torrentFinished() if torrent's size became smaller
+                                                // since there is high chance that it happened because user unselected some files
+                                                // and torrent immediately became finished. We don't want notification in that case
+                                                && torrent->sizeWhenDone() >= oldSizeWhenDone) {
                                             emit torrentFinished(torrent.get());
                                         }
                                         if (!metadataWasComplete && torrent->isMetadataComplete()) {
