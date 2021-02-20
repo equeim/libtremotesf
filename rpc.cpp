@@ -315,14 +315,17 @@ namespace libtremotesf
         mExpectedSslErrors.clear();
 
         if (server.selfSignedCertificateEnabled) {
-            const QSslCertificate certificate(server.selfSignedCertificate);
-            mExpectedSslErrors.reserve(2);
-            mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
-            mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
+            const auto certificates(QSslCertificate::fromData(server.selfSignedCertificate, QSsl::Pem));
+            mExpectedSslErrors.reserve(certificates.size() * 3);
+            for (const auto& certificate : certificates) {
+                mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
+                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
+                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificateInChain, certificate));
+            }
         }
 
         if (server.clientCertificateEnabled) {
-            mSslConfiguration.setLocalCertificate(QSslCertificate(server.clientCertificate));
+            mSslConfiguration.setLocalCertificate(QSslCertificate(server.clientCertificate, QSsl::Pem));
             mSslConfiguration.setPrivateKey(QSslKey(server.clientCertificate, QSsl::Rsa));
         }
 
