@@ -21,9 +21,7 @@
 
 #include <vector>
 
-class QString;
-
-//#include <QString>
+#include <QString>
 
 class QJsonObject;
 
