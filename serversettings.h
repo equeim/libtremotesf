@@ -1,4 +1,4 @@
-﻿/*
+/*
  * Tremotesf
  * Copyright (C) 2015-2018 Alexey Rochev <equeim@gmail.com>
  *
