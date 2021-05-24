@@ -155,8 +155,8 @@ namespace libtremotesf
           mUpdateTimer(new QTimer(this)),
           mServerSettings(new ServerSettings(this, this)),
           mServerStats(new ServerStats(this)),
-          mStatus(Disconnected),
-          mError(NoError)
+          mStatus(Status::Disconnected),
+          mError(Error::NoError)
     {
         QObject::connect(mNetwork, &QNetworkAccessManager::authenticationRequired, this, &Rpc::onAuthenticationRequired);
 
@@ -206,7 +206,7 @@ namespace libtremotesf
 
     bool Rpc::isConnected() const
     {
-        return (mStatus == Connected);
+        return (mStatus == Status::Connected);
     }
 
     Rpc::Status Rpc::status() const
@@ -353,17 +353,17 @@ namespace libtremotesf
 
     void Rpc::connect()
     {
-        if (mStatus == Disconnected && !mServerUrl.isEmpty()) {
-            setError(NoError);
-            setStatus(Connecting);
+        if (mStatus == Status::Disconnected && !mServerUrl.isEmpty()) {
+            setError(Error::NoError);
+            setStatus(Status::Connecting);
             getServerSettings();
         }
     }
 
     void Rpc::disconnect()
     {
-        setError(NoError);
-        setStatus(Disconnected);
+        setError(Error::NoError);
+        setStatus(Status::Disconnected);
     }
 
     void Rpc::addTorrentFile(const QString& filePath,
@@ -773,14 +773,14 @@ namespace libtremotesf
 
         const bool wasConnected = isConnected();
 
-        if (wasConnected && (status == Disconnected)) {
+        if (wasConnected && (status == Status::Disconnected)) {
             emit aboutToDisconnect();
         }
 
         mStatus = status;
 
         switch (mStatus) {
-        case Disconnected:
+        case Status::Disconnected:
         {
             qInfo("Disconnected");
 
@@ -820,12 +820,12 @@ namespace libtremotesf
 
             break;
         }
-        case Connecting:
+        case Status::Connecting:
             qInfo("Connecting");
             mUpdating = true;
             emit statusChanged();
             break;
-        case Connected:
+        case Status::Connected:
         {
             qInfo("Connected");
             emit statusChanged();
@@ -857,11 +857,11 @@ namespace libtremotesf
                                 mRpcVersionChecked = true;
 
                                 if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
-                                    setError(ServerIsTooNew);
-                                    setStatus(Disconnected);
+                                    setError(Error::ServerIsTooNew);
+                                    setStatus(Status::Disconnected);
                                 } else if (mServerSettings->rpcVersion() < minimumRpcVersion) {
-                                    setError(ServerIsTooOld);
-                                    setStatus(Disconnected);
+                                    setError(Error::ServerIsTooOld);
+                                    setStatus(Status::Disconnected);
                                 } else {
                                     mLocal = isSessionIdFileExists();
                                     if (!mLocal) {
@@ -1096,8 +1096,8 @@ namespace libtremotesf
     void Rpc::startUpdateTimer()
     {
         if (mUpdating && mServerSettingsUpdated && mTorrentsUpdated && mServerStatsUpdated) {
-            if (mStatus == Connecting) {
-                setStatus(Connected);
+            if (mStatus == Status::Connecting) {
+                setStatus(Status::Connected);
             }
             if (!mUpdateDisabled) {
                 mUpdateTimer->start();
@@ -1128,7 +1128,7 @@ namespace libtremotesf
                 return;
             }
 
-            if (mStatus != Disconnected) {
+            if (mStatus != Status::Disconnected) {
                 switch (reply->error()) {
                 case QNetworkReply::NoError:
                 {
@@ -1144,7 +1144,7 @@ namespace libtremotesf
                     auto watcher = new QFutureWatcher<std::pair<QJsonObject, bool>>(this);
                     QObject::connect(watcher, &QFutureWatcher<std::pair<QJsonObject, bool>>::finished, this, [=] {
                         const auto result = watcher->result();
-                        if (mStatus != Disconnected) {
+                        if (mStatus != Status::Disconnected) {
                             const QJsonObject& parseResult = result.first;
                             const bool parsedOk = result.second;
                             if (parsedOk) {
@@ -1157,8 +1157,8 @@ namespace libtremotesf
                                 }
                             } else {
                                 qWarning("Parsing error");
-                                setError(ParseError);
-                                setStatus(Disconnected);
+                                setError(Error::ParseError);
+                                setStatus(Status::Disconnected);
                             }
                         }
                         watcher->deleteLater();
@@ -1168,15 +1168,15 @@ namespace libtremotesf
                 }
                 case QNetworkReply::AuthenticationRequiredError:
                     qWarning("Authentication error");
-                    setError(AuthenticationError);
-                    setStatus(Disconnected);
+                    setError(Error::AuthenticationError);
+                    setStatus(Status::Disconnected);
                     break;
                 case QNetworkReply::OperationCanceledError:
                 case QNetworkReply::TimeoutError:
                     qWarning("Timed out");
                     if (!retryRequest(std::move(request), reply)) {
-                        setError(TimedOut);
-                        setStatus(Disconnected);
+                        setError(Error::TimedOut);
+                        setStatus(Status::Disconnected);
                     }
                     break;
                 default:
@@ -1200,8 +1200,8 @@ namespace libtremotesf
                     }
 
                     if (!retryRequest(std::move(request), reply)) {
-                        setError(ConnectionError, reply->errorString());
-                        setStatus(Disconnected);
+                        setError(Error::ConnectionError, reply->errorString());
+                        setStatus(Status::Disconnected);
                     }
                 }
                 }

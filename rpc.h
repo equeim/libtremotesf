@@ -33,6 +33,8 @@
 #include <QUrl>
 #include <QVariantList>
 
+#include "qtsupport.h"
+
 class QAuthenticator;
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -82,6 +84,22 @@ namespace libtremotesf
         int timeout;
     };
 
+    DEFINE_Q_ENUM_NS(RpcStatus,
+
+                     Disconnected,
+                     Connecting,
+                     Connected)
+
+    DEFINE_Q_ENUM_NS(RpcError,
+
+                     NoError,
+                     TimedOut,
+                     ConnectionError,
+                     AuthenticationError,
+                     ParseError,
+                     ServerIsTooNew,
+                     ServerIsTooOld)
+
     class Rpc : public QObject
     {
         Q_OBJECT
@@ -95,25 +113,8 @@ namespace libtremotesf
         Q_PROPERTY(bool backgroundUpdate READ backgroundUpdate WRITE setBackgroundUpdate NOTIFY backgroundUpdateChanged)
         Q_PROPERTY(bool updateDisabled READ isUpdateDisabled WRITE setUpdateDisabled NOTIFY updateDisabledChanged)
     public:
-        enum Status
-        {
-            Disconnected,
-            Connecting,
-            Connected
-        };
-        Q_ENUM(Status)
-
-        enum Error
-        {
-            NoError,
-            TimedOut,
-            ConnectionError,
-            AuthenticationError,
-            ParseError,
-            ServerIsTooNew,
-            ServerIsTooOld
-        };
-        Q_ENUM(Error)
+        using Status = RpcStatus;
+        using Error = RpcError;
 
         explicit Rpc(QObject* parent = nullptr);
 
