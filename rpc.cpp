@@ -155,7 +155,7 @@ namespace libtremotesf
           mUpdateTimer(new QTimer(this)),
           mServerSettings(new ServerSettings(this, this)),
           mServerStats(new ServerStats(this)),
-          mStatus(Status::Disconnected),
+          mConnectionState(ConnectionState::Disconnected),
           mError(Error::NoError)
     {
         QObject::connect(mNetwork, &QNetworkAccessManager::authenticationRequired, this, &Rpc::onAuthenticationRequired);
@@ -206,12 +206,12 @@ namespace libtremotesf
 
     bool Rpc::isConnected() const
     {
-        return (mStatus == Status::Connected);
+        return (mConnectionState == ConnectionState::Connected);
     }
 
-    Rpc::Status Rpc::status() const
+    Rpc::ConnectionState Rpc::connectionState() const
     {
-        return mStatus;
+        return mConnectionState;
     }
 
     Rpc::Error Rpc::error() const
@@ -353,9 +353,9 @@ namespace libtremotesf
 
     void Rpc::connect()
     {
-        if (mStatus == Status::Disconnected && !mServerUrl.isEmpty()) {
+        if (mConnectionState == ConnectionState::Disconnected && !mServerUrl.isEmpty()) {
             setError(Error::NoError);
-            setStatus(Status::Connecting);
+            setConnectionState(ConnectionState::Connecting);
             getServerSettings();
         }
     }
@@ -363,7 +363,7 @@ namespace libtremotesf
     void Rpc::disconnect()
     {
         setError(Error::NoError);
-        setStatus(Status::Disconnected);
+        setConnectionState(ConnectionState::Disconnected);
     }
 
     void Rpc::addTorrentFile(const QString& filePath,
@@ -765,22 +765,22 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::setStatus(Status status)
+    void Rpc::setConnectionState(ConnectionState state)
     {
-        if (status == mStatus) {
+        if (state == mConnectionState) {
             return;
         }
 
         const bool wasConnected = isConnected();
 
-        if (wasConnected && (status == Status::Disconnected)) {
+        if (wasConnected && (state == ConnectionState::Disconnected)) {
             emit aboutToDisconnect();
         }
 
-        mStatus = status;
+        mConnectionState = state;
 
-        switch (mStatus) {
-        case Status::Disconnected:
+        switch (mConnectionState) {
+        case ConnectionState::Disconnected:
         {
             qInfo("Disconnected");
 
@@ -802,7 +802,7 @@ namespace libtremotesf
             mServerStatsUpdated = false;
             mUpdateTimer->stop();
 
-            emit statusChanged();
+            emit connectionStateChanged();
 
             if (wasConnected) {
                 emit connectedChanged();
@@ -820,15 +820,15 @@ namespace libtremotesf
 
             break;
         }
-        case Status::Connecting:
+        case ConnectionState::Connecting:
             qInfo("Connecting");
             mUpdating = true;
-            emit statusChanged();
+            emit connectionStateChanged();
             break;
-        case Status::Connected:
+        case ConnectionState::Connected:
         {
             qInfo("Connected");
-            emit statusChanged();
+            emit connectionStateChanged();
             emit connectedChanged();
             break;
         }
@@ -858,10 +858,10 @@ namespace libtremotesf
 
                                 if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
                                     setError(Error::ServerIsTooNew);
-                                    setStatus(Status::Disconnected);
+                                    setConnectionState(ConnectionState::Disconnected);
                                 } else if (mServerSettings->rpcVersion() < minimumRpcVersion) {
                                     setError(Error::ServerIsTooOld);
-                                    setStatus(Status::Disconnected);
+                                    setConnectionState(ConnectionState::Disconnected);
                                 } else {
                                     mLocal = isSessionIdFileExists();
                                     if (!mLocal) {
@@ -1096,8 +1096,8 @@ namespace libtremotesf
     void Rpc::startUpdateTimer()
     {
         if (mUpdating && mServerSettingsUpdated && mTorrentsUpdated && mServerStatsUpdated) {
-            if (mStatus == Status::Connecting) {
-                setStatus(Status::Connected);
+            if (mConnectionState == ConnectionState::Connecting) {
+                setConnectionState(ConnectionState::Connected);
             }
             if (!mUpdateDisabled) {
                 mUpdateTimer->start();
@@ -1128,7 +1128,7 @@ namespace libtremotesf
                 return;
             }
 
-            if (mStatus != Status::Disconnected) {
+            if (mConnectionState != ConnectionState::Disconnected) {
                 switch (reply->error()) {
                 case QNetworkReply::NoError:
                 {
@@ -1144,7 +1144,7 @@ namespace libtremotesf
                     auto watcher = new QFutureWatcher<std::pair<QJsonObject, bool>>(this);
                     QObject::connect(watcher, &QFutureWatcher<std::pair<QJsonObject, bool>>::finished, this, [=] {
                         const auto result = watcher->result();
-                        if (mStatus != Status::Disconnected) {
+                        if (mConnectionState != ConnectionState::Disconnected) {
                             const QJsonObject& parseResult = result.first;
                             const bool parsedOk = result.second;
                             if (parsedOk) {
@@ -1158,7 +1158,7 @@ namespace libtremotesf
                             } else {
                                 qWarning("Parsing error");
                                 setError(Error::ParseError);
-                                setStatus(Status::Disconnected);
+                                setConnectionState(ConnectionState::Disconnected);
                             }
                         }
                         watcher->deleteLater();
@@ -1169,14 +1169,14 @@ namespace libtremotesf
                 case QNetworkReply::AuthenticationRequiredError:
                     qWarning("Authentication error");
                     setError(Error::AuthenticationError);
-                    setStatus(Status::Disconnected);
+                    setConnectionState(ConnectionState::Disconnected);
                     break;
                 case QNetworkReply::OperationCanceledError:
                 case QNetworkReply::TimeoutError:
                     qWarning("Timed out");
                     if (!retryRequest(std::move(request), reply)) {
                         setError(Error::TimedOut);
-                        setStatus(Status::Disconnected);
+                        setConnectionState(ConnectionState::Disconnected);
                     }
                     break;
                 default:
@@ -1201,7 +1201,7 @@ namespace libtremotesf
 
                     if (!retryRequest(std::move(request), reply)) {
                         setError(Error::ConnectionError, reply->errorString());
-                        setStatus(Status::Disconnected);
+                        setConnectionState(ConnectionState::Disconnected);
                     }
                 }
                 }
