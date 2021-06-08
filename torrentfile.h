@@ -36,6 +36,7 @@ namespace libtremotesf
             HighPriority
         };
 
+        TorrentFile() = default;
         explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
         bool update(const QJsonObject& fileStatsMap);
 

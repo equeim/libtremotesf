@@ -31,6 +31,7 @@ namespace libtremotesf
     {
         static const QJsonKeyString addressKey;
 
+        Peer() = default;
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
 
