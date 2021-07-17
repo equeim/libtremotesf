@@ -33,6 +33,8 @@
 #include <QUrl>
 #include <QVariantList>
 
+#include "serversettings.h"
+#include "serverstats.h"
 #include "qtsupport.h"
 
 class QAuthenticator;
@@ -42,8 +44,6 @@ class QTimer;
 
 namespace libtremotesf
 {
-    class ServerSettings;
-    class ServerStats;
     class Torrent;
 
     struct Server
