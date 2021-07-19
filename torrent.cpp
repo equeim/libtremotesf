@@ -600,9 +600,9 @@ namespace libtremotesf
         return mData.trackers;
     }
 
-    bool Torrent::isTrackersAddedOrRemoved() const
+    bool Torrent::isTrackersAnnounceUrlsChanged() const
     {
-        return mData.trackersAddedOrRemoved;
+        return mData.trackersAnnounceUrlsChanged;
     }
 
     void Torrent::addTrackers(const QStringList& announceUrls)
