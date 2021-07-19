@@ -52,7 +52,11 @@ namespace libtremotesf
         long long nextUpdateTime() const;
         int nextUpdateEta() const;
 
-        bool update(const QJsonObject& trackerMap);
+        struct UpdateResult {
+            bool changed;
+            bool announceUrlChanged;
+        };
+        UpdateResult update(const QJsonObject& trackerMap);
 
         inline bool operator==(const Tracker& other) const
         {

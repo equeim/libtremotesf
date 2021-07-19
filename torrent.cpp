@@ -260,7 +260,7 @@ namespace libtremotesf
 
         setChanged(comment, torrentMap.value(commentKey).toString(), changed);
 
-        trackersAddedOrRemoved = false;
+        trackersAnnounceUrlsChanged = false;
         std::vector<Tracker> newTrackers;
         const QJsonArray trackerJsons(torrentMap.value(QJsonKeyStringInit("trackerStats")).toArray());
         newTrackers.reserve(static_cast<size_t>(trackerJsons.size()));
@@ -274,18 +274,22 @@ namespace libtremotesf
 
             if (found == trackers.end()) {
                 newTrackers.emplace_back(trackerId, trackerMap);
-                trackersAddedOrRemoved = true;
+                trackersAnnounceUrlsChanged = true;
             } else {
-                if (found->update(trackerMap)) {
+                const auto result = found->update(trackerMap);
+                if (result.changed) {
                     changed = true;
+                }
+                if (result.announceUrlChanged) {
+                    trackersAnnounceUrlsChanged = true;
                 }
                 newTrackers.push_back(std::move(*found));
             }
         }
         if (newTrackers.size() != trackers.size()) {
-            trackersAddedOrRemoved = true;
+            trackersAnnounceUrlsChanged = true;
         }
-        if (trackersAddedOrRemoved) {
+        if (trackersAnnounceUrlsChanged) {
             changed = true;
         }
         trackers = std::move(newTrackers);

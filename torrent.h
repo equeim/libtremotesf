@@ -138,7 +138,7 @@ namespace libtremotesf
 
         bool singleFile = true;
 
-        bool trackersAddedOrRemoved = false;
+        bool trackersAnnounceUrlsChanged = false;
 
         std::vector<Tracker> trackers;
     };
