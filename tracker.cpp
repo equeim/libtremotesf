@@ -21,6 +21,7 @@
 #include <QCoreApplication>
 #include <QDateTime>
 #include <QJsonObject>
+#include <QHostAddress>
 #include <QUrl>
 
 #include "stdutils.h"
@@ -65,6 +66,13 @@ namespace libtremotesf
         return mSite;
     }
 #endif
+
+    Tracker::AnnounceHostInfo Tracker::announceHostInfo() const
+    {
+        auto host = QUrl(mAnnounce).host();
+        bool isIpAddress = !QHostAddress(host).isNull();
+        return {std::move(host), isIpAddress};
+    }
 
     Tracker::Status Tracker::status() const
     {
