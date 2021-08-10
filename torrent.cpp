@@ -297,8 +297,8 @@ namespace libtremotesf
         return changed;
     }
 
-    Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc)
-        : mRpc(rpc)
+    Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent)
+        : QObject(parent), mRpc(rpc)
     {
         mData.id = id;
         mData.hashString = torrentMap.value(hashStringKey).toString();

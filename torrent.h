@@ -205,7 +205,7 @@ namespace libtremotesf
 
         static const QJsonKeyString idKey;
 
-        explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc);
+        explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
 
         int id() const;
         const QString& hashString() const;
