@@ -933,7 +933,10 @@ namespace libtremotesf
             });
         }
 
-        void onAboutToRemoveItems(size_t, size_t) override {};
+        void onAboutToRemoveItems(size_t first, size_t last) override {
+            emit mRpc.onAboutToRemoveTorrents(first, last);
+        };
+
         void onRemovedItems(size_t first, size_t last) override {
             removed.reserve(removed.size() + (last - first));
             for (size_t i = first; i < last; ++i) {
@@ -980,6 +983,7 @@ namespace libtremotesf
             for (size_t i = first; i < last; ++i) {
                 changed.push_back(static_cast<int>(i));
             }
+            emit mRpc.onChangedTorrents(first, last);
         }
 
         std::shared_ptr<Torrent> createItemFromNewItem(NewTorrent&& newTorrent) override {
@@ -998,9 +1002,13 @@ namespace libtremotesf
             return torrent;
         }
 
-        void onAboutToAddItems(size_t) override {}
+        void onAboutToAddItems(size_t count) override {
+            emit mRpc.onAboutToAddTorrents(count);
+        }
+
         void onAddedItems(size_t count) override {
             added = static_cast<int>(count);
+            emit mRpc.onAddedTorrents(count);
         };
 
     private:
