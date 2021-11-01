@@ -830,7 +830,9 @@ namespace libtremotesf
                 for (int i = static_cast<int>(mTorrents.size()) - 1; i >= 0; --i) {
                     removedTorrentsIndices.push_back(i);
                 }
+                emit onAboutToRemoveTorrents(0, removedTorrentsIndices.size());
                 mTorrents.clear();
+                emit onRemovedTorrents(0, removedTorrentsIndices.size());
             }
 
             break;
