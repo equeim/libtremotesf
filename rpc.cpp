@@ -1094,7 +1094,7 @@ namespace libtremotesf
                         checkIfTorrentsUpdated();
                         const bool wasConnected = isConnected();
                         startUpdateTimer();
-                        if (wasConnected == isConnected()) {
+                        if (isConnected() && wasConnected) {
                             emit torrentsUpdated(updater.removed, updater.changed, updater.added);
                         }
 
