@@ -170,7 +170,7 @@ namespace libtremotesf
         QObject::connect(mNetwork, &QNetworkAccessManager::sslErrors, this, [=](auto, const auto& errors) {
             for (const auto& error : errors) {
                 if (!mExpectedSslErrors.contains(error)) {
-                    qWarning() << error;
+                    qWarning() << error << "on" << error.certificate().toText().toUtf8().data();
                 }
             }
         });
