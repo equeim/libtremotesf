@@ -297,7 +297,7 @@ namespace libtremotesf
 
         void torrentsUpdated(const std::vector<std::pair<int, int>>& removedIndexRanges, const std::vector<std::pair<int, int>>& changedIndexRanges, int addedCount);
 
-        void torrentFilesUpdated(const libtremotesf::Torrent* torrent, const std::vector<int>& changed);
+        void torrentFilesUpdated(const libtremotesf::Torrent* torrent, const std::vector<int>& changedIndexes);
         void torrentPeersUpdated(const libtremotesf::Torrent* torrent,
                                  const std::vector<std::pair<int, int>>& removedIndexRanges,
                                  const std::vector<std::pair<int, int>>& changedIndexRanges,

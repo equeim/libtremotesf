@@ -317,7 +317,7 @@ namespace libtremotesf
         void updated();
         void changed();
 
-        void filesUpdated(const std::vector<int>& changed);
+        void filesUpdated(const std::vector<int>& changedIndexes);
         void peersUpdated(const std::vector<std::pair<int, int>>& removedIndexRanges, const std::vector<std::pair<int, int>>& changedIndexRanges, int addedCount);
         void fileRenamed(const QString& filePath, const QString& newName);
         void limitsEdited();
