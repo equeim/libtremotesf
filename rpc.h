@@ -299,9 +299,9 @@ namespace libtremotesf
 
         void torrentFilesUpdated(const libtremotesf::Torrent* torrent, const std::vector<int>& changed);
         void torrentPeersUpdated(const libtremotesf::Torrent* torrent,
-                                 const std::vector<int>& removed,
-                                 const std::vector<int>& changed,
-                                 int added);
+                                 const std::vector<std::pair<int, int>>& removedIndexRanges,
+                                 const std::vector<std::pair<int, int>>& changedIndexRanges,
+                                 int addedCount);
 
         void torrentFileRenamed(int torrentId, const QString& filePath, const QString& newName);
 
