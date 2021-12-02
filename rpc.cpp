@@ -64,8 +64,10 @@ namespace libtremotesf
         constexpr auto sessionIdFileLocation = QStandardPaths::GenericDataLocation;
         const QLatin1String sessionIdFilePrefix("Transmission/tr_session_id_");
 #else
+#ifndef Q_OS_ANDROID
         constexpr auto sessionIdFileLocation = QStandardPaths::TempLocation;
         const QLatin1String sessionIdFilePrefix("tr_session_id_");
+#endif
 #endif
 
         inline QByteArray makeRequestData(const QString& method, const QVariantMap& arguments)
