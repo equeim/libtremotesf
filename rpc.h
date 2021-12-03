@@ -221,8 +221,8 @@ namespace libtremotesf
         };
 
         void setStatus(Status status);
-        void resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, int& removedTorrentsCount);
-        void emitSignalsOnConnectionStateChanged(ConnectionState oldConnectionState, int removedTorrentsCount);
+        void resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, size_t& removedTorrentsCount);
+        void emitSignalsOnConnectionStateChanged(ConnectionState oldConnectionState, size_t removedTorrentsCount);
 
         void getServerSettings();
         void getTorrents();

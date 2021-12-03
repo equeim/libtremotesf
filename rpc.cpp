@@ -786,7 +786,7 @@ namespace libtremotesf
 
         mStatus = status;
 
-        int removedTorrentsCount;
+        size_t removedTorrentsCount;
         if (connectionStateChanged) {
             resetStateOnConnectionStateChanged(oldStatus.connectionState, removedTorrentsCount);
         }
@@ -802,7 +802,7 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, int& removedTorrentsCount)
+    void Rpc::resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, size_t& removedTorrentsCount)
     {
         switch (mStatus.connectionState) {
         case ConnectionState::Disconnected:
@@ -848,7 +848,7 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::emitSignalsOnConnectionStateChanged(Rpc::ConnectionState oldConnectionState, int removedTorrentsCount)
+    void Rpc::emitSignalsOnConnectionStateChanged(Rpc::ConnectionState oldConnectionState, size_t removedTorrentsCount)
     {
         emit connectionStateChanged();
 
@@ -857,7 +857,7 @@ namespace libtremotesf
         {
             if (oldConnectionState == ConnectionState::Connected) {
                 emit connectedChanged();
-                emit torrentsUpdated({{0, removedTorrentsCount}}, {}, 0);
+                emit torrentsUpdated({{0, static_cast<int>(removedTorrentsCount)}}, {}, 0);
             }
             break;
         }

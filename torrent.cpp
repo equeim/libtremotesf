@@ -750,15 +750,15 @@ namespace libtremotesf
                 const QJsonArray fileJsons(torrentMap.value(QJsonKeyStringInit("files")).toArray());
                 mFiles.reserve(static_cast<size_t>(fileStats.size()));
                 changed.reserve(static_cast<size_t>(fileStats.size()));
-                for (int i = 0, max = fileStats.size(); i < max; ++i) {
+                for (qsizetype i = 0, max = fileStats.size(); i < max; ++i) {
                     mFiles.emplace_back(i, fileJsons[i].toObject(), fileStats[i].toObject());
-                    changed.push_back(i);
+                    changed.push_back(static_cast<int>(i));
                 }
             } else {
-                for (int i = 0, max = fileStats.size(); i < max; ++i) {
+                for (qsizetype i = 0, max = fileStats.size(); i < max; ++i) {
                     TorrentFile& file = mFiles[static_cast<size_t>(i)];
                     if (file.update(fileStats[i].toObject())) {
-                        changed.push_back(i);
+                        changed.push_back(static_cast<int>(i));
                     }
                 }
             }
