@@ -83,9 +83,9 @@ namespace libtremotesf {
                 auto changedBatchProcessor = ItemBatchProcessor<Item>([&](size_t first, size_t last) { onChangedItems(first, last); });
 
                 for (size_t i = 0, max = items.size(); i < max; ++i) {
-                    Item& item = items[i];
+                    Item* item = &items[i];
 
-                    auto found = findNewItemForItem(newItems, item);
+                    auto found = findNewItemForItem(newItems, *item);
                     if (found == newItems.end()) {
                         changedBatchProcessor.commitIfNeeded();
                         removedBatchProcessor.nextIndex(i);
@@ -93,9 +93,9 @@ namespace libtremotesf {
                         if (auto size = removedBatchProcessor.commitIfNeeded(); size) {
                             i -= *size;
                             max -= *size;
+                            item = &items[i];
                         }
-
-                        if (updateItem(item, std::forward<NewItem>(*found))) {
+                        if (updateItem(*item, std::forward<NewItem>(*found))) {
                             changedBatchProcessor.nextIndex(i);
                         } else {
                             changedBatchProcessor.commitIfNeeded();
