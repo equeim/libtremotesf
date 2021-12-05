@@ -134,6 +134,7 @@ namespace libtremotesf {
 }
 
 namespace tremotesf {
+    using libtremotesf::ItemBatchProcessor;
     using libtremotesf::ItemListUpdater;
 }
 
