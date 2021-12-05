@@ -24,7 +24,6 @@
 #include <vector>
 
 namespace libtremotesf {
-    template<typename Item>
     class ItemBatchProcessor {
     public:
         inline explicit ItemBatchProcessor(std::function<void(size_t, size_t)>&& action) : mAction(std::move(action)) {}
@@ -74,13 +73,13 @@ namespace libtremotesf {
 
         virtual void update(std::vector<Item>& items, NewItemContainer&& newItems) {
             if (!items.empty()) {
-                auto removedBatchProcessor = ItemBatchProcessor<Item>([&](size_t first, size_t last) {
+                auto removedBatchProcessor = ItemBatchProcessor([&](size_t first, size_t last) {
                     onAboutToRemoveItems(first, last);
                     items.erase(items.begin() + static_cast<ptrdiff_t>(first), items.begin() + static_cast<ptrdiff_t>(last));
                     onRemovedItems(first, last);
                 });
 
-                auto changedBatchProcessor = ItemBatchProcessor<Item>([&](size_t first, size_t last) { onChangedItems(first, last); });
+                auto changedBatchProcessor = ItemBatchProcessor([&](size_t first, size_t last) { onChangedItems(first, last); });
 
                 for (size_t i = 0, max = items.size(); i < max; ++i) {
                     Item* item = &items[i];
