@@ -5,6 +5,11 @@ project(libtremotesf CXX)
 
 option(TREMOTESF_QT6 "Build with Qt 6" ON)
 option(TREMOTESF_SAILFISHOS "Build for Sailfish OS" OFF)
+option(TREMOTESF_BUILD_TESTS "Build tests" OFF)
+
+if (TREMOTESF_BUILD_TESTS)
+    enable_testing()
+endif()
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -44,5 +49,12 @@ add_library(
 
 target_link_libraries(libtremotesf Qt${TREMOTESF_QT_VERSION_MAJOR}::Core Qt${TREMOTESF_QT_VERSION_MAJOR}::Network)
 target_include_directories(libtremotesf PUBLIC ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
+
+if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
+    find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
+    add_executable(itemlistupdater_test itemlistupdater_test.cpp)
+    add_test(NAME itemlistupdater_test COMMAND itemlistupdater_test)
+    target_link_libraries(itemlistupdater_test libtremotesf Qt${LIBTREMOTESF_QT_VERSION_MAJOR}::Test)
+endif()
 
 set_common_options_on_targets()
