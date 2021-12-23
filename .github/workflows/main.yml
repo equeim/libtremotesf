@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+    strategy:
+      matrix:
+        qt-version: [5, 6]
+        compiler: [gcc, clang]
+
+    runs-on: ubuntu-latest
+    container: fedora:latest
+
+    steps:
+    - name: Install packages
+      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build qt${{matrix.qt-version}}-qtbase-devel ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
+
+    - uses: actions/checkout@v2
+
+    - name: Configure
+      run: cmake -B ${{github.workspace}}/build -G 'Ninja Multi-Config' -DCMAKE_CONFIGURATION_TYPES='Debug;Release' -DTREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -DTREMOTESF_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+
+    - name: Build Debug
+      run: cmake --build ${{github.workspace}}/build --config Debug
+
+    - name: Build Release
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Test Debug
+      run: ctest --test-dir ${{github.workspace}}/build --build-config Debug
+
+    - name: Test Release
+      run: ctest --test-dir ${{github.workspace}}/build --build-config Release
