@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-fedora:
     strategy:
       matrix:
         qt-version: [5, 6]
@@ -24,6 +24,34 @@ jobs:
 
     - name: Configure
       run: cmake -B ${{github.workspace}}/build -G 'Ninja Multi-Config' -DCMAKE_CONFIGURATION_TYPES='Debug;Release' -DTREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -DTREMOTESF_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+
+    - name: Build Debug
+      run: cmake --build ${{github.workspace}}/build --config Debug
+
+    - name: Build Release
+      run: cmake --build ${{github.workspace}}/build --config Release
+
+    - name: Test Debug
+      run: ctest --test-dir ${{github.workspace}}/build --build-config Debug
+
+    - name: Test Release
+      run: ctest --test-dir ${{github.workspace}}/build --build-config Release
+
+  build-ubuntu:
+    strategy:
+      matrix:
+        compiler: [gcc, clang]
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Install packages
+      run: sudo apt-get update && sudo apt-get --no-install-recommends --assume-yes install cmake ninja-build qtbase5-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
+
+    - uses: actions/checkout@v2
+
+    - name: Configure
+      run: cmake -B ${{github.workspace}}/build -G 'Ninja Multi-Config' -DCMAKE_CONFIGURATION_TYPES='Debug;Release' -DTREMOTESF_QT6=OFF -DTREMOTESF_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
 
     - name: Build Debug
       run: cmake --build ${{github.workspace}}/build --config Debug
