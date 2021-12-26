@@ -54,7 +54,7 @@ if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} REQUIRED COMPONENTS Test)
     add_executable(itemlistupdater_test itemlistupdater_test.cpp)
     add_test(NAME itemlistupdater_test COMMAND itemlistupdater_test)
-    target_link_libraries(itemlistupdater_test libtremotesf Qt${LIBTREMOTESF_QT_VERSION_MAJOR}::Test)
+    target_link_libraries(itemlistupdater_test libtremotesf Qt${TREMOTESF_QT_VERSION_MAJOR}::Test)
 endif()
 
 set_common_options_on_targets()
