@@ -17,25 +17,19 @@ jobs:
     container: fedora:latest
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Install packages
-      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build qt${{matrix.qt-version}}-qtbase-devel ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
+      run: |
+        rpm --import https://packages.microsoft.com/keys/microsoft.asc
+        curl https://packages.microsoft.com/config/rhel/7/prod.repo | tee /etc/yum.repos.d/microsoft.repo
+        dnf -y --setopt=install_weak_deps=False install powershell git cmake ninja-build qt${{matrix.qt-version}}-qtbase-devel ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
 
-    - uses: actions/checkout@v2
-
-    - name: Configure
-      run: cmake -B ${{github.workspace}}/build -G 'Ninja Multi-Config' -DCMAKE_CONFIGURATION_TYPES='Debug;Release' -DTREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -DTREMOTESF_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
-
-    - name: Build Debug
-      run: cmake --build ${{github.workspace}}/build --config Debug
-
-    - name: Build Release
-      run: cmake --build ${{github.workspace}}/build --config Release
-
-    - name: Test Debug
-      run: ctest --test-dir ${{github.workspace}}/build --build-config Debug
-
-    - name: Test Release
-      run: ctest --test-dir ${{github.workspace}}/build --build-config Release
+    - name: Build libtremotesf
+      uses: ./.github/actions/build
+      with:
+        cmake-arguments: --preset default-multi -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
   build-ubuntu:
     strategy:
@@ -45,22 +39,43 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
+    - name: Checkout
+      uses: actions/checkout@v2
+
     - name: Install packages
       run: sudo apt-get update && sudo apt-get --no-install-recommends --assume-yes install cmake ninja-build qtbase5-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
-    - uses: actions/checkout@v2
+    - name: Build libtremotesf
+      uses: ./.github/actions/build
+      with:
+        cmake-arguments: --preset default-multi -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} -D TREMOTESF_QT6=OFF
 
-    - name: Configure
-      run: cmake -B ${{github.workspace}}/build -G 'Ninja Multi-Config' -DCMAKE_CONFIGURATION_TYPES='Debug;Release' -DTREMOTESF_QT6=OFF -DTREMOTESF_BUILD_TESTS=ON -DCMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+  build-windows:
+    strategy:
+      matrix:
+        qt-version: [5, 6]
 
-    - name: Build Debug
-      run: cmake --build ${{github.workspace}}/build --config Debug
+    runs-on: windows-2022
 
-    - name: Build Release
-      run: cmake --build ${{github.workspace}}/build --config Release
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v2
 
-    - name: Test Debug
-      run: ctest --test-dir ${{github.workspace}}/build --build-config Debug
+    - name: Set up vcpkg and MSVC environment
+      uses: equeim/action-setup-vcpkg-msvc@v4
+      with:
+        vcpkg-appended-cache-key: ${{ matrix.qt-version }}
 
-    - name: Test Release
-      run: ctest --test-dir ${{github.workspace}}/build --build-config Release
+    - name: Build libtremotesf
+      uses: ./.github/actions/build
+      with:
+        cmake-arguments: --preset windows-multi --toolchain '${{env.VCPKG_ROOT}}\scripts\buildsystems\vcpkg.cmake' -D VCPKG_INSTALL_OPTIONS='--disable-metrics;--clean-after-build;--x-feature=qt${{ matrix.qt-version }}' -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+
+    - name: Archive vcpkg logs
+      uses: actions/upload-artifact@v2
+      if: always()
+      with:
+        name: vcpkg-logs
+        path: |
+          ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
+          .\build\vcpkg-manifest-install.log

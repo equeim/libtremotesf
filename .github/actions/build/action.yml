@@ -1,0 +1,33 @@
+name: 'Build libtremotesf'
+
+inputs:
+  cmake-arguments:
+    description: 'Additional CMake arguments'
+    required: false
+
+# Composite actions can't use default shell, it must be specified explicitly
+# Moreover, we can't use expressions when specifying it which means we can't pass it in inputs
+# So we use pwsh on every platform
+
+runs:
+  using: composite
+  steps:
+    - name: Configure
+      shell: pwsh
+      run: cmake -S . -B ./build ${{inputs.cmake-arguments}}
+
+    - name: Build Debug
+      shell: pwsh
+      run: cmake --build ./build --config Debug
+
+    - name: Build Release
+      shell: pwsh
+      run: cmake --build ./build --config Release
+
+    - name: Test Debug
+      shell: pwsh
+      run: ctest --test-dir ./build --build-config Debug
+
+    - name: Test Release
+      shell: pwsh
+      run: ctest --test-dir ./build --build-config Release

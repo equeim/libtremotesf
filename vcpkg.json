@@ -1,0 +1,43 @@
+{
+  "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
+  "name": "libtremotesf",
+  "version": "0",
+  "features": {
+    "qt5": {
+      "description": "Build with Qt 5",
+      "dependencies": [
+        {
+          "name": "qt5-base",
+          "default-features": false
+        }
+      ]
+    },
+    "qt6": {
+      "description": "Build with Qt 6",
+      "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "features": [
+            "concurrent",
+            "network",
+            "testlib"
+          ]
+        }
+      ]
+    }
+  },
+  "default-features": [],
+  "overrides": [
+    {
+      "name": "qt5-base",
+      "version": "5.15.2",
+      "port-version": 19
+    },
+    {
+      "name": "qtbase",
+      "version": "6.2.2",
+      "port-version": 3
+    }
+  ]
+}
