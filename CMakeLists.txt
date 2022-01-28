@@ -4,8 +4,8 @@ cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION}..3.22)
 project(libtremotesf CXX)
 
 option(TREMOTESF_QT6 "Build with Qt 6" ON)
+option(TREMOTESF_BUILD_TESTS "Build tests" ON)
 option(TREMOTESF_SAILFISHOS "Build for Sailfish OS" OFF)
-option(TREMOTESF_BUILD_TESTS "Build tests" OFF)
 
 if (TREMOTESF_BUILD_TESTS)
     enable_testing()
