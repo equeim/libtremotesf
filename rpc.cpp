@@ -640,20 +640,20 @@ namespace libtremotesf
                     [=](const auto& parseResult, bool success) {
                         if (success) {
                             const QJsonArray torrents(getReplyArguments(parseResult).value(torrentsKey).toArray());
-                            for (const auto& i : torrents) {
-                                const QJsonObject torrentMap(i.toObject());
+                            for (const auto& torrentJson : torrents) {
+                                const QJsonObject torrentMap(torrentJson.toObject());
                                 const int torrentId = torrentMap.value(Torrent::idKey).toInt();
                                 Torrent* torrent = torrentById(torrentId);
                                 if (torrent && torrent->isFilesEnabled()) {
                                     torrent->updateFiles(torrentMap);
                                 }
-                                if (scheduled) {
-                                    for (const auto& torrent : mTorrents) {
-                                        torrent->checkThatFilesUpdated();
-                                    }
-                                    checkIfTorrentsUpdated();
-                                    startUpdateTimer();
+                            }
+                            if (scheduled) {
+                                for (const auto& torrent : mTorrents) {
+                                    torrent->checkThatFilesUpdated();
                                 }
+                                checkIfTorrentsUpdated();
+                                startUpdateTimer();
                             }
                         }
                     });
@@ -666,20 +666,20 @@ namespace libtremotesf
                     [=](const auto& parseResult, bool success) {
                         if (success) {
                             const QJsonArray torrents(getReplyArguments(parseResult).value(torrentsKey).toArray());
-                            for (const auto& i : torrents) {
-                                const QJsonObject torrentMap(i.toObject());
+                            for (const auto& torrentJson : torrents) {
+                                const QJsonObject torrentMap(torrentJson.toObject());
                                 const int torrentId = torrentMap.value(Torrent::idKey).toInt();
                                 Torrent* torrent = torrentById(torrentId);
                                 if (torrent && torrent->isPeersEnabled()) {
                                     torrent->updatePeers(torrentMap);
                                 }
-                                if (scheduled) {
-                                    for (const auto& torrent : mTorrents) {
-                                        torrent->checkThatPeersUpdated();
-                                    }
-                                    checkIfTorrentsUpdated();
-                                    startUpdateTimer();
+                            }
+                            if (scheduled) {
+                                for (const auto& torrent : mTorrents) {
+                                    torrent->checkThatPeersUpdated();
                                 }
+                                checkIfTorrentsUpdated();
+                                startUpdateTimer();
                             }
                         }
                     });
