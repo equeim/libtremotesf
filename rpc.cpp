@@ -34,6 +34,7 @@
 #include <QTimer>
 #include <QSslCertificate>
 #include <QSslKey>
+#include <QStringBuilder>
 #include <QStandardPaths>
 #include <QtConcurrentRun>
 
@@ -273,13 +274,16 @@ namespace libtremotesf
         mNetwork->clearAccessCache();
         disconnect();
 
-        mServerUrl.setHost(server.address);
-        mServerUrl.setPort(server.port);
-        mServerUrl.setPath(server.apiPath);
+        QLatin1String scheme;
         if (server.https) {
-            mServerUrl.setScheme(QLatin1String("https"));
+            scheme = QLatin1String("https://");
         } else {
-            mServerUrl.setScheme(QLatin1String("http"));
+            scheme = QLatin1String("http://");
+        }
+        const QString urlString = scheme % server.address % QLatin1Char(':') % QString::number(server.port) % QLatin1Char('/') % server.apiPath;
+        mServerUrl = QUrl(urlString, QUrl::TolerantMode).adjusted(QUrl::StripTrailingSlash | QUrl::NormalizePathSegments);
+        if (!mServerUrl.isValid()) {
+            qWarning() << "Failed to parse URL from" << urlString;
         }
 
         switch (server.proxyType) {
