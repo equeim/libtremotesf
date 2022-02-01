@@ -786,7 +786,7 @@ namespace libtremotesf
 
         mStatus = status;
 
-        size_t removedTorrentsCount;
+        size_t removedTorrentsCount = 0;
         if (connectionStateChanged) {
             resetStateOnConnectionStateChanged(oldStatus.connectionState, removedTorrentsCount);
         }
