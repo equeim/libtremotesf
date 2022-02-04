@@ -27,6 +27,7 @@
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
+#include <QMetaEnum>
 #include <QNetworkAccessManager>
 #include <QNetworkInterface>
 #include <QNetworkProxy>
@@ -1241,16 +1242,24 @@ namespace libtremotesf
                 qWarning("HTTP status code %d", httpStatusCode.toInt());
             }
 
+            const auto createErrorMessage = [reply] {
+                return QString(
+                            QMetaEnum::fromType<QNetworkReply::NetworkError>().valueToKey(reply->error()) %
+                            QLatin1String(": ") %
+                            reply->errorString()
+                );
+            };
+
             switch (reply->error()) {
             case QNetworkReply::AuthenticationRequiredError:
                 qWarning("Authentication error");
-                setStatus(Status{ConnectionState::Disconnected, Error::AuthenticationError});
+                setStatus(Status{ConnectionState::Disconnected, Error::AuthenticationError, createErrorMessage()});
                 break;
             case QNetworkReply::OperationCanceledError:
             case QNetworkReply::TimeoutError:
                 qWarning("Timed out");
                 if (!retryRequest(std::move(request), reply)) {
-                    setStatus(Status{ConnectionState::Disconnected, Error::TimedOut});
+                    setStatus(Status{ConnectionState::Disconnected, Error::TimedOut, createErrorMessage()});
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
                         qInfo("Auto reconnecting in %d seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();
@@ -1260,7 +1269,7 @@ namespace libtremotesf
             default:
             {
                 if (!retryRequest(std::move(request), reply)) {
-                    setStatus(Status{ConnectionState::Disconnected, Error::ConnectionError});
+                    setStatus(Status{ConnectionState::Disconnected, Error::ConnectionError, createErrorMessage()});
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
                         qInfo("Auto reconnecting in %d seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();
