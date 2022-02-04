@@ -1272,12 +1272,6 @@ namespace libtremotesf
 
         QObject::connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
 
-        QObject::connect(this, &Rpc::connectedChanged, reply, [=] {
-            if (!isConnected()) {
-                reply->abort();
-            }
-        });
-
         auto timer = new QTimer(this);
         timer->setInterval(mTimeout);
         timer->setSingleShot(true);
