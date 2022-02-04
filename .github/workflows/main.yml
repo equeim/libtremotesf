@@ -63,15 +63,17 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up vcpkg and MSVC environment
-      uses: equeim/action-setup-vcpkg-msvc@v4
+      uses: equeim/action-setup-vcpkg-msvc@v6
       with:
         vcpkg-appended-cache-key: ${{ matrix.qt-version }}
+        vcpkg-use-github-packages: true
+        vcpkg-github-packages-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build libtremotesf
       uses: equeim/action-cmake-build@v5.2
       with:
         # We set VCPKG_INSTALLED_DIR variable to share vcpkg prefix between Debug and Release configs
-        cmake-arguments: --preset windows --toolchain '${{env.VCPKG_ROOT}}\scripts\buildsystems\vcpkg.cmake' -D VCPKG_INSTALLED_DIR='${{github.workspace}}\vcpkg_installed' -D VCPKG_INSTALL_OPTIONS='--disable-metrics;--clean-after-build;--x-feature=qt${{ matrix.qt-version }}' -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_FEATURES='qt${{ matrix.qt-version }}' -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
     - name: Archive vcpkg logs
       uses: actions/upload-artifact@v2
@@ -80,4 +82,4 @@ jobs:
         name: vcpkg-logs-qt${{matrix.qt-version}}
         path: |
           ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
-          .\build\vcpkg-manifest-install.log
+          .\build-*\vcpkg-manifest-install.log
