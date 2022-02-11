@@ -7,49 +7,53 @@ on:
     branches: [ master ]
 
 jobs:
-  build-fedora:
+  build-linux:
     strategy:
       matrix:
-        fedora-version: [latest, rawhide]
-        qt-version: [5, 6]
+        container-image: ['fedora:latest', 'opensuse/leap:latest', 'opensuse/tumbleweed:latest', 'mageia:latest', 'debian:oldstable', 'debian:stable', 'ubuntu:latest', 'ubuntu:rolling']
+        qt-version: [5]
         compiler: [gcc, clang]
+        include:
+        - container-image: 'fedora:latest'
+          qt-version: 6
+          compiler: gcc
+        - container-image: 'fedora:latest'
+          qt-version: 6
+          compiler: clang
+        - container-image: 'opensuse/tumbleweed:latest'
+          qt-version: 6
+          compiler: gcc
+        - container-image: 'opensuse/tumbleweed:latest'
+          qt-version: 6
+          compiler: clang
 
     runs-on: ubuntu-latest
-    container: fedora:${{matrix.fedora-version}}
+    container: ${{ matrix.container-image }}
 
     steps:
-    - name: Install packages
-      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build qt${{matrix.qt-version}}-qtbase-devel ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
+    - name: Install packages on Fedora/Mageia
+      if: startsWith(matrix.container-image, 'fedora') || startsWith(matrix.container-image, 'mageia')
+      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
 
-    - name: Checkout
-      uses: actions/checkout@v2
+    - name: Install packages on openSUSE
+      if: startsWith(matrix.container-image, 'opensuse')
+      # We need GCC 11 on openSUSE Leap even with Clang, for newer libstdc++ headers
+      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' ${{ startsWith(matrix.container-image, 'opensuse/leap') && 'gcc11-c++' || (matrix.compiler == 'gcc' && 'gcc-c++' || '') }} ${{ matrix.compiler == 'clang' && 'clang' || '' }}
 
-    - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v5.2
-      with:
-        cmake-arguments: --preset default -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
-
-  build-ubuntu:
-    strategy:
-      matrix:
-        ubuntu-version: [latest, rolling]
-        compiler: [gcc, clang]
-
-    runs-on: ubuntu-latest
-    container: ubuntu:${{matrix.ubuntu-version}}
-
-    steps:
-    - name: Install packages
+    - name: Install packages on Debian/Ubuntu
+      if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
       run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Set compiler environment variable
+      run: echo 'CXX=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}' >> "$GITHUB_ENV"
+
     - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v5.2
+      uses: equeim/action-cmake-build@v8
       with:
-        # Can't use presets on older Ubuntu version
-        cmake-arguments: -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }} -D TREMOTESF_QT6=OFF
+        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
   build-windows:
     strategy:
@@ -70,7 +74,7 @@ jobs:
         vcpkg-github-packages-token: ${{ secrets.GITHUB_TOKEN }}
 
     - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v5.2
+      uses: equeim/action-cmake-build@v8
       with:
         # We set VCPKG_INSTALLED_DIR variable to share vcpkg prefix between Debug and Release configs
         cmake-arguments: --preset windows -D VCPKG_MANIFEST_FEATURES='qt${{ matrix.qt-version }}' -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
