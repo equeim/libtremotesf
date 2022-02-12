@@ -73,17 +73,25 @@ jobs:
         vcpkg-use-github-packages: true
         vcpkg-github-packages-token: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Build libtremotesf
+    # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
+
+    - name: Run vcpkg install
+      run: ${{env.VCPKG_ROOT}}\vcpkg install --disable-metrics --clean-after-build --triplet=x64-windows-static --host-triplet=x64-windows-static --x-feature=qt${{ matrix.qt-version }}
+
+    - name: Build libtremotesf with MSVC
       uses: equeim/action-cmake-build@v8
       with:
-        # We set VCPKG_INSTALLED_DIR variable to share vcpkg prefix between Debug and Release configs
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_FEATURES='qt${{ matrix.qt-version }}' -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+
+    - name: Build libtremotesf with clang-cl
+      uses: equeim/action-cmake-build@v8
+      with:
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=clang-cl
+        output-directories-suffix: -clang-cl
 
     - name: Archive vcpkg logs
       uses: actions/upload-artifact@v2
       if: always()
       with:
         name: vcpkg-logs-qt${{matrix.qt-version}}
-        path: |
-          ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
-          .\build-*\vcpkg-manifest-install.log
+        path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
