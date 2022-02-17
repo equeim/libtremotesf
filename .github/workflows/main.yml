@@ -10,7 +10,7 @@ jobs:
   build-linux:
     strategy:
       matrix:
-        container-image: ['fedora:latest', 'opensuse/leap:latest', 'opensuse/tumbleweed:latest', 'mageia:latest', 'debian:oldstable', 'debian:stable', 'ubuntu:latest', 'ubuntu:rolling']
+        container-image: ['fedora:latest', 'opensuse/tumbleweed:latest', 'mageia:latest', 'debian:stable', 'ubuntu:rolling']
         qt-version: [5]
         compiler: [gcc, clang]
         include:
