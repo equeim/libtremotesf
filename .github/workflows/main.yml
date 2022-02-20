@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [ master ]
+    branches: [master]
   pull_request:
-    branches: [ master ]
+    branches: [master]
 
 jobs:
   build-linux:
@@ -47,11 +47,14 @@ jobs:
     - name: Checkout
       uses: actions/checkout@v2
 
+    - name: Add GCC problem matcher
+      uses: ammaraskar/gcc-problem-matcher@master
+
     - name: Set compiler environment variable
       run: echo 'CXX=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}' >> "$GITHUB_ENV"
 
     - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v8
+      uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
@@ -67,7 +70,7 @@ jobs:
       uses: actions/checkout@v2
 
     - name: Set up vcpkg and MSVC environment
-      uses: equeim/action-setup-vcpkg-msvc@v6
+      uses: equeim/action-setup-vcpkg-msvc@v7
       with:
         vcpkg-appended-cache-key: ${{ matrix.qt-version }}
         vcpkg-use-github-packages: true
@@ -84,7 +87,7 @@ jobs:
         cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
     - name: Build libtremotesf with clang-cl
-      uses: equeim/action-cmake-build@v8
+      uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=clang-cl
         output-directories-suffix: -clang-cl
