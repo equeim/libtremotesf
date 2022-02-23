@@ -74,7 +74,7 @@ jobs:
       with:
         vcpkg-appended-cache-key: ${{ matrix.qt-version }}
         vcpkg-use-github-packages: true
-        vcpkg-github-packages-token: ${{ secrets.GITHUB_TOKEN }}
+        vcpkg-github-packages-token: ${{ secrets.VCPKG_GITHUB_PACKAGES_TOKEN }}
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
