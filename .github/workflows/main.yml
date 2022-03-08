@@ -59,42 +59,52 @@ jobs:
         cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
   build-windows:
-    strategy:
-      matrix:
-        qt-version: [5, 6]
-
     runs-on: windows-2022
 
     steps:
     - name: Checkout
       uses: actions/checkout@v2
 
-    - name: Set up vcpkg and MSVC environment
-      uses: equeim/action-setup-vcpkg-msvc@v7
+    - name: Set up MSVC environment
+      uses: equeim/action-setup-msvc-environment@v1
+
+    - name: Set up vcpkg
+      uses: equeim/action-setup-vcpkg@v2
       with:
-        vcpkg-appended-cache-key: ${{ matrix.qt-version }}
-        vcpkg-use-github-packages: true
-        vcpkg-github-packages-token: ${{ secrets.GITHUB_TOKEN }}
+        run-install: true
+        triplet: x64-windows-static
+        install-features: qt5 qt6
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
-    - name: Run vcpkg install
-      run: ${{env.VCPKG_ROOT}}\vcpkg install --disable-metrics --clean-after-build --triplet=x64-windows-static --host-triplet=x64-windows-static --x-feature=qt${{ matrix.qt-version }}
-
-    - name: Build libtremotesf with MSVC
-      uses: equeim/action-cmake-build@v8
-      with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
-
-    - name: Build libtremotesf with clang-cl
+    - name: Build libtremotesf with Qt 6 and MSVC
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=clang-cl
-        output-directories-suffix: -clang-cl
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON
+        output-directories-suffix: -qt6
+
+    - name: Build libtremotesf with Qt 6 and clang-cl
+      uses: equeim/action-cmake-build@v9
+      with:
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON -D CMAKE_CXX_COMPILER=clang-cl
+        output-directories-suffix: -qt6-clang-cl
+
+    - name: Build libtremotesf with Qt 5 and MSVC
+      uses: equeim/action-cmake-build@v9
+      with:
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF
+        output-directories-suffix: -qt5
+
+    - name: Build libtremotesf with Qt 5 and clang-cl
+      uses: equeim/action-cmake-build@v9
+      with:
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF -D CMAKE_CXX_COMPILER=clang-cl
+        output-directories-suffix: -qt5-clang-cl
 
     - name: Archive vcpkg logs
       uses: actions/upload-artifact@v2
       if: always()
       with:
-        name: vcpkg-logs-qt${{matrix.qt-version}}
+        name: vcpkg-logs
+        retention-days: ${{ github.event_name == 'push' && github.retention_days || 3 }}
         path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
