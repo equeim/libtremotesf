@@ -20,6 +20,7 @@ set(CMAKE_AUTOMOC ON)
 include(cmake/CommonOptions.cmake)
 
 find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Concurrent Network)
+find_package(fmt 7.0 REQUIRED)
 
 if (ANDROID)
     set(library_type STATIC)
@@ -35,6 +36,7 @@ add_library(
     peer.h
     rpc.cpp
     rpc.h
+    println.h
     serversettings.cpp
     serversettings.h
     serverstats.cpp
@@ -42,15 +44,15 @@ add_library(
     stdutils.h
     torrent.cpp
     torrent.h
-    torrent_qdebug.h
     torrentfile.cpp
     torrentfile.h
     tracker.cpp
     tracker.h
 )
 
-target_link_libraries(libtremotesf Qt::Core Qt::Network)
+target_link_libraries(libtremotesf PRIVATE Qt::Network PUBLIC Qt::Core fmt::fmt)
 target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
+target_compile_definitions(libtremotesf PUBLIC FMT_UNICODE=1)
 
 if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Test)
