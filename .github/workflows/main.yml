@@ -33,16 +33,16 @@ jobs:
     steps:
     - name: Install packages on Fedora/Mageia
       if: startsWith(matrix.container-image, 'fedora') || startsWith(matrix.container-image, 'mageia')
-      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
+      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
 
     - name: Install packages on openSUSE
       if: startsWith(matrix.container-image, 'opensuse')
       # We need GCC 11 on openSUSE Leap even with Clang, for newer libstdc++ headers
-      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' ${{ startsWith(matrix.container-image, 'opensuse/leap') && 'gcc11-c++' || (matrix.compiler == 'gcc' && 'gcc-c++' || '') }} ${{ matrix.compiler == 'clang' && 'clang' || '' }}
+      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ startsWith(matrix.container-image, 'opensuse/leap') && 'gcc11-c++' || (matrix.compiler == 'gcc' && 'gcc-c++' || '') }} ${{ matrix.compiler == 'clang' && 'clang' || '' }}
 
     - name: Install packages on Debian/Ubuntu
       if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
-      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
+      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev libfmt-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
     - name: Checkout
       uses: actions/checkout@v2
