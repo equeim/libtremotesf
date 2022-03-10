@@ -203,4 +203,10 @@ class QList;
 template<typename T>
 struct fmt::formatter<QList<T>> : libtremotesf::QDebugFormatter<QList<T>> {};
 
+#if QT_VERSION_MAJOR < 6
+// Can't use SPECIALIZE_FORMATTER_FOR_QDEBUG because QStringList is type alias and we can't forward declare it
+template<>
+struct fmt::formatter<QStringList> : libtremotesf::QDebugFormatter<QStringList> {};
+#endif
+
 #endif // LIBTREMOTESF_PRINTLN_H
