@@ -59,6 +59,10 @@ if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     add_executable(itemlistupdater_test itemlistupdater_test.cpp)
     add_test(NAME itemlistupdater_test COMMAND itemlistupdater_test)
     target_link_libraries(itemlistupdater_test libtremotesf Qt::Test)
+
+    add_executable(println_test println_test.cpp)
+    add_test(NAME println_test COMMAND println_test)
+    target_link_libraries(println_test libtremotesf Qt::Test)
 endif()
 
 set_common_options_on_targets()
