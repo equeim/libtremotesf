@@ -49,6 +49,10 @@ namespace libtremotesf
 #else
             "\n";
 #endif
+
+        inline std::string_view toStdStringView(const QByteArray& str) {
+            return std::string_view(str.data(), static_cast<size_t>(str.size()));
+        }
     }
 
     template<typename S, typename FirstArg, typename... Args>
@@ -69,24 +73,24 @@ namespace libtremotesf
 
         template<typename S, typename FirstArg, typename... Args>
         void operator()(S&& fmt, FirstArg&& firstArg, Args&&... args) const {
-            operator()(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
+            println(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
         }
 
         template<typename T>
         void operator()(T&& value) const {
             using Type = std::decay_t<T>;
-            if constexpr (std::is_convertible_v<Type, QString>) {
-                println(value);
+            if constexpr (std::is_constructible_v<QString, Type>) {
+                println(QString(value));
             } else if constexpr (
                 std::is_same_v<Type, QStringView>
 #if QT_VERSION_MAJOR >= 6
+                || std::is_same_v<Type, QUtf8StringView>
                 || std::is_same_v<Type, QAnyStringView>
 #endif
             ) {
                 println(value.toString());
-            } else if constexpr (std::is_convertible_v<Type, std::string_view>) {
-                const std::string_view& string = value;
-                println(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
+            } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
+                println(std::string_view(value));
             } else {
                 operator()(singleArgumentFormatString, std::forward<T>(value));
             }
@@ -100,6 +104,10 @@ namespace libtremotesf
             // 1. QDebug marshalls everything through QTextStream
             // 2. QMessageLogger::<>(const char*, ...) overloads perform QString::vasprintf() formatting
             qt_message_output(type, context, string);
+        }
+
+        void println(const std::string_view& string) const {
+            println(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
         }
 
         QtMsgType type;
@@ -120,7 +128,15 @@ template<>
 struct fmt::formatter<QString> : fmt::formatter<std::string_view> {
     template<typename FormatContext>
     auto format(const QString& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(string.toUtf8().constData(), ctx);
+        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(string.toUtf8()), ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<QStringView> : fmt::formatter<std::string_view> {
+    template<typename FormatContext>
+    auto format(const QStringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(string.toUtf8()), ctx);
     }
 };
 
@@ -128,9 +144,27 @@ template<>
 struct fmt::formatter<QLatin1String> : fmt::formatter<std::string_view> {
     template<typename FormatContext>
     auto format(const QLatin1String& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(string.data(), ctx);
+        return fmt::formatter<std::string_view>::format(std::string_view(string.data(), static_cast<size_t>(string.size())), ctx);
     }
 };
+
+#if QT_VERSION_MAJOR >= 6
+template<>
+struct fmt::formatter<QUtf8StringView> : fmt::formatter<std::string_view> {
+    template<typename FormatContext>
+    auto format(const QUtf8StringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::formatter<std::string_view>::format(std::string_view(string.data(), static_cast<size_t>(string.size())), ctx);
+    }
+};
+
+template<>
+struct fmt::formatter<QAnyStringView> : fmt::formatter<QString> {
+    template<typename FormatContext>
+    auto format(const QAnyStringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::formatter<QString>::format(string.toString(), ctx);
+    }
+};
+#endif
 
 namespace libtremotesf {
     template<typename T>
