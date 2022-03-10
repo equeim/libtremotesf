@@ -34,9 +34,15 @@ namespace libtremotesf
 {
     namespace
     {
-        inline constexpr auto singleArgumentFormatString = FMT_COMPILE("{}");
+        // Can't use FMT_COMPILE with fmt::print() and fmt 7
 
-        // Can't use FMT_COMPILE with fmt::print() on fmt 7
+        inline constexpr auto singleArgumentFormatString =
+#if FMT_VERSION >= 80000
+            FMT_COMPILE("{}");
+#else
+            "{}";
+#endif
+
         inline constexpr auto newlineFormatString =
 #if FMT_VERSION >= 80000
             FMT_COMPILE("\n");
