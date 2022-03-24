@@ -45,7 +45,7 @@ jobs:
       run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev libfmt-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Add GCC problem matcher
       uses: ammaraskar/gcc-problem-matcher@master
@@ -59,21 +59,22 @@ jobs:
         cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
 
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
 
     - name: Set up MSVC environment
       uses: equeim/action-setup-msvc-environment@v1
 
     - name: Set up vcpkg
-      uses: equeim/action-setup-vcpkg@v2
+      uses: equeim/action-setup-vcpkg@v3
       with:
         run-install: true
         triplet: x64-windows-static
         install-features: qt5 qt6
+        save-cache: ${{ github.event_name == 'push' }}
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
@@ -102,7 +103,7 @@ jobs:
         output-directories-suffix: -qt5-clang-cl
 
     - name: Archive vcpkg logs
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       if: always()
       with:
         name: vcpkg-logs
