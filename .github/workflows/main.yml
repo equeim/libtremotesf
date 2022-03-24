@@ -7,104 +7,10 @@ on:
     branches: [master]
 
 jobs:
-  build-linux:
-    strategy:
-      matrix:
-        container-image: ['fedora:latest', 'opensuse/tumbleweed:latest', 'mageia:latest', 'debian:stable', 'ubuntu:rolling']
-        qt-version: [5]
-        compiler: [gcc, clang]
-        include:
-        - container-image: 'fedora:latest'
-          qt-version: 6
-          compiler: gcc
-        - container-image: 'fedora:latest'
-          qt-version: 6
-          compiler: clang
-        - container-image: 'opensuse/tumbleweed:latest'
-          qt-version: 6
-          compiler: gcc
-        - container-image: 'opensuse/tumbleweed:latest'
-          qt-version: 6
-          compiler: clang
-
-    runs-on: ubuntu-latest
-    container: ${{ matrix.container-image }}
-
-    steps:
-    - name: Install packages on Fedora/Mageia
-      if: startsWith(matrix.container-image, 'fedora') || startsWith(matrix.container-image, 'mageia')
-      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
-
-    - name: Install packages on openSUSE
-      if: startsWith(matrix.container-image, 'opensuse')
-      # We need GCC 11 on openSUSE Leap even with Clang, for newer libstdc++ headers
-      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ startsWith(matrix.container-image, 'opensuse/leap') && 'gcc11-c++' || (matrix.compiler == 'gcc' && 'gcc-c++' || '') }} ${{ matrix.compiler == 'clang' && 'clang' || '' }}
-
-    - name: Install packages on Debian/Ubuntu
-      if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
-      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev libfmt-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
-
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Add GCC problem matcher
-      uses: ammaraskar/gcc-problem-matcher@master
-
-    - name: Set compiler environment variable
-      run: echo 'CXX=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}' >> "$GITHUB_ENV"
-
-    - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
-
   build-windows:
-    runs-on: windows-2022
+    runs-on: windows-latest
 
     steps:
-    - name: Checkout
-      uses: actions/checkout@v2
-
-    - name: Set up MSVC environment
-      uses: equeim/action-setup-msvc-environment@v1
-
-    - name: Set up vcpkg
-      uses: equeim/action-setup-vcpkg@v2
-      with:
-        run-install: true
-        triplet: x64-windows-static
-        install-features: qt5 qt6
-
-    # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
-
-    - name: Build libtremotesf with Qt 6 and MSVC
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON
-        output-directories-suffix: -qt6
-
-    - name: Build libtremotesf with Qt 6 and clang-cl
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON -D CMAKE_CXX_COMPILER=clang-cl
-        output-directories-suffix: -qt6-clang-cl
-
-    - name: Build libtremotesf with Qt 5 and MSVC
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF
-        output-directories-suffix: -qt5
-
-    - name: Build libtremotesf with Qt 5 and clang-cl
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF -D CMAKE_CXX_COMPILER=clang-cl
-        output-directories-suffix: -qt5-clang-cl
-
-    - name: Archive vcpkg logs
-      uses: actions/upload-artifact@v2
-      if: always()
-      with:
-        name: vcpkg-logs
-        retention-days: ${{ github.event_name == 'push' && github.retention_days || 3 }}
-        path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
+    - name: Test
+      run: |
+        Get-ChildItem env:
