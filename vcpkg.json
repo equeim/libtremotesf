@@ -35,11 +35,11 @@
     {
       "name": "qt5-base",
       "version": "5.15.3",
-      "port-version": 0
+      "port-version": 2
     },
     {
       "name": "qtbase",
-      "version": "6.2.3",
+      "version": "6.2.4",
       "port-version": 0
     },
     {
