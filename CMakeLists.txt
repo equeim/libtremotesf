@@ -52,7 +52,7 @@ add_library(
     tracker.h
 )
 
-target_link_libraries(libtremotesf PRIVATE Qt::Network PUBLIC Qt::Core fmt::fmt)
+target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt)
 target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
 target_compile_definitions(libtremotesf PUBLIC FMT_UNICODE=1)
 
