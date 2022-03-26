@@ -20,7 +20,9 @@ set(CMAKE_AUTOMOC ON)
 include(cmake/CommonOptions.cmake)
 
 find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Concurrent Network)
-find_package(fmt 7.0 REQUIRED)
+if (NOT DEFINED FMT_SOURCE_DIR)
+    find_package(fmt 7.0 REQUIRED)
+endif()
 
 if (ANDROID)
     set(library_type STATIC)
