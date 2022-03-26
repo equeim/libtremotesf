@@ -24,15 +24,9 @@ if (NOT DEFINED FMT_SOURCE_DIR)
     find_package(fmt 7.0 REQUIRED)
 endif()
 
-if (ANDROID)
-    set(library_type STATIC)
-else()
-    set(library_type OBJECT)
-endif()
-
 add_library(
     libtremotesf
-    ${library_type}
+    OBJECT
     itemlistupdater.h
     peer.cpp
     peer.h
