@@ -32,6 +32,12 @@ jobs:
         - container-image: 'opensuse/tumbleweed:latest'
           qt-version: 6
           compiler: clang
+        - container-image: 'ubuntu:22.04'
+          qt-version: 6
+          compiler: gcc
+        - container-image: 'ubuntu:22.04'
+          qt-version: 6
+          compiler: clang
 
     runs-on: ubuntu-latest
     container: ${{ matrix.container-image }}
@@ -48,7 +54,7 @@ jobs:
 
     - name: Install packages on Debian/Ubuntu
       if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
-      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build qtbase5-dev libfmt-dev ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
+      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build libfmt-dev ${{ matrix.qt-version == '6' && 'qt6-base-dev' || 'qtbase5-dev' }} ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
     - name: Checkout
       uses: actions/checkout@v3
@@ -56,13 +62,10 @@ jobs:
     - name: Add GCC problem matcher
       uses: ammaraskar/gcc-problem-matcher@master
 
-    - name: Set compiler environment variable
-      run: echo 'CXX=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}' >> "$GITHUB_ENV"
-
     - name: Build libtremotesf
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}
 
   build-windows:
     runs-on: windows-latest
