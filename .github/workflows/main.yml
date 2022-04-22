@@ -10,14 +10,20 @@ jobs:
   build-linux:
     strategy:
       matrix:
-        container-image: ['fedora:latest', 'opensuse/tumbleweed:latest', 'mageia:latest', 'debian:stable', 'ubuntu:rolling']
+        container-image: ['fedora:34', 'fedora:35', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'ubuntu:21.10', 'ubuntu:22.04']
         qt-version: [5]
         compiler: [gcc, clang]
         include:
-        - container-image: 'fedora:latest'
+        - container-image: 'fedora:34'
           qt-version: 6
           compiler: gcc
-        - container-image: 'fedora:latest'
+        - container-image: 'fedora:34'
+          qt-version: 6
+          compiler: clang
+        - container-image: 'fedora:35'
+          qt-version: 6
+          compiler: gcc
+        - container-image: 'fedora:35'
           qt-version: 6
           compiler: clang
         - container-image: 'opensuse/tumbleweed:latest'
