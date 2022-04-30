@@ -111,10 +111,10 @@ namespace libtremotesf
 
             static constexpr qint64 bufferSize = 1024 * 1024 - 1; // 1 MiB minus 1 byte (dividable by 3)
             QString string;
-            string.reserve(static_cast<int>(((4 * file.size() / 3) + 3) & ~3));
+            string.reserve(static_cast<QString::size_type>(((4 * file.size() / 3) + 3) & ~3));
 
             QByteArray buffer;
-            buffer.resize(static_cast<int>(std::min(bufferSize, file.size())));
+            buffer.resize(static_cast<QByteArray::size_type>(std::min(bufferSize, file.size())));
 
             qint64 offset = 0;
 
@@ -122,7 +122,7 @@ namespace libtremotesf
                 const qint64 n = file.read(buffer.data() + offset, buffer.size() - offset);
                 if (n <= 0) {
                     if (offset > 0) {
-                        buffer.resize(static_cast<int>(offset));
+                        buffer.resize(static_cast<QByteArray::size_type>(offset));
                         string.append(QLatin1String(buffer.toBase64()));
                     }
                     break;
@@ -912,7 +912,7 @@ namespace libtremotesf
 
         void update(std::vector<std::unique_ptr<Torrent>>& torrents, std::vector<NewTorrent>&& newTorrents) override {
             if (newTorrents.size() > torrents.size()) {
-                checkSingleFileIds.reserve(static_cast<int>(newTorrents.size() - torrents.size()));
+                checkSingleFileIds.reserve(static_cast<decltype(checkSingleFileIds)::size_type>(newTorrents.size() - torrents.size()));
             }
             ItemListUpdater::update(torrents, std::move(newTorrents));
         }
