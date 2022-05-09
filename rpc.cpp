@@ -161,6 +161,7 @@ namespace libtremotesf
           mServerStats(new ServerStats(this)),
           mStatus()
     {
+        mNetwork->setAutoDeleteReplies(true);
         QObject::connect(mNetwork, &QNetworkAccessManager::authenticationRequired, this, &Rpc::onAuthenticationRequired);
 
         mAutoReconnectTimer->setSingleShot(true);
@@ -1309,8 +1310,6 @@ namespace libtremotesf
             }
             }
         });
-
-        QObject::connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
 
         return reply;
     }
