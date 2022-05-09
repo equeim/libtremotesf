@@ -46,6 +46,9 @@
 
 #include "println.h"
 
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(QNetworkReply::NetworkError)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
+
 namespace libtremotesf
 {
     namespace
@@ -155,7 +158,8 @@ namespace libtremotesf
           mUpdateTimer(new QTimer(this)),
           mAutoReconnectTimer(new QTimer(this)),
           mServerSettings(new ServerSettings(this, this)),
-          mServerStats(new ServerStats(this))
+          mServerStats(new ServerStats(this)),
+          mStatus()
     {
         QObject::connect(mNetwork, &QNetworkAccessManager::authenticationRequired, this, &Rpc::onAuthenticationRequired);
 
@@ -167,14 +171,6 @@ namespace libtremotesf
 
         mUpdateTimer->setSingleShot(true);
         QObject::connect(mUpdateTimer, &QTimer::timeout, this, &Rpc::updateData);
-
-        QObject::connect(mNetwork, &QNetworkAccessManager::sslErrors, this, [=](auto, const auto& errors) {
-            for (const QSslError& error : errors) {
-                if (!mExpectedSslErrors.contains(error)) {
-                    printlnWarning("{} on {}", error, error.certificate().toText());
-                }
-            }
-        });
     }
 
     ServerSettings* Rpc::serverSettings() const
@@ -232,6 +228,11 @@ namespace libtremotesf
     const QString& Rpc::errorMessage() const
     {
         return mStatus.errorMessage;
+    }
+
+    const QString& Rpc::detailedErrorMessage() const
+    {
+        return mStatus.detailedErrorMessage;
     }
 
     bool Rpc::isLocal() const
@@ -1172,6 +1173,14 @@ namespace libtremotesf
         mActiveNetworkRequests.insert(reply);
 
         reply->ignoreSslErrors(mExpectedSslErrors);
+        auto sslErrors = std::make_shared<QList<QSslError>>();
+
+        QObject::connect(reply, &QNetworkReply::sslErrors, this, [sslErrors](const QList<QSslError>& errors) {
+            for (const QSslError& error : errors) {
+                printlnWarning("{} on {}", error, error.certificate().toText());
+            }
+            *sslErrors = errors;
+        });
 
         QObject::connect(reply, &QNetworkReply::finished, this, [=, request = std::move(request)]() mutable {
             if (mActiveNetworkRequests.erase(reply) == 0) {
@@ -1235,24 +1244,53 @@ namespace libtremotesf
                 printlnWarning("HTTP status code {}", httpStatusCode.toInt());
             }
 
-            const auto createErrorMessage = [reply] {
-                return QString(
-                            QMetaEnum::fromType<QNetworkReply::NetworkError>().valueToKey(reply->error()) %
-                            QLatin1String(": ") %
-                            reply->errorString()
+            const auto createErrorStatus = [&](Error error) {
+                auto detailedErrorMessage = QString::fromStdString(
+                        fmt::format(
+                                "{}: {}\nURL: {}",
+                                reply->error(),
+                                reply->errorString(),
+                                reply->request().url().toString()
+                        )
                 );
+                if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
+                    detailedErrorMessage += QString::fromStdString(
+                            fmt::format(
+                                    "\nHTTP status code: {}\nReply headers:",
+                                    httpStatusCode.toInt()
+                            )
+                    );
+                    for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
+                        detailedErrorMessage += QString::fromStdString(
+                                fmt::format(
+                                        "\n  {}: {}",
+                                        pair.first,
+                                        pair.second
+                                )
+                        );
+                    }
+                }
+                if (!sslErrors->isEmpty()) {
+                    detailedErrorMessage += QString::fromStdString(fmt::format("\n\n{} TLS errors:", sslErrors->size()));
+                    int i = 1;
+                    for (const QSslError& sslError : *sslErrors) {
+                        detailedErrorMessage += QString::fromStdString(fmt::format("\n\n {}. {}: {} on certificate:\n - {}", i, sslError.error(), sslError.errorString(), sslError.certificate().toText()));
+                        ++i;
+                    }
+                }
+                return Status{ConnectionState::Disconnected, error, reply->errorString(), std::move(detailedErrorMessage)};
             };
 
             switch (reply->error()) {
             case QNetworkReply::AuthenticationRequiredError:
                 printlnWarning("Authentication error");
-                setStatus(Status{ConnectionState::Disconnected, Error::AuthenticationError, createErrorMessage()});
+                setStatus(createErrorStatus(Error::AuthenticationError));
                 break;
             case QNetworkReply::OperationCanceledError:
             case QNetworkReply::TimeoutError:
                 printlnWarning("Timed out");
                 if (!retryRequest(std::move(request), reply)) {
-                    setStatus(Status{ConnectionState::Disconnected, Error::TimedOut, createErrorMessage()});
+                    setStatus(createErrorStatus(Error::TimedOut));
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
                         printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();
@@ -1262,7 +1300,7 @@ namespace libtremotesf
             default:
             {
                 if (!retryRequest(std::move(request), reply)) {
-                    setStatus(Status{ConnectionState::Disconnected, Error::ConnectionError, createErrorMessage()});
+                    setStatus(createErrorStatus(Error::ConnectionError));
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
                         printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();

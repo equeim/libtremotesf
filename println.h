@@ -28,6 +28,7 @@
 
 #include <QDebug>
 #include <QMessageLogger>
+#include <QMetaEnum>
 #include <QString>
 
 namespace libtremotesf
@@ -195,6 +196,25 @@ namespace libtremotesf {
             return fmt::format_to(ctx.out(), "{}", buffer);
         }
     };
+
+    template<typename T>
+    struct QEnumFormatter {
+        static_assert(std::is_enum_v<T>);
+
+        constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+            return ctx.begin();
+        }
+
+        template<typename FormatContext>
+        auto format(const T& t, FormatContext& ctx) -> decltype(ctx.out()) {
+            const auto meta = QMetaEnum::fromType<T>();
+            const auto key = meta.valueToKey(static_cast<int>(t));
+            if (meta.isScoped()) {
+                return fmt::format_to(ctx.out(), "{}::{}::{}", meta.scope(), meta.enumName(), key);
+            }
+            return fmt::format_to(ctx.out(), "{}::{}", meta.scope(), key);
+        }
+    };
 }
 
 #define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) \
@@ -222,5 +242,8 @@ struct fmt::formatter<QList<T>> : libtremotesf::QDebugFormatter<QList<T>> {};
 template<>
 struct fmt::formatter<QStringList> : libtremotesf::QDebugFormatter<QStringList> {};
 #endif
+
+#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) \
+template<> struct fmt::formatter<Enum> : libtremotesf::QEnumFormatter<Enum> {};
 
 #endif // LIBTREMOTESF_PRINTLN_H
