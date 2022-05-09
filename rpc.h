@@ -268,7 +268,7 @@ namespace libtremotesf
         QList<QSslError> mExpectedSslErrors;
         QString mUsername;
         QString mPassword;
-        int mTimeout;
+        int mTimeoutMillis;
         bool mAutoReconnectEnabled;
         bool mLocal;
 
