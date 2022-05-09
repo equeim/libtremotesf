@@ -36,6 +36,8 @@
 #include "serversettings.h"
 #include "serverstats.h"
 
+#include "println.h"
+
 class QAuthenticator;
 class QNetworkAccessManager;
 class QNetworkReply;
@@ -134,10 +136,14 @@ namespace libtremotesf
             ConnectionState connectionState{ConnectionState::Disconnected};
             Error error{Error::NoError};
             QString errorMessage{};
+            QString detailedErrorMessage{};
 
-            inline bool operator==(const Status& other) noexcept
+            inline bool operator==(const Status& other) const noexcept
             {
-                return connectionState == other.connectionState && error == other.error && errorMessage == other.errorMessage;
+                return connectionState == other.connectionState&&
+                    error == other.error &&
+                    errorMessage == other.errorMessage &&
+                        detailedErrorMessage == other.detailedErrorMessage;
             }
         };
 
@@ -146,6 +152,7 @@ namespace libtremotesf
         ConnectionState connectionState() const;
         Error error() const;
         const QString& errorMessage() const;
+        const QString& detailedErrorMessage() const;
         bool isLocal() const;
 
         int torrentsCount() const;
@@ -320,5 +327,10 @@ namespace libtremotesf
         void updateDisabledChanged();
     };
 }
+
+#ifndef SWIG
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::RpcConnectionState)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::RpcError)
+#endif
 
 #endif // LIBTREMOTESF_RPC_H
