@@ -1184,131 +1184,7 @@ namespace libtremotesf
         });
 
         QObject::connect(reply, &QNetworkReply::finished, this, [=, request = std::move(request)]() mutable {
-            if (mActiveNetworkRequests.erase(reply) == 0) {
-                return;
-            }
-
-            if (connectionState() == ConnectionState::Disconnected) {
-                return;
-            }
-
-            if (reply->error() == QNetworkReply::NoError) {
-                mRetryingNetworkRequests.erase(reply);
-                const QByteArray replyData(reply->readAll());
-
-                const auto future = QtConcurrent::run([replyData] {
-                    QJsonParseError error{};
-                    QJsonObject result(QJsonDocument::fromJson(replyData, &error).object());
-                    const bool parsedOk = (error.error == QJsonParseError::NoError);
-                    return std::pair<QJsonObject, bool>(std::move(result), parsedOk);
-                });
-                auto watcher = new QFutureWatcher<std::pair<QJsonObject, bool>>(this);
-                QObject::connect(watcher, &QFutureWatcher<std::pair<QJsonObject, bool>>::finished, this, [=] {
-                    const auto result = watcher->result();
-                    if (connectionState() != ConnectionState::Disconnected) {
-                        const QJsonObject& parseResult = result.first;
-                        const bool parsedOk = result.second;
-                        if (parsedOk) {
-                            const bool success = isResultSuccessful(parseResult);
-                            if (!success) {
-                                printlnWarning("method '{}' failed, response: {}", request.method, parseResult);
-                            }
-                            if (request.callOnSuccessParse) {
-                                request.callOnSuccessParse(parseResult, success);
-                            }
-                        } else {
-                            printlnWarning("Parsing error");
-                            setStatus(Status{ConnectionState::Disconnected, Error::ParseError});
-                        }
-                    }
-                    watcher->deleteLater();
-                });
-                watcher->setFuture(future);
-
-                return;
-            }
-
-            if (reply->error() == QNetworkReply::ContentConflictError && reply->hasRawHeader(sessionIdHeader)) {
-                const auto newSessionId(reply->rawHeader(sessionIdHeader));
-                if (newSessionId != request.request.rawHeader(sessionIdHeader)) {
-                    printlnInfo("Session id changed, retrying '{}' request", request.method);
-                    mSessionId = reply->rawHeader(sessionIdHeader);
-                    // Retry without incrementing retryAttempts
-                    request.setSessionId(mSessionId);
-                    postRequest(std::move(request));
-                    return;
-                }
-            }
-
-            printlnWarning("'{}' request error {} {}", request.method, reply->error(), reply->errorString());
-            if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
-                printlnWarning("HTTP status code {}", httpStatusCode.toInt());
-            }
-
-            const auto createErrorStatus = [&](Error error) {
-                auto detailedErrorMessage = QString::fromStdString(
-                        fmt::format(
-                                "{}: {}\nURL: {}",
-                                reply->error(),
-                                reply->errorString(),
-                                reply->request().url().toString()
-                        )
-                );
-                if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
-                    detailedErrorMessage += QString::fromStdString(
-                            fmt::format(
-                                    "\nHTTP status code: {}\nReply headers:",
-                                    httpStatusCode.toInt()
-                            )
-                    );
-                    for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
-                        detailedErrorMessage += QString::fromStdString(
-                                fmt::format(
-                                        "\n  {}: {}",
-                                        pair.first,
-                                        pair.second
-                                )
-                        );
-                    }
-                }
-                if (!sslErrors->isEmpty()) {
-                    detailedErrorMessage += QString::fromStdString(fmt::format("\n\n{} TLS errors:", sslErrors->size()));
-                    int i = 1;
-                    for (const QSslError& sslError : *sslErrors) {
-                        detailedErrorMessage += QString::fromStdString(fmt::format("\n\n {}. {}: {} on certificate:\n - {}", i, sslError.error(), sslError.errorString(), sslError.certificate().toText()));
-                        ++i;
-                    }
-                }
-                return Status{ConnectionState::Disconnected, error, reply->errorString(), std::move(detailedErrorMessage)};
-            };
-
-            switch (reply->error()) {
-            case QNetworkReply::AuthenticationRequiredError:
-                printlnWarning("Authentication error");
-                setStatus(createErrorStatus(Error::AuthenticationError));
-                break;
-            case QNetworkReply::OperationCanceledError:
-            case QNetworkReply::TimeoutError:
-                printlnWarning("Timed out");
-                if (!retryRequest(std::move(request), reply)) {
-                    setStatus(createErrorStatus(Error::TimedOut));
-                    if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
-                        mAutoReconnectTimer->start();
-                    }
-                }
-                break;
-            default:
-            {
-                if (!retryRequest(std::move(request), reply)) {
-                    setStatus(createErrorStatus(Error::ConnectionError));
-                    if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
-                        mAutoReconnectTimer->start();
-                    }
-                }
-            }
-            }
+            onRequestFinished(reply, *sslErrors, std::move(request));
         });
 
         return reply;
@@ -1350,6 +1226,135 @@ namespace libtremotesf
     void Rpc::postRequest(QLatin1String method, const QVariantMap& arguments, const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse)
     {
         postRequest(method, makeRequestData(method, arguments), callOnSuccessParse);
+    }
+
+    void Rpc::onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request)
+    {
+        if (mActiveNetworkRequests.erase(reply) == 0) {
+            return;
+        }
+
+        if (connectionState() == ConnectionState::Disconnected) {
+            return;
+        }
+
+        if (reply->error() == QNetworkReply::NoError) {
+            mRetryingNetworkRequests.erase(reply);
+            const QByteArray replyData(reply->readAll());
+
+            const auto future = QtConcurrent::run([replyData] {
+                QJsonParseError error{};
+                QJsonObject result(QJsonDocument::fromJson(replyData, &error).object());
+                const bool parsedOk = (error.error == QJsonParseError::NoError);
+                return std::pair<QJsonObject, bool>(std::move(result), parsedOk);
+            });
+            auto watcher = new QFutureWatcher<std::pair<QJsonObject, bool>>(this);
+            QObject::connect(watcher, &QFutureWatcher<std::pair<QJsonObject, bool>>::finished, this, [=] {
+                const auto result = watcher->result();
+                if (connectionState() != ConnectionState::Disconnected) {
+                    const QJsonObject& parseResult = result.first;
+                    const bool parsedOk = result.second;
+                    if (parsedOk) {
+                        const bool success = isResultSuccessful(parseResult);
+                        if (!success) {
+                            printlnWarning("method '{}' failed, response: {}", request.method, parseResult);
+                        }
+                        if (request.callOnSuccessParse) {
+                            request.callOnSuccessParse(parseResult, success);
+                        }
+                    } else {
+                        printlnWarning("Parsing error");
+                        setStatus(Status{ConnectionState::Disconnected, Error::ParseError});
+                    }
+                }
+                watcher->deleteLater();
+            });
+            watcher->setFuture(future);
+
+            return;
+        }
+
+        if (reply->error() == QNetworkReply::ContentConflictError && reply->hasRawHeader(sessionIdHeader)) {
+            const auto newSessionId(reply->rawHeader(sessionIdHeader));
+            if (newSessionId != request.request.rawHeader(sessionIdHeader)) {
+                printlnInfo("Session id changed, retrying '{}' request", request.method);
+                mSessionId = reply->rawHeader(sessionIdHeader);
+                // Retry without incrementing retryAttempts
+                request.setSessionId(mSessionId);
+                postRequest(std::move(request));
+                return;
+            }
+        }
+
+        printlnWarning("'{}' request error {} {}", request.method, reply->error(), reply->errorString());
+        if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
+            printlnWarning("HTTP status code {} {}", httpStatusCode.toInt(), reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString());
+        }
+
+        const auto createErrorStatus = [&](Error error) {
+            auto detailedErrorMessage = QString::fromStdString(
+                fmt::format(
+                    "{}: {}\nURL: {}",
+                    reply->error(),
+                    reply->errorString(),
+                    reply->request().url().toString()
+                )
+            );
+            if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
+                detailedErrorMessage += QString::fromStdString(
+                    fmt::format(
+                        "\nHTTP status code: {}\nReply headers:",
+                        httpStatusCode.toInt()
+                    )
+                );
+                for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
+                    detailedErrorMessage += QString::fromStdString(
+                        fmt::format(
+                            "\n  {}: {}",
+                            pair.first,
+                            pair.second
+                        )
+                    );
+                }
+            }
+            if (!sslErrors.isEmpty()) {
+                detailedErrorMessage += QString::fromStdString(fmt::format("\n\n{} TLS errors:", sslErrors.size()));
+                int i = 1;
+                for (const QSslError& sslError : sslErrors) {
+                    detailedErrorMessage += QString::fromStdString(fmt::format("\n\n {}. {}: {} on certificate:\n - {}", i, sslError.error(), sslError.errorString(), sslError.certificate().toText()));
+                    ++i;
+                }
+            }
+            return Status{ConnectionState::Disconnected, error, reply->errorString(), std::move(detailedErrorMessage)};
+        };
+
+        switch (reply->error()) {
+            case QNetworkReply::AuthenticationRequiredError:
+                printlnWarning("Authentication error");
+                setStatus(createErrorStatus(Error::AuthenticationError));
+                break;
+            case QNetworkReply::OperationCanceledError:
+            case QNetworkReply::TimeoutError:
+                printlnWarning("Timed out");
+                if (!retryRequest(std::move(request), reply)) {
+                    setStatus(createErrorStatus(Error::TimedOut));
+                    if (mAutoReconnectEnabled && !mUpdateDisabled) {
+                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
+                        mAutoReconnectTimer->start();
+                    }
+                }
+                break;
+            default:
+            {
+                if (!retryRequest(std::move(request), reply)) {
+                    setStatus(createErrorStatus(Error::ConnectionError));
+                    if (mAutoReconnectEnabled && !mUpdateDisabled) {
+                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
+                        mAutoReconnectTimer->start();
+                    }
+                }
+            }
+        }
     }
 
     bool Rpc::isSessionIdFileExists() const
