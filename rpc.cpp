@@ -1294,28 +1294,51 @@ namespace libtremotesf
         const auto createErrorStatus = [&](Error error) {
             auto detailedErrorMessage = QString::fromStdString(
                 fmt::format(
-                    "{}: {}\nURL: {}",
+                    "{}: {}",
                     reply->error(),
-                    reply->errorString(),
-                    reply->request().url().toString()
+                    reply->errorString()
                 )
             );
+            if (reply->url() == request.request.url()) {
+                detailedErrorMessage += QString::fromStdString(
+                    fmt::format(
+                        "\nURL: {}",
+                        reply->url().toString()
+                    )
+                );
+            } else {
+                detailedErrorMessage += QString::fromStdString(
+                    fmt::format(
+                        "\nOriginal URL: {}\nRedirected URL: {}",
+                        request.request.url().toString(),
+                        reply->url().toString()
+                    )
+                );
+            }
             if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
                 detailedErrorMessage += QString::fromStdString(
                     fmt::format(
-                        "\nHTTP status code: {}\nReply headers:",
-                        httpStatusCode.toInt()
+                        "\nHTTP status code: {} {}\nEncrypted: {}\nHTTP/2 was used: {}",
+                        httpStatusCode.toInt(),
+                        reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString(),
+                        reply->attribute(QNetworkRequest::ConnectionEncryptedAttribute).toBool(),
+                        reply->attribute(QNetworkRequest::Http2WasUsedAttribute).toBool()
                     )
                 );
-                for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
-                    detailedErrorMessage += QString::fromStdString(
-                        fmt::format(
-                            "\n  {}: {}",
-                            pair.first,
-                            pair.second
-                        )
-                    );
+                if (!reply->rawHeaderPairs().isEmpty()) {
+                    detailedErrorMessage += QLatin1String("\nReply headers:");
+                    for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
+                        detailedErrorMessage += QString::fromStdString(
+                            fmt::format(
+                                "\n  {}: {}",
+                                pair.first,
+                                pair.second
+                            )
+                        );
+                    }
                 }
+            } else {
+                detailedErrorMessage += QLatin1String("\nDid not establish HTTP connection");
             }
             if (!sslErrors.isEmpty()) {
                 detailedErrorMessage += QString::fromStdString(fmt::format("\n\n{} TLS errors:", sslErrors.size()));
