@@ -257,6 +257,8 @@ namespace libtremotesf
                          const QVariantMap& arguments,
                          const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
 
+        void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
+
         bool isSessionIdFileExists() const;
 
         QNetworkAccessManager* mNetwork;
