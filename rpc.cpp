@@ -148,7 +148,7 @@ namespace libtremotesf
           mUpdateDisabled(false),
           mUpdating(false),
           mAuthentication(false),
-          mTimeout(0),
+          mTimeoutMillis(0),
           mAutoReconnectEnabled(false),
           mLocal(false),
           mRpcVersionChecked(false),
@@ -326,7 +326,7 @@ namespace libtremotesf
         mAuthentication = server.authentication;
         mUsername = server.username;
         mPassword = server.password;
-        mTimeout = server.timeout * 1000; // msecs
+        mTimeoutMillis = server.timeout * 1000; // msecs
         mUpdateTimer->setInterval(server.updateInterval * 1000); // msecs
 
         mAutoReconnectEnabled = server.autoReconnectEnabled;
@@ -343,7 +343,7 @@ namespace libtremotesf
         mAuthentication = false;
         mUsername.clear();
         mPassword.clear();
-        mTimeout = 0;
+        mTimeoutMillis = 0;
         mLocal = false;
         mAutoReconnectEnabled = false;
         mAutoReconnectTimer->stop();
@@ -1312,13 +1312,6 @@ namespace libtremotesf
 
         QObject::connect(reply, &QNetworkReply::finished, reply, &QNetworkReply::deleteLater);
 
-        auto timer = new QTimer(this);
-        timer->setInterval(mTimeout);
-        timer->setSingleShot(true);
-        QObject::connect(timer, &QTimer::timeout, reply, &QNetworkReply::abort);
-        QObject::connect(timer, &QTimer::timeout, timer, &QObject::deleteLater);
-        timer->start();
-
         return reply;
     }
 
@@ -1351,6 +1344,7 @@ namespace libtremotesf
         request.setSessionId(mSessionId);
         request.request.setHeader(QNetworkRequest::ContentTypeHeader, QLatin1String("application/json"));
         request.request.setSslConfiguration(mSslConfiguration);
+        request.request.setTransferTimeout(mTimeoutMillis);
         postRequest(std::move(request));
     }
 
