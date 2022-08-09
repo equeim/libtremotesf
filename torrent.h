@@ -345,17 +345,6 @@ struct fmt::formatter<libtremotesf::Torrent> {
         return fmt::format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
     }
 };
-
-template<>
-struct fmt::formatter<libtremotesf::Torrent*> : fmt::formatter<libtremotesf::Torrent> {
-    template<typename FormatContext>
-    auto format(const libtremotesf::Torrent* torrent, FormatContext& ctx) -> decltype(ctx.out()) {
-        if (torrent) {
-            return fmt::formatter<libtremotesf::Torrent>::format(*torrent, ctx);
-        }
-        return fmt::format_to(ctx.out(), "Torrent(nullptr)");
-    }
-};
 #endif // SWIG
 
 #endif // LIBTREMOTESF_TORRENT_H
