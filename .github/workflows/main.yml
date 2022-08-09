@@ -49,8 +49,7 @@ jobs:
 
     - name: Install packages on openSUSE
       if: startsWith(matrix.container-image, 'opensuse')
-      # We need GCC 11 on openSUSE Leap even with Clang, for newer libstdc++ headers
-      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ startsWith(matrix.container-image, 'opensuse/leap') && 'gcc11-c++' || (matrix.compiler == 'gcc' && 'gcc-c++' || '') }} ${{ matrix.compiler == 'clang' && 'clang' || '' }}
+      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }}
 
     - name: Install packages on Debian/Ubuntu
       if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
