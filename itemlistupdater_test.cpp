@@ -34,7 +34,7 @@ struct fmt::formatter<Item> {
     }
 
     template<typename FormatContext>
-    auto format(const Item& item, FormatContext& ctx) -> decltype(ctx.out()) {
+    auto format(const Item& item, FormatContext& ctx) const -> decltype(ctx.out()) {
         return fmt::format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
     }
 };

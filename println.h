@@ -163,6 +163,14 @@ struct fmt::formatter<QLatin1String> : fmt::formatter<std::string_view> {
     }
 };
 
+template<>
+struct fmt::formatter<QByteArray> : fmt::formatter<std::string_view> {
+    template <typename FormatContext>
+    auto format(const QByteArray& array, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::formatter<std::string_view>::format(std::string_view(array.data(), static_cast<size_t>(array.size())), ctx);
+    }
+};
+
 #if QT_VERSION_MAJOR >= 6
 template<>
 struct fmt::formatter<QUtf8StringView> : fmt::formatter<std::string_view> {

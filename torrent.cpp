@@ -730,7 +730,7 @@ namespace libtremotesf
     void Torrent::checkThatFilesUpdated()
     {
         if (mFilesEnabled && !mFilesUpdated) {
-            printlnWarning("Files were not updated for {}", this);
+            printlnWarning("Files were not updated for {}", *this);
             mFilesUpdated = true;
         }
     }
@@ -738,7 +738,7 @@ namespace libtremotesf
     void Torrent::checkThatPeersUpdated()
     {
         if (mPeersEnabled && !mPeersUpdated) {
-            printlnWarning("Peers were not updated for {}", this);
+            printlnWarning("Peers were not updated for {}", *this);
             mPeersUpdated = true;
         }
     }
