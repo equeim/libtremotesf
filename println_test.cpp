@@ -135,6 +135,27 @@ private slots:
 #endif
     }
 
+    void stdoutThis() {
+        printlnStdout(*this);
+        printlnStdout("{}", *this);
+        printlnStdout(FMT_STRING("{}"), *this);
+#if FMT_VERSION >= 80000
+        printlnStdout(FMT_COMPILE("{}"), *this);
+        printlnStdout(fmt::runtime("{}"), *this);
+#endif
+    }
+
+    void stdoutQObject() {
+        QObject value{};
+        printlnStdout(value);
+        printlnStdout("{}", value);
+        printlnStdout(FMT_STRING("{}"), value);
+#if FMT_VERSION >= 80000
+        printlnStdout(FMT_COMPILE("{}"), value);
+        printlnStdout(fmt::runtime("{}"), value);
+#endif
+    }
+
 
     void infoStringLiteral() {
         printlnInfo("foo");
@@ -250,6 +271,27 @@ private slots:
 
     void infoTorrent() {
         const Torrent value(0, {}, nullptr);
+        printlnInfo(value);
+        printlnInfo("{}", value);
+        printlnInfo(FMT_STRING("{}"), value);
+        printlnInfo(FMT_COMPILE("{}"), value);
+#if FMT_VERSION >= 80000
+        printlnInfo(fmt::runtime("{}"), value);
+#endif
+    }
+
+    void infoThis() {
+        printlnInfo(*this);
+        printlnInfo("{}", *this);
+        printlnInfo(FMT_STRING("{}"), *this);
+        printlnInfo(FMT_COMPILE("{}"), *this);
+#if FMT_VERSION >= 80000
+        printlnInfo(fmt::runtime("{}"), *this);
+#endif
+    }
+
+    void infoQObject() {
+        QObject value{};
         printlnInfo(value);
         printlnInfo("{}", value);
         printlnInfo(FMT_STRING("{}"), value);
