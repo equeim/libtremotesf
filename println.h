@@ -225,6 +225,21 @@ namespace libtremotesf {
     };
 }
 
+template<typename T>
+struct fmt::formatter<T, std::enable_if_t<std::is_base_of_v<QObject, T>, char>> {
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const QObject& object, FormatContext& ctx) -> decltype(ctx.out()) {
+        QString buffer{};
+        QDebug stream(&buffer);
+        stream.nospace() << &object;
+        return fmt::format_to(ctx.out(), "{}", buffer);
+    }
+};
+
 #define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) \
 class Class; \
 template<> struct fmt::formatter<Class> : libtremotesf::QDebugFormatter<Class> {};
