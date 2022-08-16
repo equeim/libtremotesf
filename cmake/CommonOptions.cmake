@@ -53,8 +53,8 @@ function(set_common_options_on_targets)
     )
 
     if (WIN32)
-        # Windows 8.1
-        list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603)
+        # Minimum supported version, 0x0603 = Windows 8.1
+        list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603 WINRT_LEAN_AND_MEAN WINRT_NO_MODULE_LOCK _SILENCE_CLANG_COROUTINE_MESSAGE)
     endif()
 
     if (DEFINED TREMOTESF_COMMON_COMPILE_DEFINITIONS)
