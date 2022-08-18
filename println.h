@@ -216,11 +216,15 @@ namespace libtremotesf {
         template<typename FormatContext>
         auto format(const T& t, FormatContext& ctx) -> decltype(ctx.out()) {
             const auto meta = QMetaEnum::fromType<T>();
-            const auto key = meta.valueToKey(static_cast<int>(t));
-            if (meta.isScoped()) {
-                return fmt::format_to(ctx.out(), "{}::{}::{}", meta.scope(), meta.enumName(), key);
-            }
-            return fmt::format_to(ctx.out(), "{}::{}", meta.scope(), key);
+            std::string unnamed{};
+            const char* key = [&]() -> const char* {
+                if (auto named = meta.valueToKey(static_cast<int>(t)); named) {
+                    return named;
+                }
+                unnamed = fmt::format("<unnamed value {}>", static_cast<std::underlying_type_t<T>>(t));
+                return unnamed.c_str();
+            }();
+            return fmt::format_to(ctx.out(), "{}::{}::{}", meta.scope(), meta.enumName(), key);
         }
     };
 }
