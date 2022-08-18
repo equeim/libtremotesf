@@ -230,7 +230,7 @@ namespace libtremotesf {
 }
 
 template<typename T>
-struct fmt::formatter<T, std::enable_if_t<std::is_base_of_v<QObject, T>, char>> {
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> {
     constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
         return ctx.begin();
     }
