@@ -42,6 +42,7 @@
 #include "serversettings.h"
 #include "serverstats.h"
 #include "stdutils.h"
+#include "target_os.h"
 #include "torrent.h"
 
 #include "println.h"
@@ -62,15 +63,22 @@ namespace libtremotesf
         const QLatin1String torrentsKey("torrents");
         const QLatin1String torrentDuplicateKey("torrent-duplicate");
 
-#ifdef Q_OS_WIN
-        constexpr auto sessionIdFileLocation = QStandardPaths::GenericDataLocation;
-        const QLatin1String sessionIdFilePrefix("Transmission/tr_session_id_");
-#else
-#ifndef Q_OS_ANDROID
-        constexpr auto sessionIdFileLocation = QStandardPaths::TempLocation;
-        const QLatin1String sessionIdFilePrefix("tr_session_id_");
-#endif
-#endif
+
+        constexpr auto sessionIdFileLocation = [] {
+            if constexpr (isTargetOsWindows) {
+                return QStandardPaths::GenericDataLocation;
+            } else {
+                return QStandardPaths::TempLocation;
+            }
+        }();
+
+        const auto sessionIdFilePrefix = [] {
+            if constexpr (isTargetOsWindows) {
+                return QLatin1String("Transmission/tr_session_id_");
+            } else {
+                return QLatin1String("tr_session_id_");
+            }
+        }();
 
         inline QByteArray makeRequestData(const QString& method, const QVariantMap& arguments)
         {
@@ -1382,11 +1390,11 @@ namespace libtremotesf
 
     bool Rpc::isSessionIdFileExists() const
     {
-#ifndef Q_OS_ANDROID
-        if (mServerSettings->hasSessionIdFile()) {
-            return !QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId).isEmpty();
+        if constexpr (targetOs != TargetOs::UnixAndroid) {
+            if (mServerSettings->hasSessionIdFile()) {
+                return !QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId).isEmpty();
+            }
         }
-#endif
         return false;
     }
 

@@ -10,6 +10,12 @@ else()
     set(TREMOTESF_MINIMUM_QT_VERSION 5.15)
 endif()
 
+if (UNIX AND NOT APPLE AND NOT ANDROID)
+    set(TREMOTESF_UNIX_FREEDESKTOP ON)
+else()
+    set(TREMOTESF_UNIX_FREEDESKTOP OFF)
+endif()
+
 if (MSVC AND (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY))
     if (VCPKG_TARGET_TRIPLET MATCHES "^[a-zA-Z0-9]+-windows-static$")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -55,6 +61,10 @@ function(set_common_options_on_targets)
     if (WIN32)
         # Minimum supported version, 0x0603 = Windows 8.1
         list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603 WINRT_LEAN_AND_MEAN WINRT_NO_MODULE_LOCK _SILENCE_CLANG_COROUTINE_MESSAGE)
+    endif()
+
+    if (TREMOTESF_UNIX_FREEDESKTOP)
+        list(APPEND common_compile_definitions TREMOTESF_UNIX_FREEDESKTOP)
     endif()
 
     if (DEFINED TREMOTESF_COMMON_COMPILE_DEFINITIONS)
