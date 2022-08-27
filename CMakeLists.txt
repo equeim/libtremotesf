@@ -38,6 +38,7 @@ add_library(
     serverstats.cpp
     serverstats.h
     stdutils.h
+    target_os.h
     torrent.cpp
     torrent.h
     torrentfile.cpp
