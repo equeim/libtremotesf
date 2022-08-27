@@ -84,7 +84,7 @@ jobs:
         run-install: true
         triplet: x64-windows-static
         install-features: qt5 qt6
-        save-cache: ${{ github.event_name == 'push' }}
+        save-cache: ${{ github.event_name != 'pull_request' }}
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
