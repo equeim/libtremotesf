@@ -48,6 +48,9 @@
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(QNetworkReply::NetworkError)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
 
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
+
 namespace libtremotesf
 {
     namespace

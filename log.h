@@ -19,7 +19,6 @@
 #ifndef LIBTREMOTESF_PRINTLN_H
 #define LIBTREMOTESF_PRINTLN_H
 
-#include <stdexcept>
 #include <type_traits>
 
 #include <fmt/core.h>
@@ -244,33 +243,8 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
     }
 };
 
-#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) \
-class Class; \
-template<> struct fmt::formatter<Class> : libtremotesf::QDebugFormatter<Class> {};
+#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) template<> struct fmt::formatter<Class> : libtremotesf::QDebugFormatter<Class> {};
 
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QLocale)
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QVariant)
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QUrl)
-
-template<typename Key, typename Value>
-class QMap;
-template<typename Key, typename Value>
-struct fmt::formatter<QMap<Key, Value>> : libtremotesf::QDebugFormatter<QMap<Key, Value>> {};
-
-template<typename T>
-class QList;
-template<typename T>
-struct fmt::formatter<QList<T>> : libtremotesf::QDebugFormatter<QList<T>> {};
-
-#if QT_VERSION_MAJOR < 6
-// Can't use SPECIALIZE_FORMATTER_FOR_QDEBUG because QStringList is type alias and we can't forward declare it
-template<>
-struct fmt::formatter<QStringList> : libtremotesf::QDebugFormatter<QStringList> {};
-#endif
-
-#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) \
-template<> struct fmt::formatter<Enum> : libtremotesf::QEnumFormatter<Enum> {};
+#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::QEnumFormatter<Enum> {};
 
 #endif // LIBTREMOTESF_PRINTLN_H
