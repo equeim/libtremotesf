@@ -39,13 +39,11 @@
 #include <QtConcurrentRun>
 
 #include "itemlistupdater.h"
+#include "log.h"
 #include "serversettings.h"
 #include "serverstats.h"
-#include "stdutils.h"
 #include "target_os.h"
 #include "torrent.h"
-
-#include "println.h"
 
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(QNetworkReply::NetworkError)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
@@ -116,7 +114,7 @@ namespace libtremotesf
         QString readFileAsBase64String(QFile& file)
         {
             if (!file.isOpen() && !file.open(QIODevice::ReadOnly)) {
-                printlnWarning("Failed to open file {}", file.fileName());
+                logWarning("Failed to open file {}", file.fileName());
                 return QString();
             }
 
@@ -174,7 +172,7 @@ namespace libtremotesf
 
         mAutoReconnectTimer->setSingleShot(true);
         QObject::connect(mAutoReconnectTimer, &QTimer::timeout, this, [=] {
-            printlnInfo("Auto reconnection");
+            logInfo("Auto reconnection");
             connect();
         });
 
@@ -291,7 +289,7 @@ namespace libtremotesf
         const QString urlString = scheme % server.address % QLatin1Char(':') % QString::number(server.port) % QLatin1Char('/') % server.apiPath;
         mServerUrl = QUrl(urlString, QUrl::TolerantMode).adjusted(QUrl::StripTrailingSlash | QUrl::NormalizePathSegments);
         if (!mServerUrl.isValid()) {
-            printlnWarning("Failed to parse URL from {}", urlString);
+            logWarning("Failed to parse URL from {}", urlString);
         }
 
         switch (server.proxyType) {
@@ -394,7 +392,7 @@ namespace libtremotesf
                            bandwidthPriority,
                            start);
         } else {
-            printlnWarning("addTorrentFile: failed to open file, error = {}, error string = {}", file->error(), file->errorString());
+            logWarning("addTorrentFile: failed to open file, error = {}, error string = {}", file->error(), file->errorString());
             emit torrentAddError();
         }
     }
@@ -776,7 +774,7 @@ namespace libtremotesf
         if (isConnected()) {
             postRequest(QLatin1String("session-close"), QVariantMap{}, [=](const QJsonObject&, bool success) {
                 if (success) {
-                    printlnInfo("Successfully sent shutdown request, disconnecting");
+                    logInfo("Successfully sent shutdown request, disconnecting");
                     disconnect();
                 }
             });
@@ -819,7 +817,7 @@ namespace libtremotesf
         switch (mStatus.connectionState) {
         case ConnectionState::Disconnected:
         {
-            printlnInfo("Disconnected");
+            logInfo("Disconnected");
 
             mNetwork->clearAccessCache();
 
@@ -849,12 +847,12 @@ namespace libtremotesf
             break;
         }
         case ConnectionState::Connecting:
-            printlnInfo("Connecting");
+            logInfo("Connecting");
             mUpdating = true;
             break;
         case ConnectionState::Connected:
         {
-            printlnInfo("Connected");
+            logInfo("Connected");
             break;
         }
         }
@@ -1186,7 +1184,7 @@ namespace libtremotesf
 
         QObject::connect(reply, &QNetworkReply::sslErrors, this, [sslErrors](const QList<QSslError>& errors) {
             for (const QSslError& error : errors) {
-                printlnWarning("{} on {}", error, error.certificate().toText());
+                logWarning("{} on {}", error, error.certificate().toText());
             }
             *sslErrors = errors;
         });
@@ -1214,7 +1212,7 @@ namespace libtremotesf
 
         request.setSessionId(mSessionId);
 
-        printlnWarning("Retrying '{}' request, retry attempts = {}", request.method, retryAttempts);
+        logWarning("Retrying '{}' request, retry attempts = {}", request.method, retryAttempts);
         QNetworkReply* reply = postRequest(std::move(request));
         mRetryingNetworkRequests.emplace(reply, retryAttempts);
 
@@ -1265,13 +1263,13 @@ namespace libtremotesf
                     if (parsedOk) {
                         const bool success = isResultSuccessful(parseResult);
                         if (!success) {
-                            printlnWarning("method '{}' failed, response: {}", request.method, parseResult);
+                            logWarning("method '{}' failed, response: {}", request.method, parseResult);
                         }
                         if (request.callOnSuccessParse) {
                             request.callOnSuccessParse(parseResult, success);
                         }
                     } else {
-                        printlnWarning("Parsing error");
+                        logWarning("Parsing error");
                         setStatus(Status{ConnectionState::Disconnected, Error::ParseError});
                     }
                 }
@@ -1285,7 +1283,7 @@ namespace libtremotesf
         if (reply->error() == QNetworkReply::ContentConflictError && reply->hasRawHeader(sessionIdHeader)) {
             const auto newSessionId(reply->rawHeader(sessionIdHeader));
             if (newSessionId != request.request.rawHeader(sessionIdHeader)) {
-                printlnInfo("Session id changed, retrying '{}' request", request.method);
+                logInfo("Session id changed, retrying '{}' request", request.method);
                 mSessionId = reply->rawHeader(sessionIdHeader);
                 // Retry without incrementing retryAttempts
                 request.setSessionId(mSessionId);
@@ -1294,9 +1292,9 @@ namespace libtremotesf
             }
         }
 
-        printlnWarning("'{}' request error {} {}", request.method, reply->error(), reply->errorString());
+        logWarning("'{}' request error {} {}", request.method, reply->error(), reply->errorString());
         if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute); httpStatusCode.isValid()) {
-            printlnWarning("HTTP status code {} {}", httpStatusCode.toInt(), reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString());
+            logWarning("HTTP status code {} {}", httpStatusCode.toInt(), reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString());
         }
 
         const auto createErrorStatus = [&](Error error) {
@@ -1361,16 +1359,16 @@ namespace libtremotesf
 
         switch (reply->error()) {
             case QNetworkReply::AuthenticationRequiredError:
-                printlnWarning("Authentication error");
+                logWarning("Authentication error");
                 setStatus(createErrorStatus(Error::AuthenticationError));
                 break;
             case QNetworkReply::OperationCanceledError:
             case QNetworkReply::TimeoutError:
-                printlnWarning("Timed out");
+                logWarning("Timed out");
                 if (!retryRequest(std::move(request), reply)) {
                     setStatus(createErrorStatus(Error::TimedOut));
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
+                        logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();
                     }
                 }
@@ -1380,7 +1378,7 @@ namespace libtremotesf
                 if (!retryRequest(std::move(request), reply)) {
                     setStatus(createErrorStatus(Error::ConnectionError));
                     if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                        printlnInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
+                        logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
                         mAutoReconnectTimer->start();
                     }
                 }

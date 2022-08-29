@@ -28,11 +28,11 @@ add_library(
     libtremotesf
     OBJECT
     itemlistupdater.h
+    log.h
     peer.cpp
     peer.h
     rpc.cpp
     rpc.h
-    println.h
     serversettings.cpp
     serversettings.h
     serverstats.cpp
@@ -57,9 +57,9 @@ if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     add_test(NAME itemlistupdater_test COMMAND itemlistupdater_test)
     target_link_libraries(itemlistupdater_test libtremotesf Qt::Test)
 
-    add_executable(println_test println_test.cpp)
-    add_test(NAME println_test COMMAND println_test)
-    target_link_libraries(println_test libtremotesf Qt::Test)
+    add_executable(log_test log_test.cpp)
+    add_test(NAME log_test COMMAND log_test)
+    target_link_libraries(log_test libtremotesf Qt::Test)
 endif()
 
 set_common_options_on_targets()

@@ -27,7 +27,6 @@
 #include <fmt/core.h>
 
 #include "peer.h"
-#include "stdutils.h"
 #include "torrentfile.h"
 #include "tracker.h"
 

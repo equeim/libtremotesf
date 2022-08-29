@@ -6,7 +6,7 @@
 #include <QTest>
 
 #include <fmt/ranges.h>
-#include "println.h"
+#include "log.h"
 
 #include "itemlistupdater.h"
 
@@ -267,10 +267,10 @@ private:
         checkThatItemsAreUnique(oldList);
         checkThatItemsAreUnique(newList);
 
-        printlnInfo("Checking update from {}", oldList);
+        logInfo("Checking update from {}", oldList);
         std::sort(newList.begin(), newList.end());
         do {
-            printlnInfo(" - to {}", newList);
+            logInfo(" - to {}", newList);
             try {
                 checkUpdateInner(oldList, newList);
             } catch (const AbortTest&) {
