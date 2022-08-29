@@ -7,6 +7,9 @@
 #include "log.h"
 #include "torrent.h"
 
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QStringList)
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QVariant)
+
 using namespace libtremotesf;
 
 class PrintlnTest : public QObject {
