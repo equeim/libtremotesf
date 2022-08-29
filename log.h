@@ -201,7 +201,7 @@ namespace libtremotesf {
             QString buffer{};
             QDebug stream(&buffer);
             stream.nospace() << t;
-            return fmt::format_to(ctx.out(), "{}", buffer);
+            return fmt::format_to(ctx.out(), singleArgumentFormatString, buffer);
         }
     };
 
@@ -240,7 +240,7 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
         QString buffer{};
         QDebug stream(&buffer);
         stream.nospace() << &object;
-        return fmt::format_to(ctx.out(), "{}", buffer);
+        return fmt::format_to(ctx.out(), libtremotesf::singleArgumentFormatString, buffer);
     }
 };
 
