@@ -166,7 +166,7 @@ template<>
 struct fmt::formatter<QByteArray> : fmt::formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const QByteArray& array, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(std::string_view(array.data(), static_cast<size_t>(array.size())), ctx);
+        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(array), ctx);
     }
 };
 
