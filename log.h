@@ -44,11 +44,11 @@ namespace libtremotesf
             "{}";
 #endif
 
-        inline constexpr auto newlineFormatString =
+        inline constexpr auto printlnFormatString =
 #if FMT_VERSION >= 80000
-            FMT_COMPILE("\n");
+            FMT_COMPILE("{}\n");
 #else
-            "\n";
+            "{}\n";
 #endif
 
         template<class T>
@@ -63,15 +63,15 @@ namespace libtremotesf
         }
     }
 
-    template<typename S, typename FirstArg, typename... Args>
-    void printlnStdout(S&& fmt, FirstArg&& firstArg, Args&&... args) {
-        fmt::print(stdout, std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...);
-        fmt::print(stdout, newlineFormatString);
-    }
-
-    template<typename T>
-    void printlnStdout(T&& value) {
-        printlnStdout(singleArgumentFormatString, std::forward<T>(value));
+    template<typename FirstArg, typename... OtherArgs>
+    void printlnStdout(FirstArg&& firstArg, OtherArgs&&... otherArgs) {
+        if constexpr (sizeof...(otherArgs) == 0) {
+            // Print our single argument as-is
+            fmt::print(stdout, printlnFormatString, std::forward<FirstArg>(firstArg));
+        } else {
+            // First argument must be format string, format it first
+            fmt::print(stdout, printlnFormatString, fmt::format(std::forward<FirstArg>(firstArg), std::forward<OtherArgs>(otherArgs)...));
+        }
     }
 
     struct QMessageLoggerCallable {
