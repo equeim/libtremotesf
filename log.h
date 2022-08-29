@@ -74,27 +74,27 @@ namespace libtremotesf
         printlnStdout(singleArgumentFormatString, std::forward<T>(value));
     }
 
-    struct QMessageLoggerPrinter {
-        constexpr explicit QMessageLoggerPrinter(QtMsgType type, const char* fileName, int lineNumber, const char* functionName)
+    struct QMessageLoggerCallable {
+        constexpr explicit QMessageLoggerCallable(QtMsgType type, const char* fileName, int lineNumber, const char* functionName)
             : type(type),
               context(fileName, lineNumber, functionName, "default") {}
 
         template<typename S, typename FirstArg, typename... Args>
         void operator()(S&& fmt, FirstArg&& firstArg, Args&&... args) const {
-            println(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
+            log(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
         }
 
         template<typename T>
         void operator()(T&& value) const {
             using Type = std::decay_t<T>;
             if constexpr (std::is_same_v<Type, QString> || std::is_same_v<Type, QLatin1String>) {
-                println(value);
+                log(value);
             } else if constexpr (std::is_same_v<Type, const char*> || std::is_same_v<Type, char*>) {
                 using MaybeArray = std::remove_reference_t<T>;
                 if constexpr (is_bounded_array_v<MaybeArray>) {
-                    println(QString::fromUtf8(value, std::extent_v<MaybeArray> - 1));
+                    log(QString::fromUtf8(value, std::extent_v<MaybeArray> - 1));
                 } else {
-                    println(QString(value));
+                    log(QString(value));
                 }
             } else if constexpr (
                 std::is_same_v<Type, QStringView>
@@ -103,16 +103,16 @@ namespace libtremotesf
                 || std::is_same_v<Type, QAnyStringView>
 #endif
             ) {
-                println(value.toString());
+                log(value.toString());
             } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
-                println(std::string_view(value));
+                log(std::string_view(value));
             } else {
-                println(fmt::to_string(value));
+                log(fmt::to_string(value));
             }
         }
 
     private:
-        void println(const QString& string) const {
+        void log(const QString& string) const {
             // We use internal qt_message_output() function here because there are only two methods
             // to output string to QMessageLogger and they have overheads that are unneccessary
             // when we are doing formatting on our own:
@@ -121,8 +121,8 @@ namespace libtremotesf
             qt_message_output(type, context, string);
         }
 
-        void println(const std::string_view& string) const {
-            println(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
+        void log(const std::string_view& string) const {
+            log(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
         }
 
         QtMsgType type;
@@ -135,9 +135,9 @@ namespace tremotesf
     using libtremotesf::printlnStdout;
 }
 
-#define printlnDebug   libtremotesf::QMessageLoggerPrinter(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
-#define printlnInfo    libtremotesf::QMessageLoggerPrinter(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
-#define printlnWarning libtremotesf::QMessageLoggerPrinter(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define logDebug   libtremotesf::QMessageLoggerCallable(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define logInfo    libtremotesf::QMessageLoggerCallable(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define logWarning libtremotesf::QMessageLoggerCallable(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
 
 template<>
 struct fmt::formatter<QString> : fmt::formatter<std::string_view> {

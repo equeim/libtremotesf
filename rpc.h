@@ -36,7 +36,7 @@
 #include "serversettings.h"
 #include "serverstats.h"
 
-#include "println.h"
+#include "log.h"
 
 class QAuthenticator;
 class QNetworkAccessManager;

@@ -4,7 +4,7 @@
 #include <QTest>
 #include <QVariant>
 
-#include "println.h"
+#include "log.h"
 #include "torrent.h"
 
 using namespace libtremotesf;
@@ -158,150 +158,150 @@ private slots:
 
 
     void infoStringLiteral() {
-        printlnInfo("foo");
-        printlnInfo("{}", "foo");
-        printlnInfo(FMT_STRING("{}"), "foo");
-        printlnInfo(FMT_COMPILE("{}"), "foo");
+        logInfo("foo");
+        logInfo("{}", "foo");
+        logInfo(FMT_STRING("{}"), "foo");
+        logInfo(FMT_COMPILE("{}"), "foo");
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), "foo");
+        logInfo(fmt::runtime("{}"), "foo");
 #endif
     }
 
     void infoStdString() {
         const std::string str = "foo";
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
     void infoStdStringView() {
         const std::string_view str = "foo";
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
     void infoQString() {
         const QString str = "foo";
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
     void infoQStringView() {
         const QString _str = "foo";
         const QStringView str = _str;
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
     void infoQLatin1String() {
         const QLatin1String str("foo");
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
 #if QT_VERSION_MAJOR >= 6
     void infoQUtf8StringView() {
         const QUtf8StringView str = "foo";
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 
     void infoQAnyStringView() {
         const QAnyStringView str = "foo";
-        printlnInfo(str);
-        printlnInfo("{}", str);
-        printlnInfo(FMT_STRING("{}"), str);
-        printlnInfo(FMT_COMPILE("{}"), str);
+        logInfo(str);
+        logInfo("{}", str);
+        logInfo(FMT_STRING("{}"), str);
+        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), str);
+        logInfo(fmt::runtime("{}"), str);
 #endif
     }
 #endif
 
     void infoQVariant() {
         const QVariant value = "foo";
-        printlnInfo(value);
-        printlnInfo("{}", value);
-        printlnInfo(FMT_STRING("{}"), value);
-        printlnInfo(FMT_COMPILE("{}"), value);
+        logInfo(value);
+        logInfo("{}", value);
+        logInfo(FMT_STRING("{}"), value);
+        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), value);
+        logInfo(fmt::runtime("{}"), value);
 #endif
     }
 
     void infoQStringList() {
         const QStringList list{"foo"};
-        printlnInfo(list);
-        printlnInfo("{}", list);
-        printlnInfo(FMT_STRING("{}"), list);
-        printlnInfo(FMT_COMPILE("{}"), list);
+        logInfo(list);
+        logInfo("{}", list);
+        logInfo(FMT_STRING("{}"), list);
+        logInfo(FMT_COMPILE("{}"), list);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), list);
+        logInfo(fmt::runtime("{}"), list);
 #endif
     }
 
     void infoTorrent() {
         const Torrent value(0, {}, nullptr);
-        printlnInfo(value);
-        printlnInfo("{}", value);
-        printlnInfo(FMT_STRING("{}"), value);
-        printlnInfo(FMT_COMPILE("{}"), value);
+        logInfo(value);
+        logInfo("{}", value);
+        logInfo(FMT_STRING("{}"), value);
+        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), value);
+        logInfo(fmt::runtime("{}"), value);
 #endif
     }
 
     void infoThis() {
-        printlnInfo(*this);
-        printlnInfo("{}", *this);
-        printlnInfo(FMT_STRING("{}"), *this);
-        printlnInfo(FMT_COMPILE("{}"), *this);
+        logInfo(*this);
+        logInfo("{}", *this);
+        logInfo(FMT_STRING("{}"), *this);
+        logInfo(FMT_COMPILE("{}"), *this);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), *this);
+        logInfo(fmt::runtime("{}"), *this);
 #endif
     }
 
     void infoQObject() {
         QObject value{};
-        printlnInfo(value);
-        printlnInfo("{}", value);
-        printlnInfo(FMT_STRING("{}"), value);
-        printlnInfo(FMT_COMPILE("{}"), value);
+        logInfo(value);
+        logInfo("{}", value);
+        logInfo(FMT_STRING("{}"), value);
+        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnInfo(fmt::runtime("{}"), value);
+        logInfo(fmt::runtime("{}"), value);
 #endif
     }
 };
 
 QTEST_MAIN(PrintlnTest)
 
-#include "println_test.moc"
+#include "log_test.moc"

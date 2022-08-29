@@ -26,9 +26,8 @@
 #include <QLocale>
 
 #include "itemlistupdater.h"
+#include "log.h"
 #include "rpc.h"
-#include "println.h"
-#include "serversettings.h"
 #include "stdutils.h"
 
 namespace libtremotesf
@@ -730,7 +729,7 @@ namespace libtremotesf
     void Torrent::checkThatFilesUpdated()
     {
         if (mFilesEnabled && !mFilesUpdated) {
-            printlnWarning("Files were not updated for {}", *this);
+            logWarning("Files were not updated for {}", *this);
             mFilesUpdated = true;
         }
     }
@@ -738,7 +737,7 @@ namespace libtremotesf
     void Torrent::checkThatPeersUpdated()
     {
         if (mPeersEnabled && !mPeersUpdated) {
-            printlnWarning("Peers were not updated for {}", *this);
+            logWarning("Peers were not updated for {}", *this);
             mPeersUpdated = true;
         }
     }
