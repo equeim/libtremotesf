@@ -51,6 +51,8 @@ target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt)
 target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
 target_compile_definitions(libtremotesf PUBLIC FMT_UNICODE=1)
 
+qt_import_plugins(libtremotesf EXCLUDE_BY_TYPE bearer)
+
 if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Test)
     add_executable(itemlistupdater_test itemlistupdater_test.cpp)
