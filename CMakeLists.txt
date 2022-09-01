@@ -27,6 +27,7 @@ endif()
 add_library(
     libtremotesf
     OBJECT
+    formatters.h
     itemlistupdater.h
     log.h
     peer.cpp
