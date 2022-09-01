@@ -27,6 +27,8 @@ endif()
 add_library(
     libtremotesf
     OBJECT
+    demangle.cpp
+    demangle.h
     formatters.h
     itemlistupdater.h
     log.h
@@ -56,6 +58,7 @@ qt_import_plugins(libtremotesf EXCLUDE_BY_TYPE bearer)
 
 if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Test)
+
     add_executable(itemlistupdater_test itemlistupdater_test.cpp)
     add_test(NAME itemlistupdater_test COMMAND itemlistupdater_test)
     target_link_libraries(itemlistupdater_test libtremotesf Qt::Test)
@@ -63,6 +66,10 @@ if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
     add_executable(log_test log_test.cpp)
     add_test(NAME log_test COMMAND log_test)
     target_link_libraries(log_test libtremotesf Qt::Test)
+
+    add_executable(demangle_test demangle_test.cpp)
+    add_test(NAME demangle_test COMMAND demangle_test)
+    target_link_libraries(demangle_test libtremotesf Qt::Test)
 endif()
 
 set_common_options_on_targets()
