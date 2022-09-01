@@ -1,6 +1,7 @@
 #ifndef LIBTREMOTESF_FORMATTERS_H
 #define LIBTREMOTESF_FORMATTERS_H
 
+#include <stdexcept>
 #include <type_traits>
 
 #include <QDebug>
@@ -9,6 +10,8 @@
 
 #include <fmt/core.h>
 #include <fmt/compile.h>
+
+#include "demangle.h"
 
 namespace libtremotesf {
     // Can't use FMT_COMPILE with fmt::print() and fmt 7
@@ -134,5 +137,17 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
 #define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) template<> struct fmt::formatter<Class> : libtremotesf::QDebugFormatter<Class> {};
 
 #define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::QEnumFormatter<Enum> {};
+
+template<typename T>
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception, T>>> {
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const std::exception& e, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::format_to(ctx.out(), "{}: {}", libtremotesf::typeName(e), e.what());
+    }
+};
 
 #endif // LIBTREMOTESF_FORMATTERS_H
