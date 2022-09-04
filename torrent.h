@@ -149,59 +149,6 @@ namespace libtremotesf
     class Torrent : public QObject
     {
         Q_OBJECT
-
-        Q_PROPERTY(int id READ id CONSTANT)
-        Q_PROPERTY(QString hashString READ hashString CONSTANT)
-        Q_PROPERTY(QString name READ name NOTIFY changed)
-
-        Q_PROPERTY(libtremotesf::TorrentData::Status status READ status NOTIFY changed)
-        Q_PROPERTY(QString errorString READ errorString NOTIFY changed)
-        Q_PROPERTY(int queuePosition READ queuePosition NOTIFY changed)
-
-        Q_PROPERTY(long long totalSize READ totalSize NOTIFY changed)
-        Q_PROPERTY(long long completedSize READ completedSize NOTIFY changed)
-        Q_PROPERTY(long long leftUntilDone READ leftUntilDone NOTIFY changed)
-        Q_PROPERTY(long long sizeWhenDone READ sizeWhenDone NOTIFY changed)
-        Q_PROPERTY(double percentDone READ percentDone NOTIFY changed)
-        Q_PROPERTY(bool finished READ isFinished NOTIFY changed)
-        Q_PROPERTY(double recheckProgress READ recheckProgress NOTIFY changed)
-        Q_PROPERTY(int eta READ eta NOTIFY changed)
-
-        Q_PROPERTY(long long downloadSpeed READ downloadSpeed NOTIFY changed)
-        Q_PROPERTY(long long uploadSpeed READ uploadSpeed NOTIFY changed)
-
-        Q_PROPERTY(bool downloadSpeedLimited READ isDownloadSpeedLimited WRITE setDownloadSpeedLimited NOTIFY changed)
-        Q_PROPERTY(int downloadSpeedLimit READ downloadSpeedLimit WRITE setDownloadSpeedLimit NOTIFY changed)
-        Q_PROPERTY(bool uploadSpeedLimited READ isUploadSpeedLimited WRITE setUploadSpeedLimited NOTIFY changed)
-        Q_PROPERTY(int uploadSpeedLimit READ uploadSpeedLimit WRITE setUploadSpeedLimit NOTIFY changed)
-
-        Q_PROPERTY(long long totalDownloaded READ totalDownloaded NOTIFY changed)
-        Q_PROPERTY(long long totalUploaded READ totalUploaded NOTIFY changed)
-        Q_PROPERTY(double ratio READ ratio NOTIFY changed)
-        Q_PROPERTY(libtremotesf::TorrentData::RatioLimitMode ratioLimitMode READ ratioLimitMode WRITE setRatioLimitMode NOTIFY changed)
-        Q_PROPERTY(double ratioLimit READ ratioLimit WRITE setRatioLimit NOTIFY changed)
-
-        Q_PROPERTY(int seeders READ seeders NOTIFY changed)
-        Q_PROPERTY(int leechers READ leechers NOTIFY changed)
-        Q_PROPERTY(int peersLimit READ peersLimit WRITE setPeersLimit NOTIFY changed)
-
-        Q_PROPERTY(QDateTime addedDate READ addedDate CONSTANT)
-        Q_PROPERTY(QDateTime activityDate READ activityDate NOTIFY changed)
-        Q_PROPERTY(QDateTime doneDate READ doneDate NOTIFY changed)
-
-        Q_PROPERTY(bool honorSessionLimits READ honorSessionLimits WRITE setHonorSessionLimits NOTIFY changed)
-        Q_PROPERTY(libtremotesf::TorrentData::Priority bandwidthPriority READ bandwidthPriority WRITE setBandwidthPriority NOTIFY changed)
-        Q_PROPERTY(libtremotesf::TorrentData::IdleSeedingLimitMode idleSeedingLimitMode READ idleSeedingLimitMode WRITE setIdleSeedingLimitMode NOTIFY changed)
-        Q_PROPERTY(int idleSeedingLimit READ idleSeedingLimit WRITE setIdleSeedingLimit NOTIFY changed)
-        Q_PROPERTY(QString downloadDirectory READ downloadDirectory NOTIFY changed)
-        Q_PROPERTY(bool singleFile READ isSingleFile NOTIFY changed)
-        Q_PROPERTY(QString creator READ creator NOTIFY changed)
-        Q_PROPERTY(QDateTime creationDate READ creationDate NOTIFY changed)
-        Q_PROPERTY(QString comment READ comment NOTIFY changed)
-
-        Q_PROPERTY(std::vector<QString> webSeeders READ webSeeders NOTIFY changed)
-        Q_PROPERTY(int activeWebSeeders READ activeWebSeeders NOTIFY changed)
-
     public:
         using Status = TorrentData::Status;
         using Priority = TorrentData::Priority;
@@ -235,40 +182,40 @@ namespace libtremotesf
         long long uploadSpeed() const;
 
         bool isDownloadSpeedLimited() const;
-        Q_INVOKABLE void setDownloadSpeedLimited(bool limited);
+        void setDownloadSpeedLimited(bool limited);
         int downloadSpeedLimit() const;
-        Q_INVOKABLE void setDownloadSpeedLimit(int limit);
+        void setDownloadSpeedLimit(int limit);
 
         bool isUploadSpeedLimited() const;
-        Q_INVOKABLE void setUploadSpeedLimited(bool limited);
+        void setUploadSpeedLimited(bool limited);
         int uploadSpeedLimit() const;
-        Q_INVOKABLE void setUploadSpeedLimit(int limit);
+        void setUploadSpeedLimit(int limit);
 
         long long totalDownloaded() const;
         long long totalUploaded() const;
         double ratio() const;
         RatioLimitMode ratioLimitMode() const;
-        Q_INVOKABLE void setRatioLimitMode(libtremotesf::Torrent::RatioLimitMode mode);
+        void setRatioLimitMode(libtremotesf::Torrent::RatioLimitMode mode);
         double ratioLimit() const;
-        Q_INVOKABLE void setRatioLimit(double limit);
+        void setRatioLimit(double limit);
 
         int seeders() const;
         int leechers() const;
         int peersLimit() const;
-        Q_INVOKABLE void setPeersLimit(int limit);
+        void setPeersLimit(int limit);
 
         const QDateTime& addedDate() const;
         const QDateTime& activityDate() const;
         const QDateTime& doneDate() const;
 
         bool honorSessionLimits() const;
-        Q_INVOKABLE void setHonorSessionLimits(bool honor);
+        void setHonorSessionLimits(bool honor);
         Priority bandwidthPriority() const;
-        Q_INVOKABLE void setBandwidthPriority(libtremotesf::Torrent::Priority priority);
+        void setBandwidthPriority(libtremotesf::Torrent::Priority priority);
         IdleSeedingLimitMode idleSeedingLimitMode() const;
-        Q_INVOKABLE void setIdleSeedingLimitMode(libtremotesf::Torrent::IdleSeedingLimitMode mode);
+        void setIdleSeedingLimitMode(libtremotesf::Torrent::IdleSeedingLimitMode mode);
         int idleSeedingLimit() const;
-        Q_INVOKABLE void setIdleSeedingLimit(int limit);
+        void setIdleSeedingLimit(int limit);
         const QString& downloadDirectory() const;
         bool isSingleFile() const;
         const QString& creator() const;
@@ -277,9 +224,9 @@ namespace libtremotesf
 
         const std::vector<Tracker>& trackers() const;
         bool isTrackersAnnounceUrlsChanged() const;
-        Q_INVOKABLE void addTrackers(const QStringList& announceUrls);
-        Q_INVOKABLE void setTracker(int trackerId, const QString& announce);
-        Q_INVOKABLE void removeTrackers(const QVariantList& ids);
+        void addTrackers(const QStringList& announceUrls);
+        void setTracker(int trackerId, const QString& announce);
+        void removeTrackers(const QVariantList& ids);
 
         const std::vector<QString>& webSeeders() const;
         int activeWebSeeders() const;
@@ -287,15 +234,15 @@ namespace libtremotesf
         const TorrentData& data() const;
 
         bool isFilesEnabled() const;
-        Q_INVOKABLE void setFilesEnabled(bool enabled);
+        void setFilesEnabled(bool enabled);
         const std::vector<TorrentFile>& files() const;
 
-        Q_INVOKABLE void setFilesWanted(const QVariantList& files, bool wanted);
-        Q_INVOKABLE void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
-        Q_INVOKABLE void renameFile(const QString& path, const QString& newName);
+        void setFilesWanted(const QVariantList& files, bool wanted);
+        void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
+        void renameFile(const QString& path, const QString& newName);
 
         bool isPeersEnabled() const;
-        Q_INVOKABLE void setPeersEnabled(bool enabled);
+        void setPeersEnabled(bool enabled);
         const std::vector<Peer>& peers() const;
 
         bool isUpdated() const;
@@ -327,7 +274,6 @@ namespace libtremotesf
         void filesUpdated(const std::vector<int>& changedIndexes);
         void peersUpdated(const std::vector<std::pair<int, int>>& removedIndexRanges, const std::vector<std::pair<int, int>>& changedIndexRanges, int addedCount);
         void fileRenamed(const QString& filePath, const QString& newName);
-        void limitsEdited();
     };
 }
 

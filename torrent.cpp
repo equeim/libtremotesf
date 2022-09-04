@@ -411,7 +411,6 @@ namespace libtremotesf
     void Torrent::setDownloadSpeedLimited(bool limited)
     {
         mData.downloadSpeedLimited = limited;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), downloadSpeedLimitedKey, limited);
     }
 
@@ -423,7 +422,6 @@ namespace libtremotesf
     void Torrent::setDownloadSpeedLimit(int limit)
     {
         mData.downloadSpeedLimit = limit;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), downloadSpeedLimitKey, limit);
     }
 
@@ -435,7 +433,6 @@ namespace libtremotesf
     void Torrent::setUploadSpeedLimited(bool limited)
     {
         mData.uploadSpeedLimited = limited;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), uploadSpeedLimitedKey, limited);
     }
 
@@ -447,7 +444,6 @@ namespace libtremotesf
     void Torrent::setUploadSpeedLimit(int limit)
     {
         mData.uploadSpeedLimit = limit;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), uploadSpeedLimitKey, limit);
     }
 
@@ -474,7 +470,6 @@ namespace libtremotesf
     void Torrent::setRatioLimitMode(Torrent::RatioLimitMode mode)
     {
         mData.ratioLimitMode = mode;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), ratioLimitModeKey, mode);
     }
 
@@ -486,7 +481,6 @@ namespace libtremotesf
     void Torrent::setRatioLimit(double limit)
     {
         mData.ratioLimit = limit;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), ratioLimitKey, limit);
     }
 
@@ -508,7 +502,6 @@ namespace libtremotesf
     void Torrent::setPeersLimit(int limit)
     {
         mData.peersLimit = limit;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), peersLimitKey, limit);
     }
 
@@ -535,7 +528,6 @@ namespace libtremotesf
     void Torrent::setHonorSessionLimits(bool honor)
     {
         mData.honorSessionLimits = honor;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), honorSessionLimitsKey, honor);
     }
 
@@ -547,7 +539,6 @@ namespace libtremotesf
     void Torrent::setBandwidthPriority(Priority priority)
     {
         mData.bandwidthPriority = priority;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priority);
     }
 
@@ -559,7 +550,6 @@ namespace libtremotesf
     void Torrent::setIdleSeedingLimitMode(Torrent::IdleSeedingLimitMode mode)
     {
         mData.idleSeedingLimitMode = mode;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, mode);
     }
 
@@ -571,7 +561,6 @@ namespace libtremotesf
     void Torrent::setIdleSeedingLimit(int limit)
     {
         mData.idleSeedingLimit = limit;
-        emit limitsEdited();
         mRpc->setTorrentProperty(id(), idleSeedingLimitKey, limit);
     }
 

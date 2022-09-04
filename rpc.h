@@ -36,7 +36,7 @@
 #include "serversettings.h"
 #include "serverstats.h"
 
-#include "log.h"
+#include "formatters.h"
 
 class QAuthenticator;
 class QNetworkAccessManager;
@@ -110,14 +110,6 @@ namespace libtremotesf
     class Rpc : public QObject
     {
         Q_OBJECT
-        Q_PROPERTY(libtremotesf::ServerSettings* serverSettings READ serverSettings CONSTANT)
-        Q_PROPERTY(libtremotesf::ServerStats* serverStats READ serverStats CONSTANT)
-        Q_PROPERTY(bool connected READ isConnected NOTIFY connectedChanged)
-        Q_PROPERTY(libtremotesf::RpcConnectionState connectionState READ connectionState NOTIFY connectionStateChanged)
-        Q_PROPERTY(libtremotesf::RpcError error READ error NOTIFY errorChanged)
-        Q_PROPERTY(bool local READ isLocal NOTIFY connectedChanged)
-        Q_PROPERTY(int torrentsCount READ torrentsCount NOTIFY torrentsUpdated)
-        Q_PROPERTY(bool updateDisabled READ isUpdateDisabled WRITE setUpdateDisabled NOTIFY updateDisabledChanged)
     public:
         using ConnectionState = RpcConnectionState;
         using Error = RpcError;
@@ -128,7 +120,7 @@ namespace libtremotesf
         ServerStats* serverStats() const;
 
         const std::vector<std::unique_ptr<Torrent>>& torrents() const;
-        Q_INVOKABLE libtremotesf::Torrent* torrentByHash(const QString& hash) const;
+        libtremotesf::Torrent* torrentByHash(const QString& hash) const;
         Torrent* torrentById(int id) const;
 
         struct Status
@@ -158,15 +150,15 @@ namespace libtremotesf
         int torrentsCount() const;
 
         bool isUpdateDisabled() const;
-        Q_INVOKABLE void setUpdateDisabled(bool disabled);
+        void setUpdateDisabled(bool disabled);
 
-        Q_INVOKABLE void setServer(const libtremotesf::Server& server);
-        Q_INVOKABLE void resetServer();
+        void setServer(const libtremotesf::Server& server);
+        void resetServer();
 
-        Q_INVOKABLE void connect();
-        Q_INVOKABLE void disconnect();
+        void connect();
+        void disconnect();
 
-        Q_INVOKABLE void addTorrentFile(const QString& filePath,
+        void addTorrentFile(const QString& filePath,
                                         const QString& downloadDirectory,
                                         const QVariantList& unwantedFiles,
                                         const QVariantList& highPriorityFiles,
@@ -175,7 +167,7 @@ namespace libtremotesf
                                         int bandwidthPriority,
                                         bool start);
 
-        Q_INVOKABLE void addTorrentFile(std::shared_ptr<QFile> file,
+        void addTorrentFile(std::shared_ptr<QFile> file,
                                         const QString& downloadDirectory,
                                         const QVariantList& unwantedFiles,
                                         const QVariantList& highPriorityFiles,
@@ -184,40 +176,40 @@ namespace libtremotesf
                                         int bandwidthPriority,
                                         bool start);
 
-        Q_INVOKABLE void addTorrentLink(const QString& link,
+        void addTorrentLink(const QString& link,
                                         const QString& downloadDirectory,
                                         int bandwidthPriority,
                                         bool start);
 
-        Q_INVOKABLE void startTorrents(const QVariantList& ids);
-        Q_INVOKABLE void startTorrentsNow(const QVariantList& ids);
-        Q_INVOKABLE void pauseTorrents(const QVariantList& ids);
-        Q_INVOKABLE void removeTorrents(const QVariantList& ids, bool deleteFiles);
-        Q_INVOKABLE void checkTorrents(const QVariantList& ids);
-        Q_INVOKABLE void moveTorrentsToTop(const QVariantList& ids);
-        Q_INVOKABLE void moveTorrentsUp(const QVariantList& ids);
-        Q_INVOKABLE void moveTorrentsDown(const QVariantList& ids);
-        Q_INVOKABLE void moveTorrentsToBottom(const QVariantList& ids);
+        void startTorrents(const QVariantList& ids);
+        void startTorrentsNow(const QVariantList& ids);
+        void pauseTorrents(const QVariantList& ids);
+        void removeTorrents(const QVariantList& ids, bool deleteFiles);
+        void checkTorrents(const QVariantList& ids);
+        void moveTorrentsToTop(const QVariantList& ids);
+        void moveTorrentsUp(const QVariantList& ids);
+        void moveTorrentsDown(const QVariantList& ids);
+        void moveTorrentsToBottom(const QVariantList& ids);
 
-        Q_INVOKABLE void reannounceTorrents(const QVariantList& ids);
+        void reannounceTorrents(const QVariantList& ids);
 
         void setSessionProperty(const QString& property, const QVariant& value);
         void setSessionProperties(const QVariantMap& properties);
         void setTorrentProperty(int id, const QString& property, const QVariant& value, bool updateIfSuccessful = false);
-        Q_INVOKABLE void setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles);
+        void setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles);
         void getTorrentsFiles(const QVariantList& ids, bool scheduled);
         void getTorrentsPeers(const QVariantList& ids, bool scheduled);
 
-        Q_INVOKABLE void renameTorrentFile(int torrentId,
+        void renameTorrentFile(int torrentId,
                                            const QString& filePath,
                                            const QString& newName);
 
-        Q_INVOKABLE void getDownloadDirFreeSpace();
-        Q_INVOKABLE void getFreeSpaceForPath(const QString& path);
+        void getDownloadDirFreeSpace();
+        void getFreeSpaceForPath(const QString& path);
 
-        Q_INVOKABLE void updateData();
+        void updateData();
 
-        Q_INVOKABLE void shutdownServer();
+        void shutdownServer();
 
     private:
         struct Request

@@ -20,6 +20,8 @@
 
 #include <QJsonObject>
 
+#include "stdutils.h"
+
 namespace libtremotesf
 {
     const QLatin1String Peer::addressKey("address");

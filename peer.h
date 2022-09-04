@@ -21,8 +21,6 @@
 
 #include <QString>
 
-#include "stdutils.h"
-
 class QJsonObject;
 
 namespace libtremotesf

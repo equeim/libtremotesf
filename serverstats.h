@@ -29,11 +29,6 @@ namespace libtremotesf
 
     class SessionStats
     {
-        Q_GADGET
-        Q_PROPERTY(long long downloaded READ downloaded)
-        Q_PROPERTY(long long uploaded READ uploaded)
-        Q_PROPERTY(int duration READ duration)
-        Q_PROPERTY(int sessionCount READ sessionCount)
     public:
         long long downloaded() const;
         long long uploaded() const;
@@ -52,10 +47,6 @@ namespace libtremotesf
     class ServerStats : public QObject
     {
         Q_OBJECT
-        Q_PROPERTY(long long downloadSpeed READ downloadSpeed NOTIFY updated)
-        Q_PROPERTY(long long uploadSpeed READ uploadSpeed NOTIFY updated)
-        Q_PROPERTY(libtremotesf::SessionStats currentSession READ currentSession NOTIFY updated)
-        Q_PROPERTY(libtremotesf::SessionStats total READ total NOTIFY updated)
     public:
         explicit ServerStats(QObject* parent = nullptr);
 
