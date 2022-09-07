@@ -26,7 +26,7 @@ endif()
 
 function(set_common_options_on_targets)
     if (MSVC)
-        set(common_compile_options /W4)
+        set(common_compile_options /W4 /utf-8)
     else()
         set(
             common_compile_options
@@ -60,7 +60,13 @@ function(set_common_options_on_targets)
 
     if (WIN32)
         # Minimum supported version, 0x0603 = Windows 8.1
-        list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603 WINRT_LEAN_AND_MEAN WINRT_NO_MODULE_LOCK _SILENCE_CLANG_COROUTINE_MESSAGE)
+        list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603)
+        # Disable implicit ANSI codepage counterparts to Win32 functions dealing with strings
+        list(APPEND common_compile_definitions UNICODE)
+        # Slim down <windows.h>, can be undefined locally
+        list(APPEND common_compile_definitions WIN32_LEAN_AND_MEAN)
+        # C++/WinRT macros
+        list(APPEND common_compile_definitions WINRT_LEAN_AND_MEAN WINRT_NO_MODULE_LOCK _SILENCE_CLANG_COROUTINE_MESSAGE)
     endif()
 
     if (TREMOTESF_UNIX_FREEDESKTOP)
