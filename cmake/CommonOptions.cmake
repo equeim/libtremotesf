@@ -26,14 +26,39 @@ endif()
 
 function(set_common_options_on_targets)
     if (MSVC)
-        set(common_compile_options /W4 /utf-8)
+        set(
+            common_compile_options
+            /utf-8
+            /W4
+            /w44062
+            /w44165
+            /w44242
+            /w44254
+            /w44263
+            /w44264
+            /w44265
+            /w44287
+            /w44296
+            /w44355
+            /w44365
+            /w44388
+            /w44577
+            /w44623
+            /we4774
+            /we4777
+            /w44800
+            /w44826
+            /we4905
+            /we4906
+            /w45204
+        )
     else()
         set(
             common_compile_options
             -Wall
             -Wextra
             -Wpedantic
-            -Wnon-virtual-dtor
+            -Werror=non-virtual-dtor
             -Wcast-align
             -Woverloaded-virtual
             -Wconversion
