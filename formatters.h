@@ -145,8 +145,24 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception
     }
 
     template <typename FormatContext>
-    auto format(const std::exception& e, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "{}: {}", libtremotesf::typeName(e), e.what());
+    auto format(const T& e, FormatContext& ctx) -> decltype(ctx.out()) {
+        const auto type = libtremotesf::typeName(e);
+        const auto what = e.what();
+        if constexpr (std::is_base_of_v<std::system_error, T>) {
+            return formatSystemError(type, e, ctx);
+        } else {
+            if (auto s = dynamic_cast<const std::system_error*>(&e); s) {
+                return formatSystemError(type, *s, ctx);
+            }
+            return fmt::format_to(ctx.out(), "{}: {}", type, what);
+        }
+    }
+
+private:
+    template <typename FormatContext>
+    auto formatSystemError(const std::string& type, const std::system_error& e, FormatContext& ctx) -> decltype(ctx.out()) {
+        const int code = e.code().value();
+        return fmt::format_to(ctx.out(), "{}: {} (error code {} ({:#x}))", type, e.what(), code, static_cast<unsigned int>(code));
     }
 };
 
