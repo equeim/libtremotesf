@@ -11,6 +11,11 @@
 #include <fmt/core.h>
 #include <fmt/compile.h>
 
+#ifdef Q_OS_WIN
+#include <guiddef.h>
+#include <winrt/base.h>
+#endif
+
 #include "demangle.h"
 
 namespace libtremotesf {
@@ -165,5 +170,38 @@ private:
         return fmt::format_to(ctx.out(), "{}: {} (error code {} ({:#x}))", type, e.what(), code, static_cast<unsigned int>(code));
     }
 };
+
+#ifdef Q_OS_WIN
+template<>
+struct fmt::formatter<winrt::hstring> : fmt::formatter<QString> {
+    template <typename FormatContext>
+    auto format(const winrt::hstring& str, FormatContext& ctx) -> decltype(ctx.out()) {
+        return fmt::formatter<QString>::format(
+            QString::fromWCharArray(str.data(), static_cast<QString::size_type>(str.size())),
+            ctx
+        );
+    }
+};
+
+template<typename T>
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<winrt::hresult_error, T>>> {
+    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+        return ctx.begin();
+    }
+
+    template <typename FormatContext>
+    auto format(const T& e, FormatContext& ctx) -> decltype(ctx.out()) {
+        const auto code = e.code().value;
+        return fmt::format_to(
+            ctx.out(),
+            "{}: {} (error code {} ({:#x}))",
+            libtremotesf::typeName(e),
+            e.message(),
+            code,
+            static_cast<uint32_t>(code)
+        );
+    }
+};
+#endif
 
 #endif // LIBTREMOTESF_FORMATTERS_H

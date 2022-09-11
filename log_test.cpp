@@ -12,6 +12,10 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QVariant)
 
 using namespace libtremotesf;
 
+#ifdef Q_OS_WIN
+static constexpr int32_t E_ACCESSDENIED = 0x80070005;
+#endif
+
 class PrintlnTest : public QObject {
     Q_OBJECT
 private slots:
@@ -303,6 +307,76 @@ private slots:
         logInfo(fmt::runtime("{}"), value);
 #endif
     }
+
+    void warningStdException() {
+        std::runtime_error e("nope");
+        logWarning(e);
+    }
+
+    void warningWithStdException() {
+        std::runtime_error e("nope");
+        logWarningWithException(e, "oh no");
+    }
+
+    void warningNested() {
+        try {
+            try {
+                throw std::runtime_error("nope");
+            } catch (const std::runtime_error&) {
+                std::throw_with_nested(std::runtime_error("higher-level nope"));
+            }
+        } catch (const std::runtime_error& e) {
+            logWarning(e);
+        }
+    }
+
+    void warningWithNested() {
+        try {
+            try {
+                throw std::runtime_error("nope");
+            } catch (const std::runtime_error&) {
+                std::throw_with_nested(std::runtime_error("higher-level nope"));
+            }
+        } catch (const std::runtime_error& e) {
+            logWarningWithException(e, "oh no");
+        }
+    }
+
+#ifdef Q_OS_WIN
+    void warningHresultError() {
+        winrt::hresult_error e(E_ACCESSDENIED);
+        logWarning(e);
+    }
+
+    void warningWithHresultError() {
+        winrt::hresult_error e(E_ACCESSDENIED);
+        logWarningWithException(e, "oh no");
+    }
+
+    void warningHresultErrorNested() {
+        try {
+            try {
+                throw winrt::hresult_error(E_ACCESSDENIED);
+            } catch (const winrt::hresult_error&) {
+                std::throw_with_nested(std::runtime_error("higher-level nope"));
+            }
+        } catch (const std::runtime_error& e) {
+            logWarning(e);
+        }
+    }
+
+    void warningWithHresultErrorNested() {
+        try {
+            try {
+                throw winrt::hresult_error(E_ACCESSDENIED);
+            } catch (const winrt::hresult_error&) {
+                std::throw_with_nested(std::runtime_error("higher-level nope"));
+            }
+        } catch (const std::runtime_error& e) {
+            logWarningWithException(e, "oh no");
+        }
+    }
+#endif
 };
 
 QTEST_MAIN(PrintlnTest)
