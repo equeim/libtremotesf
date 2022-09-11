@@ -22,9 +22,6 @@
 #include <vector>
 
 class QString;
-
-//#include <QString>
-
 class QJsonObject;
 
 namespace libtremotesf

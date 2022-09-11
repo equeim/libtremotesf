@@ -18,16 +18,7 @@
 
 #include "demangle.h"
 
-namespace libtremotesf {
-    // Can't use FMT_COMPILE with fmt::print() and fmt 7
-
-    inline constexpr auto singleArgumentFormatString =
-    #if FMT_VERSION >= 80000
-        FMT_COMPILE("{}");
-    #else
-        "{}";
-    #endif
-
+namespace libtremotesf::impl {
     [[maybe_unused]]
     inline std::string_view toStdStringView(const QByteArray& str) {
         return std::string_view(str.data(), static_cast<size_t>(str.size()));
@@ -38,7 +29,7 @@ template<>
 struct fmt::formatter<QString> : fmt::formatter<std::string_view> {
     template<typename FormatContext>
     auto format(const QString& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(string.toUtf8()), ctx);
+        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(string.toUtf8()), ctx);
     }
 };
 
@@ -46,7 +37,7 @@ template<>
 struct fmt::formatter<QStringView> : fmt::formatter<std::string_view> {
     template<typename FormatContext>
     auto format(const QStringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(string.toUtf8()), ctx);
+        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(string.toUtf8()), ctx);
     }
 };
 
@@ -62,7 +53,7 @@ template<>
 struct fmt::formatter<QByteArray> : fmt::formatter<std::string_view> {
     template <typename FormatContext>
     auto format(const QByteArray& array, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::toStdStringView(array), ctx);
+        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(array), ctx);
     }
 };
 
@@ -84,7 +75,15 @@ struct fmt::formatter<QAnyStringView> : fmt::formatter<QString> {
 };
 #endif
 
-namespace libtremotesf {
+namespace libtremotesf::impl {
+    // Can't use FMT_COMPILE with fmt::print() and fmt 7
+    inline constexpr auto singleArgumentFormatString =
+    #if FMT_VERSION >= 80000
+        FMT_COMPILE("{}");
+    #else
+        "{}";
+    #endif
+
     template<typename T>
     struct QDebugFormatter {
         constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
@@ -135,13 +134,13 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
         QString buffer{};
         QDebug stream(&buffer);
         stream.nospace() << &object;
-        return fmt::format_to(ctx.out(), libtremotesf::singleArgumentFormatString, buffer);
+        return fmt::format_to(ctx.out(), libtremotesf::impl::singleArgumentFormatString, buffer);
     }
 };
 
-#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) template<> struct fmt::formatter<Class> : libtremotesf::QDebugFormatter<Class> {};
+#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) template<> struct fmt::formatter<Class> : libtremotesf::impl::QDebugFormatter<Class> {};
 
-#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::QEnumFormatter<Enum> {};
+#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {};
 
 template<typename T>
 struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception, T>>> {

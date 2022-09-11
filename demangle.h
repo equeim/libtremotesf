@@ -5,12 +5,22 @@
 #include <typeinfo>
 
 namespace libtremotesf {
-    std::string demangleTypeName(const char* typeName);
+    namespace impl {
+        std::string demangleTypeName(const char* typeName);
+    }
+
+    inline std::string typeName(const std::type_info& typeInfo) {
+        return impl::demangleTypeName(typeInfo.name());
+    }
 
     template<typename T>
     std::string typeName(T&& t) {
-        return demangleTypeName(typeid(t).name());
+        return typeName(typeid(t));
     }
+}
+
+namespace tremotesf {
+    using libtremotesf::typeName;
 }
 
 #endif // LIBTREMOTESF_DEMANGLE_H

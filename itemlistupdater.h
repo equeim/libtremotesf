@@ -27,11 +27,13 @@
 #include <vector>
 
 namespace libtremotesf {
-    template<typename T, typename U, typename = void>
-    inline constexpr bool is_equality_comparable_v = false;
+    namespace impl {
+        template<typename T, typename U, typename = void>
+        inline constexpr bool is_equality_comparable_v = false;
 
-    template<typename T, typename U>
-    inline constexpr bool is_equality_comparable_v<T, U, std::enable_if_t<std::is_same_v<decltype(std::declval<T>() == std::declval<U>()), bool>>> = true;
+        template<typename T, typename U>
+        inline constexpr bool is_equality_comparable_v<T, U, std::enable_if_t<std::is_same_v<decltype(std::declval<T>() == std::declval<U>()), bool>>> = true;
+    }
 
     class ItemBatchProcessor {
     public:
@@ -136,7 +138,7 @@ namespace libtremotesf {
          * Default implementation simply checks for equality of items or throws logic_error if they are not comparable
          */
         inline virtual typename NewItemContainer::iterator findNewItemForItem(NewItemContainer& container, const Item& item) {
-            if constexpr (is_equality_comparable_v<NewItem, Item>) {
+            if constexpr (impl::is_equality_comparable_v<NewItem, Item>) {
                 return std::find_if(container.begin(), container.end(), [&item](const NewItem& newItem) {
                     return newItem == item;
                 });
