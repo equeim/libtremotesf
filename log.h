@@ -44,6 +44,14 @@ namespace libtremotesf
         template<class T, std::size_t N>
         [[maybe_unused]]
         inline constexpr bool is_bounded_array_v<T[N]> = true;
+
+        template<class T>
+        inline constexpr bool is_exception_v =
+                std::is_base_of_v<std::exception, T>
+#ifdef Q_OS_WIN
+                || std::is_base_of_v<winrt::hresult_error, T>
+#endif
+        ;
     }
 
     template<typename FirstArg, typename... OtherArgs>
@@ -57,27 +65,27 @@ namespace libtremotesf
         }
     }
 
-    struct QMessageLoggerCallable {
-        constexpr explicit QMessageLoggerCallable(QtMsgType type, const char* fileName, int lineNumber, const char* functionName)
+    struct QMessageLoggerDelegate {
+        constexpr explicit QMessageLoggerDelegate(QtMsgType type, const char* fileName, int lineNumber, const char* functionName)
             : type(type),
               context(fileName, lineNumber, functionName, "default") {}
 
         template<typename S, typename FirstArg, typename... Args>
-        void operator()(S&& fmt, FirstArg&& firstArg, Args&&... args) const {
-            log(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
+        void log(S&& fmt, FirstArg&& firstArg, Args&&... args) const {
+            logImpl(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
         }
 
         template<typename T>
-        void operator()(T&& value) const {
+        void log(T&& value) const {
             using Type = std::decay_t<T>;
             if constexpr (std::is_same_v<Type, QString> || std::is_same_v<Type, QLatin1String>) {
-                log(value);
+                logImpl(value);
             } else if constexpr (std::is_same_v<Type, const char*> || std::is_same_v<Type, char*>) {
                 using MaybeArray = std::remove_reference_t<T>;
                 if constexpr (is_bounded_array_v<MaybeArray>) {
-                    log(QString::fromUtf8(value, std::extent_v<MaybeArray> - 1));
+                    logImpl(QString::fromUtf8(value, std::extent_v<MaybeArray> - 1));
                 } else {
-                    log(QString(value));
+                    logImpl(QString(value));
                 }
             } else if constexpr (
                 std::is_same_v<Type, QStringView>
@@ -86,16 +94,25 @@ namespace libtremotesf
                 || std::is_same_v<Type, QAnyStringView>
 #endif
             ) {
-                log(value.toString());
+                logImpl(value.toString());
             } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
-                log(std::string_view(value));
+                logImpl(std::string_view(value));
+            } else if constexpr (is_exception_v<Type>) {
+                logException<T, false>(std::forward<T>(value));
             } else {
-                log(fmt::to_string(value));
+                logImpl(fmt::to_string(value));
             }
         }
 
+        template<typename E, typename S, typename... Args>
+        void logWithException(E&& e, S&& fmt, Args&&... args) const {
+            static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
+            log(fmt::format(std::forward<S>(fmt), std::forward<Args>(args)...));
+            logException(std::forward<E>(e));
+        }
+
     private:
-        void log(const QString& string) const {
+        void logImpl(const QString& string) const {
             // We use internal qt_message_output() function here because there are only two methods
             // to output string to QMessageLogger and they have overheads that are unneccessary
             // when we are doing formatting on our own:
@@ -104,8 +121,30 @@ namespace libtremotesf
             qt_message_output(type, context, string);
         }
 
-        void log(const std::string_view& string) const {
+        void logImpl(const std::string_view& string) const {
             log(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
+        }
+
+        template<typename E, bool PrintCausedBy = true>
+        void logException(E&& e) const {
+            if constexpr (PrintCausedBy) {
+                log(" |- Caused by: {}", e);
+            } else {
+                log(singleArgumentFormatString, e);
+            }
+            try {
+                std::rethrow_if_nested(e);
+            } catch (const std::exception& nested) {
+                logException(nested);
+            }
+#ifdef Q_OS_WIN
+            catch (const winrt::hresult_error& nested) {
+                logException(nested);
+            }
+#endif
+            catch (...) {
+                log(" |- Caused by: unknown exception");
+            }
         }
 
         QtMsgType type;
@@ -118,8 +157,11 @@ namespace tremotesf
     using libtremotesf::printlnStdout;
 }
 
-#define logDebug   libtremotesf::QMessageLoggerCallable(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
-#define logInfo    libtremotesf::QMessageLoggerCallable(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
-#define logWarning libtremotesf::QMessageLoggerCallable(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define logDebug                libtremotesf::QMessageLoggerDelegate(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
+#define logDebugWithException   libtremotesf::QMessageLoggerDelegate(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
+#define logInfo                 libtremotesf::QMessageLoggerDelegate(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
+#define logInfoWithException    libtremotesf::QMessageLoggerDelegate(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
+#define logWarning              libtremotesf::QMessageLoggerDelegate(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
+#define logWarningWithException libtremotesf::QMessageLoggerDelegate(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
 
 #endif // LIBTREMOTESF_PRINTLN_H
