@@ -157,11 +157,12 @@ namespace tremotesf
     using libtremotesf::printlnStdout;
 }
 
-#define logDebug                libtremotesf::impl::QMessageLoggerDelegate(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
-#define logDebugWithException   libtremotesf::impl::QMessageLoggerDelegate(QtDebugMsg,   QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
-#define logInfo                 libtremotesf::impl::QMessageLoggerDelegate(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
-#define logInfoWithException    libtremotesf::impl::QMessageLoggerDelegate(QtInfoMsg,    QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
-#define logWarning              libtremotesf::impl::QMessageLoggerDelegate(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).log
-#define logWarningWithException libtremotesf::impl::QMessageLoggerDelegate(QtWarningMsg, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC).logWithException
+#define QMLD(type) libtremotesf::impl::QMessageLoggerDelegate(type, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define logDebug(...)                QMLD(QtDebugMsg).log(__VA_ARGS__)
+#define logDebugWithException(...)   QMLD(QtDebugMsg).logWithException(__VA_ARGS__)
+#define logInfo(...)                 QMLD(QtInfoMsg).log(__VA_ARGS__)
+#define logInfoWithException(...)    QMLD(QtInfoMsg).logWithException(__VA_ARGS__)
+#define logWarning(...)              QMLD(QtWarningMsg).log(__VA_ARGS__)
+#define logWarningWithException(...) QMLD(QtWarningMsg).logWithException(__VA_ARGS__)
 
 #endif // LIBTREMOTESF_PRINTLN_H
