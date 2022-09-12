@@ -38,14 +38,6 @@ namespace libtremotesf
 #endif
 
         template<class T>
-        [[maybe_unused]]
-        inline constexpr bool is_bounded_array_v = false;
-
-        template<class T, std::size_t N>
-        [[maybe_unused]]
-        inline constexpr bool is_bounded_array_v<T[N]> = true;
-
-        template<class T>
         inline constexpr bool is_exception_v =
                 std::is_base_of_v<std::exception, T>
 #ifdef Q_OS_WIN
@@ -64,17 +56,13 @@ namespace libtremotesf
             }
 
             template<typename T>
-            void log(T&& value) const {
-                using Type = std::decay_t<T>;
+            void log(const T& value) const {
+                using Type = std::remove_cv_t<std::remove_reference_t<T>>;
+                using Decayed = std::decay_t<T>;
                 if constexpr (std::is_same_v<Type, QString> || std::is_same_v<Type, QLatin1String>) {
                     logString(value);
-                } else if constexpr (std::is_same_v<Type, const char*> || std::is_same_v<Type, char*>) {
-                    using MaybeArray = std::remove_reference_t<T>;
-                    if constexpr (is_bounded_array_v<MaybeArray>) {
-                        logString(QString::fromUtf8(value, std::extent_v<MaybeArray> - 1));
-                    } else {
-                        logString(QString(value));
-                    }
+                } else if constexpr (std::is_same_v<Decayed, const char*> || std::is_same_v<Decayed, char*>) {
+                    logString(QString(value));
                 } else if constexpr (
                     std::is_same_v<Type, QStringView>
 #if QT_VERSION_MAJOR >= 6
