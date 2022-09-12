@@ -31,6 +31,7 @@ add_library(
     demangle.h
     formatters.h
     itemlistupdater.h
+    log.cpp
     log.h
     peer.cpp
     peer.h

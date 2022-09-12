@@ -86,7 +86,7 @@ namespace libtremotesf
                 } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
                     logString(std::string_view(value));
                 } else if constexpr (is_exception_v<Type>) {
-                    logException<T, false>(std::forward<T>(value));
+                    logExceptionRecursively<Type, false>(value);
                 } else {
                     logString(fmt::to_string(value));
                 }
@@ -96,48 +96,45 @@ namespace libtremotesf
             void logWithException(E&& e, S&& fmt, Args&&... args) const {
                 static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
                 log(fmt::format(std::forward<S>(fmt), std::forward<Args>(args)...));
-                logException(std::forward<E>(e));
+                logExceptionRecursively<std::decay_t<E>>(e);
             }
 
         private:
-            void logString(const QString& string) const {
-                // We use internal qt_message_output() function here because there are only two methods
-                // to output string to QMessageLogger and they have overheads that are unneccessary
-                // when we are doing formatting on our own:
-                // 1. QDebug marshalls everything through QTextStream
-                // 2. QMessageLogger::<>(const char*, ...) overloads perform QString::vasprintf() formatting
-                qt_message_output(type, context, string);
-            }
-
-            void logString(const std::string_view& string) const {
-                logString(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
-            }
+            void logString(const QString& string) const;
+            void logString(std::string_view string) const;
 
             template<typename E, bool PrintCausedBy = true>
-            void logException(E&& e) const {
+            void logExceptionRecursively(const E& e) const {
                 if constexpr (PrintCausedBy) {
                     log(" |- Caused by: {}", e);
                 } else {
-                    log(singleArgumentFormatString, e);
+                    logString(fmt::to_string(e));
                 }
                 try {
                     std::rethrow_if_nested(e);
                 } catch (const std::exception& nested) {
-                    logException(nested);
+                    logExceptionRecursively(nested);
                 }
-    #ifdef Q_OS_WIN
+#ifdef Q_OS_WIN
                 catch (const winrt::hresult_error& nested) {
-                    logException(nested);
+                    logExceptionRecursively(nested);
                 }
-    #endif
+#endif
                 catch (...) {
-                    log(" |- Caused by: unknown exception");
+                    logString(QLatin1String(" |- Caused by: unknown exception"));
                 }
             }
 
             QtMsgType type;
             QMessageLogContext context;
         };
+
+        extern template void QMessageLoggerDelegate::logExceptionRecursively<std::exception, true>(const std::exception&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursively<std::exception, false>(const std::exception&) const;
+#ifdef Q_OS_WIN
+        extern template void QMessageLoggerDelegate::logExceptionRecursively<winrt::hresult_error, true>(const winrt::hresult_error&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursively<winrt::hresult_error, false>(const winrt::hresult_error&) const;
+#endif
     }
 
     template<typename FirstArg, typename... OtherArgs>
