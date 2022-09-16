@@ -87,6 +87,7 @@ jobs:
     - name: Set up vcpkg
       uses: equeim/action-setup-vcpkg@v3
       with:
+        vcpkg-root: C:\vcpkg
         run-install: true
         triplet: x64-windows-static
         install-features: qt5 qt6
