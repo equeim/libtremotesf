@@ -30,29 +30,29 @@ namespace {
     }
 }
 
-auto fmt::formatter<QString>::format(const QString& string, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QString>::format(const QString& string, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<string_view>::format(toFmtStringView(string.toUtf8()), ctx);
 }
 
-auto fmt::formatter<QStringView>::format(const QStringView& string, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QStringView>::format(const QStringView& string, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<string_view>::format(toFmtStringView(string.toUtf8()), ctx);
 }
 
-auto fmt::formatter<QLatin1String>::format(const QLatin1String& string, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QLatin1String>::format(const QLatin1String& string, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<string_view>::format(std::string_view(string.data(), static_cast<size_t>(string.size())), ctx);
 }
 
-auto fmt::formatter<QByteArray>::format(const QByteArray& array, fmt::format_context & ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QByteArray>::format(const QByteArray& array, fmt::format_context & ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<string_view>::format(toFmtStringView(array), ctx);
 }
 
 #if QT_VERSION_MAJOR >= 6
 
-auto fmt::formatter<QUtf8StringView>::format(const QUtf8StringView& string, format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QUtf8StringView>::format(const QUtf8StringView& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<string_view>::format(string_view(string.data(), static_cast<size_t>(string.size())), ctx);
 }
 
-auto fmt::formatter<QAnyStringView>::format(const QAnyStringView& string, format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<QAnyStringView>::format(const QAnyStringView& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<QString>::format(string.toString(), ctx);
 }
 
@@ -88,7 +88,7 @@ namespace {
     }
 }
 
-auto fmt::formatter<std::exception>::format(const std::exception& e, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<std::exception>::format(const std::exception& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     const auto type = libtremotesf::typeName(e);
     const auto what = e.what();
     if (auto s = dynamic_cast<const std::system_error*>(&e); s) {
@@ -97,20 +97,20 @@ auto fmt::formatter<std::exception>::format(const std::exception& e, fmt::format
     return fmt::format_to(ctx.out(), "{}: {}", type, what);
 }
 
-auto fmt::formatter<std::system_error>::format(const std::system_error& e, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<std::system_error>::format(const std::system_error& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return formatSystemError(libtremotesf::typeName(e), e, ctx);
 }
 
 #ifdef Q_OS_WIN
 
-auto fmt::formatter<winrt::hstring>::format(const winrt::hstring& str, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<winrt::hstring>::format(const winrt::hstring& str, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     return fmt::formatter<QString>::format(
         QString::fromWCharArray(str.data(), static_cast<QString::size_type>(str.size())),
         ctx
     );
 }
 
-auto fmt::formatter<winrt::hresult_error>::format(const winrt::hresult_error& e, fmt::format_context& ctx) -> decltype(ctx.out()) {
+auto fmt::formatter<winrt::hresult_error>::format(const winrt::hresult_error& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
     const auto code = e.code().value;
     return fmt::format_to(
         ctx.out(),
