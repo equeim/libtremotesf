@@ -29,7 +29,7 @@ struct Item {
 
 template<>
 struct fmt::formatter<Item> : libtremotesf::SimpleFormatter {
-    auto format(const Item& item, format_context& ctx) const -> decltype(ctx.out()) {
+    auto format(const Item& item, format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
         return format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
     }
 };
