@@ -24,8 +24,7 @@
 #include <QDateTime>
 #include <QObject>
 
-#include <fmt/core.h>
-
+#include "formatters.h"
 #include "peer.h"
 #include "torrentfile.h"
 #include "tracker.h"
@@ -280,15 +279,8 @@ namespace libtremotesf
 // SWIG can't parse it :(
 #ifndef SWIG
 template<>
-struct fmt::formatter<libtremotesf::Torrent> {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-
-    template<typename FormatContext>
-    auto format(const libtremotesf::Torrent& torrent, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
-    }
+struct fmt::formatter<libtremotesf::Torrent> : libtremotesf::SimpleFormatter {
+    auto format(const libtremotesf::Torrent& torrent, format_context& ctx) -> decltype(ctx.out());
 };
 #endif // SWIG
 

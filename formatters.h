@@ -2,96 +2,72 @@
 #define LIBTREMOTESF_FORMATTERS_H
 
 #include <stdexcept>
+#include <system_error>
 #include <type_traits>
 
 #include <QDebug>
 #include <QMetaEnum>
+#include <QObject>
 #include <QString>
-
-#include <fmt/core.h>
-#include <fmt/compile.h>
-
-#ifdef Q_OS_WIN
-#include <guiddef.h>
-#include <winrt/base.h>
+#if QT_VERSION_MAJOR >= 6
+#include <QUtf8StringView>
 #endif
 
-#include "demangle.h"
+#include <fmt/core.h>
+#if FMT_VERSION < 80000
+#include <fmt/format.h>
+#endif
 
-namespace libtremotesf::impl {
-    [[maybe_unused]]
-    inline std::string_view toStdStringView(const QByteArray& str) {
-        return std::string_view(str.data(), static_cast<size_t>(str.size()));
-    }
+namespace libtremotesf {
+    struct SimpleFormatter {
+        constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+            return ctx.begin();
+        }
+    };
 }
 
 template<>
-struct fmt::formatter<QString> : fmt::formatter<std::string_view> {
-    template<typename FormatContext>
-    auto format(const QString& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(string.toUtf8()), ctx);
-    }
+struct fmt::formatter<QString> : formatter<string_view> {
+    auto format(const QString& string, format_context& ctx) -> decltype(ctx.out());
 };
 
+class QStringView;
 template<>
-struct fmt::formatter<QStringView> : fmt::formatter<std::string_view> {
-    template<typename FormatContext>
-    auto format(const QStringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(string.toUtf8()), ctx);
-    }
+struct fmt::formatter<QStringView> : formatter<string_view> {
+    auto format(const QStringView& string, format_context& ctx) -> decltype(ctx.out());
 };
 
+class QLatin1String;
 template<>
-struct fmt::formatter<QLatin1String> : fmt::formatter<std::string_view> {
-    template<typename FormatContext>
-    auto format(const QLatin1String& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(std::string_view(string.data(), static_cast<size_t>(string.size())), ctx);
-    }
+struct fmt::formatter<QLatin1String> : formatter<string_view> {
+    auto format(const QLatin1String& string, format_context& ctx) -> decltype(ctx.out());
 };
 
+class QByteArray;
 template<>
-struct fmt::formatter<QByteArray> : fmt::formatter<std::string_view> {
-    template <typename FormatContext>
-    auto format(const QByteArray& array, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(libtremotesf::impl::toStdStringView(array), ctx);
-    }
+struct fmt::formatter<QByteArray> : formatter<string_view> {
+    auto format(const QByteArray& array, format_context& ctx) -> decltype(ctx.out());
 };
 
 #if QT_VERSION_MAJOR >= 6
 template<>
-struct fmt::formatter<QUtf8StringView> : fmt::formatter<std::string_view> {
-    template<typename FormatContext>
-    auto format(const QUtf8StringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<std::string_view>::format(std::string_view(string.data(), static_cast<size_t>(string.size())), ctx);
-    }
+struct fmt::formatter<QUtf8StringView> : formatter<string_view> {
+    auto format(const QUtf8StringView& string, format_context& ctx) -> decltype(ctx.out());
 };
 
+class QAnyStringView;
 template<>
-struct fmt::formatter<QAnyStringView> : fmt::formatter<QString> {
-    template<typename FormatContext>
-    auto format(const QAnyStringView& string, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<QString>::format(string.toString(), ctx);
-    }
+struct fmt::formatter<QAnyStringView> : formatter<QString> {
+    auto format(const QAnyStringView& string, format_context& ctx) -> decltype(ctx.out());
 };
 #endif
 
 namespace libtremotesf::impl {
-    // Can't use FMT_COMPILE with fmt::print() and fmt 7
-    inline constexpr auto singleArgumentFormatString =
-    #if FMT_VERSION >= 80000
-        FMT_COMPILE("{}");
-    #else
-        "{}";
-    #endif
+    inline constexpr auto singleArgumentFormatString = "{}";
 
     template<typename T>
-    struct QDebugFormatter {
-        constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-            return ctx.begin();
-        }
-
-        template<typename FormatContext>
-        auto format(const T& t, FormatContext& ctx) -> decltype(ctx.out()) {
+    struct QDebugFormatter : SimpleFormatter {
+        auto format(const T& t, fmt::format_context& ctx) -> decltype(ctx.out()) {
             QString buffer{};
             QDebug stream(&buffer);
             stream.nospace() << t;
@@ -99,38 +75,28 @@ namespace libtremotesf::impl {
         }
     };
 
+    auto formatQEnum(const QMetaEnum& meta, int64_t value, fmt::format_context& ctx) -> decltype(ctx.out());
+    auto formatQEnum(const QMetaEnum& meta, uint64_t value, fmt::format_context& ctx) -> decltype(ctx.out());
+
     template<typename T>
-    struct QEnumFormatter {
+    struct QEnumFormatter : SimpleFormatter {
         static_assert(std::is_enum_v<T>);
 
-        constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-            return ctx.begin();
-        }
-
-        template<typename FormatContext>
-        auto format(const T& t, FormatContext& ctx) -> decltype(ctx.out()) {
+        auto format(T t, fmt::format_context& ctx) -> decltype(ctx.out()) {
             const auto meta = QMetaEnum::fromType<T>();
-            std::string unnamed{};
-            const char* key = [&]() -> const char* {
-                if (auto named = meta.valueToKey(static_cast<int>(t)); named) {
-                    return named;
-                }
-                unnamed = fmt::format("<unnamed value {}>", static_cast<std::underlying_type_t<T>>(t));
-                return unnamed.c_str();
-            }();
-            return fmt::format_to(ctx.out(), "{}::{}::{}", meta.scope(), meta.enumName(), key);
+            const auto underlying = static_cast<std::underlying_type_t<T>>(t);
+            if constexpr (std::is_signed_v<decltype(underlying)>) {
+                return formatQEnum(meta, static_cast<int64_t>(underlying), ctx);
+            } else {
+                return formatQEnum(meta, static_cast<uint64_t>(underlying), ctx);
+            }
         }
     };
 }
 
 template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const QObject& object, FormatContext& ctx) -> decltype(ctx.out()) {
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> : libtremotesf::SimpleFormatter {
+    auto format(const T& object, fmt::format_context& ctx) -> decltype(ctx.out()) {
         QString buffer{};
         QDebug stream(&buffer);
         stream.nospace() << &object;
@@ -142,64 +108,36 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
 
 #define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {};
 
-template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception, T>>> {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const T& e, FormatContext& ctx) -> decltype(ctx.out()) {
-        const auto type = libtremotesf::typeName(e);
-        const auto what = e.what();
-        if constexpr (std::is_base_of_v<std::system_error, T>) {
-            return formatSystemError(type, e, ctx);
-        } else {
-            if (auto s = dynamic_cast<const std::system_error*>(&e); s) {
-                return formatSystemError(type, *s, ctx);
-            }
-            return fmt::format_to(ctx.out(), "{}: {}", type, what);
-        }
-    }
-
-private:
-    template <typename FormatContext>
-    auto formatSystemError(const std::string& type, const std::system_error& e, FormatContext& ctx) -> decltype(ctx.out()) {
-        const int code = e.code().value();
-        return fmt::format_to(ctx.out(), "{}: {} (error code {} ({:#x}))", type, e.what(), code, static_cast<unsigned int>(code));
-    }
+template<>
+struct fmt::formatter<std::exception> : libtremotesf::SimpleFormatter {
+    auto format(const std::exception& e, fmt::format_context& ctx) -> decltype(ctx.out());
 };
+
+template<typename T>
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception, T>>> : formatter<std::exception> {};
+
+template<>
+struct fmt::formatter<std::system_error> : libtremotesf::SimpleFormatter {
+    auto format(const std::system_error& e, fmt::format_context& ctx) -> decltype(ctx.out());
+};
+
+template<typename T>
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::system_error, T>>> : formatter<std::system_error> {};
 
 #ifdef Q_OS_WIN
+namespace winrt {
+    struct hstring;
+    struct hresult_error;
+}
+
 template<>
 struct fmt::formatter<winrt::hstring> : fmt::formatter<QString> {
-    template <typename FormatContext>
-    auto format(const winrt::hstring& str, FormatContext& ctx) -> decltype(ctx.out()) {
-        return fmt::formatter<QString>::format(
-            QString::fromWCharArray(str.data(), static_cast<QString::size_type>(str.size())),
-            ctx
-        );
-    }
+    auto format(const winrt::hstring& str, fmt::format_context& ctx) -> decltype(ctx.out());
 };
 
-template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<winrt::hresult_error, T>>> {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-
-    template <typename FormatContext>
-    auto format(const T& e, FormatContext& ctx) -> decltype(ctx.out()) {
-        const auto code = e.code().value;
-        return fmt::format_to(
-            ctx.out(),
-            "{}: {} (error code {} ({:#x}))",
-            libtremotesf::typeName(e),
-            e.message(),
-            code,
-            static_cast<uint32_t>(code)
-        );
-    }
+template<>
+struct fmt::formatter<winrt::hresult_error> : libtremotesf::SimpleFormatter {
+    auto format(const winrt::hresult_error& e, fmt::format_context& ctx) -> decltype(ctx.out());
 };
 #endif
 

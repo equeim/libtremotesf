@@ -30,13 +30,6 @@ namespace libtremotesf
 {
     namespace impl
     {
-        inline constexpr auto printlnFormatString =
-#if FMT_VERSION >= 80000
-            FMT_COMPILE("{}\n");
-#else
-            "{}\n";
-#endif
-
         template<class T>
         inline constexpr bool is_exception_v =
                 std::is_base_of_v<std::exception, T>
@@ -74,9 +67,9 @@ namespace libtremotesf
                 } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
                     logString(std::string_view(value));
                 } else if constexpr (is_exception_v<Type>) {
-                    logExceptionRecursively<Type, false>(value);
+                    logExceptionRecursively<false>(value);
                 } else {
-                    logString(fmt::to_string(value));
+                    log(singleArgumentFormatString, value);
                 }
             }
 
@@ -84,55 +77,50 @@ namespace libtremotesf
             void logWithException(E&& e, S&& fmt, Args&&... args) const {
                 static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
                 log(fmt::format(std::forward<S>(fmt), std::forward<Args>(args)...));
-                logExceptionRecursively<std::decay_t<E>>(e);
+                logExceptionRecursively<true>(e);
             }
 
         private:
             void logString(const QString& string) const;
             void logString(std::string_view string) const;
 
-            template<typename E, bool PrintCausedBy = true>
-            void logExceptionRecursively(const E& e) const {
-                if constexpr (PrintCausedBy) {
-                    log(" |- Caused by: {}", e);
-                } else {
-                    logString(fmt::to_string(e));
-                }
-                try {
-                    std::rethrow_if_nested(e);
-                } catch (const std::exception& nested) {
-                    logExceptionRecursively(nested);
-                }
+            template<bool PrintCausedBy = true>
+            void logExceptionRecursively(const std::exception& e) const { return logExceptionRecursivelyImpl<std::exception, PrintCausedBy>(e); }
+
+            template<bool PrintCausedBy = true>
+            void logExceptionRecursively(const std::system_error& e) const { return logExceptionRecursivelyImpl<std::system_error, PrintCausedBy>(e); }
+
 #ifdef Q_OS_WIN
-                catch (const winrt::hresult_error& nested) {
-                    logExceptionRecursively(nested);
-                }
+            template<bool PrintCausedBy = true>
+            void logExceptionRecursively(const winrt::hresult_error& e) const { return logExceptionRecursivelyImpl<winrt::hresult_error, PrintCausedBy>(e); }
 #endif
-                catch (...) {
-                    logString(QLatin1String(" |- Caused by: unknown exception"));
-                }
-            }
+
+            template<typename E, bool PrintCausedBy>
+            void logExceptionRecursivelyImpl(const E& e) const;
 
             QtMsgType type;
             QMessageLogContext context;
         };
 
-        extern template void QMessageLoggerDelegate::logExceptionRecursively<std::exception, true>(const std::exception&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursively<std::exception, false>(const std::exception&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, true>(const std::exception&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, false>(const std::exception&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, true>(const std::system_error&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, false>(const std::system_error&) const;
 #ifdef Q_OS_WIN
-        extern template void QMessageLoggerDelegate::logExceptionRecursively<winrt::hresult_error, true>(const winrt::hresult_error&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursively<winrt::hresult_error, false>(const winrt::hresult_error&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, true>(const winrt::hresult_error&) const;
+        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, false>(const winrt::hresult_error&) const;
 #endif
     }
 
     template<typename FirstArg, typename... OtherArgs>
     void printlnStdout(FirstArg&& firstArg, OtherArgs&&... otherArgs) {
+        constexpr auto printlnFormatString = "{}\n";
         if constexpr (sizeof...(otherArgs) == 0) {
             // Print our single argument as-is
-            fmt::print(stdout, impl::printlnFormatString, std::forward<FirstArg>(firstArg));
+            fmt::print(stdout, printlnFormatString, std::forward<FirstArg>(firstArg));
         } else {
             // First argument must be format string, format it first
-            fmt::print(stdout, impl::printlnFormatString, fmt::format(std::forward<FirstArg>(firstArg), std::forward<OtherArgs>(otherArgs)...));
+            fmt::print(stdout, printlnFormatString, fmt::format(std::forward<FirstArg>(firstArg), std::forward<OtherArgs>(otherArgs)...));
         }
     }
 }

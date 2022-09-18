@@ -29,6 +29,7 @@ add_library(
     OBJECT
     demangle.cpp
     demangle.h
+    formatters.cpp
     formatters.h
     itemlistupdater.h
     log.cpp
