@@ -28,14 +28,9 @@ struct Item {
 };
 
 template<>
-struct fmt::formatter<Item> {
-    constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
-        return ctx.begin();
-    }
-
-    template<typename FormatContext>
-    auto format(const Item& item, FormatContext& ctx) const -> decltype(ctx.out()) {
-        return fmt::format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
+struct fmt::formatter<Item> : libtremotesf::SimpleFormatter {
+    auto format(const Item& item, format_context& ctx) const -> decltype(ctx.out()) {
+        return format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
     }
 };
 

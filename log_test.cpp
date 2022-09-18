@@ -4,6 +4,14 @@
 #include <QTest>
 #include <QVariant>
 
+#ifdef Q_OS_WIN
+#include <guiddef.h>
+#include <winrt/base.h>
+#endif
+
+#include <fmt/format.h>
+#include <fmt/compile.h>
+
 #include "log.h"
 #include "torrent.h"
 
@@ -24,7 +32,6 @@ private slots:
         printlnStdout("{}", "foo");
         printlnStdout(FMT_STRING("{}"), "foo");
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), "foo");
         printlnStdout(fmt::runtime("{}"), "foo");
 #endif
     }
@@ -35,7 +42,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -46,7 +52,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -57,7 +62,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -69,7 +73,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -80,7 +83,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -92,7 +94,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -103,7 +104,6 @@ private slots:
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), str);
         printlnStdout(fmt::runtime("{}"), str);
 #endif
     }
@@ -115,7 +115,6 @@ private slots:
         printlnStdout("{}", value);
         printlnStdout(FMT_STRING("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), value);
         printlnStdout(fmt::runtime("{}"), value);
 #endif
     }
@@ -126,7 +125,6 @@ private slots:
         printlnStdout("{}", list);
         printlnStdout(FMT_STRING("{}"), list);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), list);
         printlnStdout(fmt::runtime("{}"), list);
 #endif
     }
@@ -137,7 +135,6 @@ private slots:
         printlnStdout("{}", value);
         printlnStdout(FMT_STRING("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), value);
         printlnStdout(fmt::runtime("{}"), value);
 #endif
     }
@@ -147,7 +144,6 @@ private slots:
         printlnStdout("{}", *this);
         printlnStdout(FMT_STRING("{}"), *this);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), *this);
         printlnStdout(fmt::runtime("{}"), *this);
 #endif
     }
@@ -158,7 +154,6 @@ private slots:
         printlnStdout("{}", value);
         printlnStdout(FMT_STRING("{}"), value);
 #if FMT_VERSION >= 80000
-        printlnStdout(FMT_COMPILE("{}"), value);
         printlnStdout(fmt::runtime("{}"), value);
 #endif
     }
@@ -168,7 +163,6 @@ private slots:
         logInfo("foo");
         logInfo("{}", "foo");
         logInfo(FMT_STRING("{}"), "foo");
-        logInfo(FMT_COMPILE("{}"), "foo");
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), "foo");
 #endif
@@ -179,7 +173,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -190,7 +183,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -201,7 +193,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -213,7 +204,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -224,7 +214,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -236,7 +225,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -247,7 +235,6 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-        logInfo(FMT_COMPILE("{}"), str);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
 #endif
@@ -259,7 +246,6 @@ private slots:
         logInfo(value);
         logInfo("{}", value);
         logInfo(FMT_STRING("{}"), value);
-        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), value);
 #endif
@@ -270,7 +256,6 @@ private slots:
         logInfo(list);
         logInfo("{}", list);
         logInfo(FMT_STRING("{}"), list);
-        logInfo(FMT_COMPILE("{}"), list);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), list);
 #endif
@@ -281,7 +266,6 @@ private slots:
         logInfo(value);
         logInfo("{}", value);
         logInfo(FMT_STRING("{}"), value);
-        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), value);
 #endif
@@ -291,7 +275,6 @@ private slots:
         logInfo(*this);
         logInfo("{}", *this);
         logInfo(FMT_STRING("{}"), *this);
-        logInfo(FMT_COMPILE("{}"), *this);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), *this);
 #endif
@@ -302,7 +285,6 @@ private slots:
         logInfo(value);
         logInfo("{}", value);
         logInfo(FMT_STRING("{}"), value);
-        logInfo(FMT_COMPILE("{}"), value);
 #if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), value);
 #endif

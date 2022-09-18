@@ -848,3 +848,7 @@ namespace libtremotesf
         mData.singleFile = (torrentMap.value(prioritiesKey).toArray().size() == 1);
     }
 }
+
+auto fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) -> decltype(ctx.out()) {
+    return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
+}
