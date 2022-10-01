@@ -10,7 +10,7 @@
 #endif
 
 namespace libtremotesf::impl {
-    void QMessageLoggerDelegate::logString(const QString& string) const {
+    void QMessageLoggerDelegate::log(const QString& string) const {
         // We use internal qt_message_output() function here because there are only two methods
         // to output string to QMessageLogger and they have overheads that are unneccessary
         // when we are doing formatting on our own:
@@ -19,8 +19,8 @@ namespace libtremotesf::impl {
         qt_message_output(type, context, string);
     }
 
-    void QMessageLoggerDelegate::logString(std::string_view string) const {
-        logString(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
+    void QMessageLoggerDelegate::log(std::string_view string) const {
+        log(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
     }
 
     template<typename E, bool PrintCausedBy>
@@ -33,15 +33,15 @@ namespace libtremotesf::impl {
         try {
             std::rethrow_if_nested(e);
         } catch (const std::exception& nested) {
-            logExceptionRecursively(nested);
+            logExceptionRecursively<true>(nested);
         }
 #ifdef Q_OS_WIN
         catch (const winrt::hresult_error& nested) {
-            logExceptionRecursively(nested);
+            logExceptionRecursively<true>(nested);
         }
 #endif
         catch (...) {
-            logString(QLatin1String(" |- Caused by: unknown exception"));
+            log(QStringLiteral(" |- Caused by: unknown exception"));
         }
     }
 
