@@ -12,6 +12,13 @@
 
 #include "formatters.h"
 
+#include <fmt/core.h>
+#if FMT_VERSION < 80000
+#define FORMAT_STRING fmt::string_view
+#else
+#define FORMAT_STRING fmt::format_string<Args...>
+#endif
+
 namespace libtremotesf
 {
     namespace impl
@@ -29,9 +36,9 @@ namespace libtremotesf
                 : type(type),
                   context(fileName, lineNumber, functionName, "default") {}
 
-            template<typename S, typename FirstArg, typename... Args>
-            void log(S&& fmt, FirstArg&& firstArg, Args&&... args) const {
-                logString(fmt::format(std::forward<S>(fmt), std::forward<FirstArg>(firstArg), std::forward<Args>(args)...));
+            template<typename... Args>
+            void log(FORMAT_STRING fmt, Args&&... args) const {
+                logString(fmt::format(fmt, std::forward<Args>(args)...));
             }
 
             template<typename T>
@@ -59,10 +66,17 @@ namespace libtremotesf
                 }
             }
 
-            template<typename E, typename S, typename... Args>
-            void logWithException(E&& e, S&& fmt, Args&&... args) const {
+            template<typename E, typename... Args>
+            void logWithException(E&& e, FORMAT_STRING fmt, Args&&... args) const {
                 static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
-                log(fmt::format(std::forward<S>(fmt), std::forward<Args>(args)...));
+                log(fmt, std::forward<Args>(args)...);
+                logExceptionRecursively<true>(e);
+            }
+
+            template<typename E, typename T>
+            void logWithException(E&& e, const T& value) const {
+                static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
+                log(value);
                 logExceptionRecursively<true>(e);
             }
 
@@ -96,18 +110,18 @@ namespace libtremotesf
         extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, true>(const winrt::hresult_error&) const;
         extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, false>(const winrt::hresult_error&) const;
 #endif
+
+        inline constexpr auto printlnFormatString = "{}\n";
     }
 
-    template<typename FirstArg, typename... OtherArgs>
-    void printlnStdout(FirstArg&& firstArg, OtherArgs&&... otherArgs) {
-        constexpr auto printlnFormatString = "{}\n";
-        if constexpr (sizeof...(otherArgs) == 0) {
-            // Print our single argument as-is
-            fmt::print(stdout, printlnFormatString, std::forward<FirstArg>(firstArg));
-        } else {
-            // First argument must be format string, format it first
-            fmt::print(stdout, printlnFormatString, fmt::format(std::forward<FirstArg>(firstArg), std::forward<OtherArgs>(otherArgs)...));
-        }
+    template<typename T>
+    void printlnStdout(const T& value) {
+        fmt::print(stdout, impl::printlnFormatString, value);
+    }
+
+    template<typename... Args>
+    void printlnStdout(FORMAT_STRING fmt, Args&&... args) {
+        fmt::print(stdout, impl::printlnFormatString, fmt::format(fmt, std::forward<Args>(args)...));
     }
 }
 
