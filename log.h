@@ -36,29 +36,28 @@ namespace libtremotesf
                 : type(type),
                   context(fileName, lineNumber, functionName, "default") {}
 
-            template<typename... Args>
+            void log(const QString& string) const;
+            void log(std::string_view string) const;
+            // Needed to resolve overload resolution ambiguity since QString and std::string_view
+            // are both implicitly convertible from const char*
+            void log(const char* string) const { log(std::string_view(string)); };
+
+            template<typename... Args, typename = std::enable_if_t<sizeof...(Args) != 0>>
             void log(FORMAT_STRING fmt, Args&&... args) const {
-                logString(fmt::format(fmt, std::forward<Args>(args)...));
+                log(fmt::format(fmt, std::forward<Args>(args)...));
             }
 
-            template<typename T>
+            template<typename T, typename = std::enable_if_t<!std::is_convertible_v<T, QString> && !std::is_convertible_v<T, std::string_view>>>
             void log(const T& value) const {
                 using Type = std::remove_cv_t<std::remove_reference_t<T>>;
-                using Decayed = std::decay_t<T>;
-                if constexpr (std::is_same_v<Type, QString> || std::is_same_v<Type, QLatin1String>) {
-                    logString(value);
-                } else if constexpr (std::is_same_v<Decayed, const char*> || std::is_same_v<Decayed, char*>) {
-                    logString(QString(value));
-                } else if constexpr (
+                if constexpr (
                     std::is_same_v<Type, QStringView>
 #if QT_VERSION_MAJOR >= 6
                     || std::is_same_v<Type, QUtf8StringView>
                     || std::is_same_v<Type, QAnyStringView>
 #endif
                 ) {
-                    logString(value.toString());
-                } else if constexpr (std::is_same_v<Type, std::string> || std::is_same_v<Type, std::string_view>) {
-                    logString(std::string_view(value));
+                    log(value.toString());
                 } else if constexpr (is_exception_v<Type>) {
                     logExceptionRecursively<false>(value);
                 } else {
@@ -66,7 +65,7 @@ namespace libtremotesf
                 }
             }
 
-            template<typename E, typename... Args>
+            template<typename E, typename... Args, typename = std::enable_if_t<sizeof...(Args) != 0>>
             void logWithException(E&& e, FORMAT_STRING fmt, Args&&... args) const {
                 static_assert(is_exception_v<std::decay_t<E>>, "First argument must be of exception type");
                 log(fmt, std::forward<Args>(args)...);
@@ -81,17 +80,14 @@ namespace libtremotesf
             }
 
         private:
-            void logString(const QString& string) const;
-            void logString(std::string_view string) const;
-
-            template<bool PrintCausedBy = true>
+            template<bool PrintCausedBy>
             void logExceptionRecursively(const std::exception& e) const { return logExceptionRecursivelyImpl<std::exception, PrintCausedBy>(e); }
 
-            template<bool PrintCausedBy = true>
+            template<bool PrintCausedBy>
             void logExceptionRecursively(const std::system_error& e) const { return logExceptionRecursivelyImpl<std::system_error, PrintCausedBy>(e); }
 
 #ifdef Q_OS_WIN
-            template<bool PrintCausedBy = true>
+            template<bool PrintCausedBy>
             void logExceptionRecursively(const winrt::hresult_error& e) const { return logExceptionRecursivelyImpl<winrt::hresult_error, PrintCausedBy>(e); }
 #endif
 
@@ -119,7 +115,7 @@ namespace libtremotesf
         fmt::print(stdout, impl::printlnFormatString, value);
     }
 
-    template<typename... Args>
+    template<typename... Args, typename = std::enable_if_t<sizeof...(Args) != 0>>
     void printlnStdout(FORMAT_STRING fmt, Args&&... args) {
         fmt::print(stdout, impl::printlnFormatString, fmt::format(fmt, std::forward<Args>(args)...));
     }
