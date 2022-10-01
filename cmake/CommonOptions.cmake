@@ -1,3 +1,7 @@
+# SPDX-FileCopyrightText: 2015-2022 Alexey Rochev
+#
+# SPDX-License-Identifier: CC0-1.0
+
 if (NOT DEFINED TREMOTESF_QT6)
     message(FATAL_ERROR "TREMOTESF_QT6 is not defined")
 endif()

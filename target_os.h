@@ -1,3 +1,10 @@
+// SPDX-FileCopyrightText: 2015-2022 Alexey Rochev
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
+#ifndef LIBTREMTOESF_TARGET_OS_H
+#define LIBTREMTOESF_TARGET_OS_H
+
 #include <QtGlobal>
 
 namespace libtremotesf {
@@ -36,3 +43,5 @@ namespace tremotesf {
 	using libtremotesf::targetOs;
 	using libtremotesf::isTargetOsWindows;
 }
+
+#endif // LIBTREMTOESF_TARGET_OS_H

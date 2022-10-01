@@ -1,0 +1,14 @@
+Format: https://www.debian.org/doc/packaging-manuals/copyright-format/1.0/
+Upstream-Name: libtremotesf
+Upstream-Contact: Alexey Rochev <equeim@gmail.com>
+Source: https://github.com/equeim/libtremotesf
+
+# Sample paragraph, commented out:
+#
+# Files: src/*
+# Copyright: $YEAR $NAME <$CONTACT>
+# License: ...
+
+Files: README.md *.json
+Copyright: 2015-2022 Alexey Rochev
+License: CC0-1.0

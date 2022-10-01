@@ -1,3 +1,7 @@
+// SPDX-FileCopyrightText: 2015-2022 Alexey Rochev
+//
+// SPDX-License-Identifier: GPL-3.0-or-later
+
 #ifndef LIBTREMOTESF_DEMANGLE_H
 #define LIBTREMOTESF_DEMANGLE_H
 
