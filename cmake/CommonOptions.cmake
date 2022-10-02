@@ -20,6 +20,10 @@ else()
     set(TREMOTESF_UNIX_FREEDESKTOP OFF)
 endif()
 
+# FYI:
+# if (MSVC)                                   -> MSVC or clang-cl
+# if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")  -> MSVC only
+
 if (MSVC AND (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY))
     if (VCPKG_TARGET_TRIPLET MATCHES "^[a-zA-Z0-9]+-windows-static$")
         set(CMAKE_MSVC_RUNTIME_LIBRARY "MultiThreaded$<$<CONFIG:Debug>:Debug>")
@@ -29,7 +33,7 @@ if (MSVC AND (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY))
 endif()
 
 function(set_common_options_on_targets)
-    if (MSVC)
+    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
         set(
             common_compile_options
             /utf-8
@@ -71,7 +75,11 @@ function(set_common_options_on_targets)
             -Wformat=2
             -Werror=format
         )
-        if (NOT CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            if (MSVC)
+                list(TRANSFORM common_compile_options PREPEND "/clang:")
+            endif()
+        else()
             list(APPEND common_compile_options -Wlogical-op)
         endif()
     endif()
