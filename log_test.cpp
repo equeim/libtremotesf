@@ -25,7 +25,7 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QVariant)
 using namespace libtremotesf;
 
 #ifdef Q_OS_WIN
-static constexpr int32_t E_ACCESSDENIED = 0x80070005;
+static constexpr auto E_ACCESSDENIED = static_cast<int32_t>(0x80070005);
 #endif
 
 class PrintlnTest : public QObject {
