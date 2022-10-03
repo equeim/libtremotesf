@@ -5,50 +5,19 @@
 #ifndef LIBTREMOTESF_STDUTILS_H
 #define LIBTREMOTESF_STDUTILS_H
 
-#include <functional>
 #include <iterator>
 #include <type_traits>
-#include <vector>
 
 #include <QtGlobal>
 
 namespace libtremotesf
 {
     template<typename C, typename V>
-    inline auto contains_impl(const C& container, const V& value, int) -> decltype(container.find(value), true)
-    {
-        return container.find(value) != std::end(container);
-    }
-
-    template<typename C, typename V>
-    inline bool contains_impl(const C& container, const V& value, long)
-    {
-        return std::find(std::begin(container), std::end(container), value) != std::end(container);
-    }
-
-    template<typename C, typename V>
-    inline bool contains(const C& container, const V& value)
-    {
-        return contains_impl(container, value, 0);
-    }
-
-    template<typename C, typename V>
-    inline size_t index_of(const C& container, const V& value) {
-        return static_cast<size_t>(std::find(std::begin(container), std::end(container), value) - std::begin(container));
-    }
-
-    template<typename C, typename V>
     inline int index_of_i(const C& container, const V& value) {
         return static_cast<int>(std::find(std::begin(container), std::end(container), value) - std::begin(container));
     }
 
-    template<typename C, typename V>
-    inline void erase_one(C& container, const V& value) {
-        container.erase(std::find(container.begin(), container.end(), value));
-    }
-
-
-    template<typename T, typename std::enable_if<std::is_scalar<T>::value && !std::is_floating_point<T>::value, int>::type = 0>
+    template<typename T, typename std::enable_if_t<std::is_scalar_v<T> && !std::is_floating_point_v<T>, int> = 0>
     inline void setChanged(T& value, T newValue, bool& changed)
     {
         if (newValue != value) {
@@ -57,7 +26,7 @@ namespace libtremotesf
         }
     }
 
-    template<typename T, typename std::enable_if<std::is_floating_point<T>::value, int>::type = 0>
+    template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
     inline void setChanged(T& value, T newValue, bool& changed)
     {
         if (!qFuzzyCompare(newValue, value)) {
@@ -66,7 +35,7 @@ namespace libtremotesf
         }
     }
 
-    template<typename T, typename std::enable_if<!std::is_scalar<T>::value, int>::type = 0>
+    template<typename T, typename std::enable_if_t<!std::is_scalar_v<T>, int> = 0>
     inline void setChanged(T& value, T&& newValue, bool& changed)
     {
         if (newValue != value) {
@@ -74,70 +43,12 @@ namespace libtremotesf
             changed = true;
         }
     }
-
-    template<typename T>
-    class VectorBatchRemover
-    {
-    public:
-        inline explicit VectorBatchRemover(std::vector<T>& items, std::vector<int>* removedIndexes = nullptr, std::vector<int>* indexesToShift = nullptr)
-            : items(items), removedIndexes(removedIndexes), indexesToShift(indexesToShift) {}
-
-        inline void remove(int index) {
-            if (removedIndexes) {
-                removedIndexes->push_back(index);
-            }
-            if (beginIndex == -1) {
-                reset(index);
-            } else {
-                if (index == (beginIndex - 1)) {
-                    beginIndex = index;
-                } else {
-                    doRemove();
-                    reset(index);
-                }
-            }
-        }
-
-        inline void doRemove() {
-            if (beginIndex != -1) {
-                items.erase(begin + beginIndex, begin + endIndex + 1);
-                if (indexesToShift && !indexesToShift->empty()) {
-                    const int shift = static_cast<int>(endIndex - beginIndex + 1);
-                    for (int& index : *indexesToShift) {
-                        if (index < beginIndex) {
-                            break;
-                        }
-                        index -= shift;
-                    }
-                }
-            }
-        }
-
-    private:
-        inline void reset(int index) {
-            beginIndex = index;
-            endIndex = index;
-        }
-
-        std::vector<T>& items;
-        std::vector<int>* const removedIndexes;
-        std::vector<int>* const indexesToShift;
-
-        const typename std::vector<T>::iterator begin = items.begin();
-
-        int beginIndex = -1;
-        int endIndex = -1;
-    };
 }
 
 namespace tremotesf
 {
-    using libtremotesf::contains;
-    using libtremotesf::index_of;
     using libtremotesf::index_of_i;
-    using libtremotesf::erase_one;
     using libtremotesf::setChanged;
-    using libtremotesf::VectorBatchRemover;
 }
 
 #endif // LIBTREMOTESF_STDUTILS_H
