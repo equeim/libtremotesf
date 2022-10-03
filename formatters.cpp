@@ -28,9 +28,8 @@
 #include "demangle.h"
 
 namespace {
-    [[maybe_unused]]
     fmt::string_view toFmtStringView(const QByteArray& str) {
-        return fmt::string_view(str.data(), static_cast<size_t>(str.size()));
+        return {str.data(), static_cast<size_t>(str.size())};
     }
 }
 

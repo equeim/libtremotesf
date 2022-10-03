@@ -208,7 +208,7 @@ namespace libtremotesf
             void setSessionId(const QByteArray& sessionId);
         };
 
-        void setStatus(Status status);
+        void setStatus(Status&& status);
         void resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, size_t& removedTorrentsCount);
         void emitSignalsOnConnectionStateChanged(ConnectionState oldConnectionState, size_t removedTorrentsCount);
 

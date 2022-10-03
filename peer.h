@@ -22,12 +22,12 @@ namespace libtremotesf
             return address == other.address;
         }
 
-        QString address;
-        QString client;
-        long long downloadSpeed;
-        long long uploadSpeed;
-        double progress;
-        QString flags;
+        QString address{};
+        QString client{};
+        long long downloadSpeed{};
+        long long uploadSpeed{};
+        double progress{};
+        QString flags{};
     };
 }
 

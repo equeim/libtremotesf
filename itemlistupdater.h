@@ -12,6 +12,8 @@
 #include <type_traits>
 #include <vector>
 
+#include <QtGlobal>
+
 namespace libtremotesf {
     namespace impl {
         template<typename T, typename U, typename = void>
@@ -66,7 +68,9 @@ namespace libtremotesf {
     template<typename Item, typename NewItem = Item, typename NewItemContainer = std::vector<NewItem>>
     class ItemListUpdater {
     public:
+        ItemListUpdater() = default;
         virtual ~ItemListUpdater() = default;
+        Q_DISABLE_COPY_MOVE(ItemListUpdater)
 
         virtual void update(std::vector<Item>& items, NewItemContainer&& newItems) {
             if (!items.empty()) {

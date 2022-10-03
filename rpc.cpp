@@ -104,17 +104,17 @@ namespace libtremotesf
         {
             if (!file.isOpen() && !file.open(QIODevice::ReadOnly)) {
                 logWarning("Failed to open file {}", file.fileName());
-                return QString();
+                return {};
             }
 
             static constexpr qint64 bufferSize = 1024 * 1024 - 1; // 1 MiB minus 1 byte (dividable by 3)
-            QString string;
+            QString string{};
             string.reserve(static_cast<QString::size_type>(((4 * file.size() / 3) + 3) & ~3));
 
-            QByteArray buffer;
+            QByteArray buffer{};
             buffer.resize(static_cast<QByteArray::size_type>(std::min(bufferSize, file.size())));
 
-            qint64 offset = 0;
+            qint64 offset{};
 
             while (true) {
                 const qint64 n = file.read(buffer.data() + offset, buffer.size() - offset);
@@ -770,7 +770,7 @@ namespace libtremotesf
         }
     }
 
-    void Rpc::setStatus(Status status)
+    void Rpc::setStatus(Status&& status)
     {
         if (status == mStatus) {
             return;
@@ -783,7 +783,7 @@ namespace libtremotesf
             emit aboutToDisconnect();
         }
 
-        mStatus = status;
+        mStatus = std::move(status);
 
         size_t removedTorrentsCount = 0;
         if (connectionStateChanged) {
@@ -796,7 +796,7 @@ namespace libtremotesf
             emitSignalsOnConnectionStateChanged(oldStatus.connectionState, removedTorrentsCount);
         }
 
-        if (status.error != oldStatus.error || status.errorMessage != oldStatus.errorMessage) {
+        if (mStatus.error != oldStatus.error || mStatus.errorMessage != oldStatus.errorMessage) {
             emit errorChanged();
         }
     }
@@ -1187,7 +1187,7 @@ namespace libtremotesf
 
     bool Rpc::retryRequest(Request&& request, QNetworkReply* previousAttempt)
     {
-        int retryAttempts;
+        int retryAttempts{};
         if (const auto found = mRetryingNetworkRequests.find(previousAttempt); found != mRetryingNetworkRequests.end()) {
             retryAttempts = found->second;
             mRetryingNetworkRequests.erase(found);
