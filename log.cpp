@@ -19,10 +19,6 @@ namespace libtremotesf::impl {
         qt_message_output(type, context, string);
     }
 
-    void QMessageLoggerDelegate::log(std::string_view string) const {
-        log(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
-    }
-
     template<typename E, bool PrintCausedBy>
     void QMessageLoggerDelegate::logExceptionRecursivelyImpl(const E& e) const {
         if constexpr (PrintCausedBy) {
