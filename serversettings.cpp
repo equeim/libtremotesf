@@ -81,8 +81,9 @@ namespace libtremotesf
                 return encryptionModePreferred;
             case ServerSettingsData::RequiredEncryption:
                 return encryptionModeRequired;
+            default:
+                return {};
             }
-            return QString();
         }
 
         const QLatin1String utpEnabledKey("utp-enabled");
