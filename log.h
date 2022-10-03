@@ -19,6 +19,14 @@
 #define FORMAT_STRING fmt::format_string<Args...>
 #endif
 
+#if defined(__GNUC__)
+#define ALWAYS_INLINE [[gnu::always_inline]]
+#elif defined(_MSC_VER)
+#define ALWAYS_INLINE __forceinline
+#else
+#define ALWAYS_INLINE
+#endif
+
 namespace libtremotesf
 {
     namespace impl
@@ -37,10 +45,13 @@ namespace libtremotesf
                   context(fileName, lineNumber, functionName, "default") {}
 
             void log(const QString& string) const;
-            void log(std::string_view string) const;
+
+            ALWAYS_INLINE void log(std::string_view string) const {
+                log(QString::fromUtf8(string.data(), static_cast<QString::size_type>(string.size())));
+            }
             // Needed to resolve overload resolution ambiguity since QString and std::string_view
             // are both implicitly convertible from const char*
-            void log(const char* string) const { log(std::string_view(string)); };
+            ALWAYS_INLINE void log(const char* string) const { log(std::string_view(string)); };
 
             template<typename... Args, typename = std::enable_if_t<sizeof...(Args) != 0>>
             void log(FORMAT_STRING fmt, Args&&... args) const {
