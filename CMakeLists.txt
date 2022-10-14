@@ -24,7 +24,7 @@ set(CMAKE_AUTOMOC ON)
 include(cmake/CommonOptions.cmake)
 
 find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Concurrent Network)
-if (NOT DEFINED FMT_SOURCE_DIR)
+if (NOT TARGET fmt::fmt)
     find_package(fmt 7.0 REQUIRED)
 endif()
 
