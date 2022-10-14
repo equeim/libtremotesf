@@ -36,6 +36,7 @@ add_library(
     formatters.cpp
     formatters.h
     itemlistupdater.h
+    literals.h
     log.cpp
     log.h
     peer.cpp

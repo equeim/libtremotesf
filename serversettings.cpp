@@ -13,36 +13,36 @@ namespace libtremotesf
 {
     namespace
     {
-        const QLatin1String downloadDirectoryKey("download-dir");
-        const QLatin1String trashTorrentFilesKey("trash-original-torrent-files");
-        const QLatin1String startAddedTorrentsKey("start-added-torrents");
-        const QLatin1String renameIncompleteFilesKey("rename-partial-files");
-        const QLatin1String incompleteDirectoryEnabledKey("incomplete-dir-enabled");
-        const QLatin1String incompleteDirectoryKey("incomplete-dir");
+        constexpr auto downloadDirectoryKey = "download-dir"_l1;
+        constexpr auto trashTorrentFilesKey = "trash-original-torrent-files"_l1;
+        constexpr auto startAddedTorrentsKey = "start-added-torrents"_l1;
+        constexpr auto renameIncompleteFilesKey = "rename-partial-files"_l1;
+        constexpr auto incompleteDirectoryEnabledKey = "incomplete-dir-enabled"_l1;
+        constexpr auto incompleteDirectoryKey = "incomplete-dir"_l1;
 
-        const QLatin1String ratioLimitedKey("seedRatioLimited");
-        const QLatin1String ratioLimitKey("seedRatioLimit");
-        const QLatin1String idleSeedingLimitedKey("idle-seeding-limit-enabled");
-        const QLatin1String idleSeedingLimitKey("idle-seeding-limit");
+        constexpr auto ratioLimitedKey = "seedRatioLimited"_l1;
+        constexpr auto ratioLimitKey = "seedRatioLimit"_l1;
+        constexpr auto idleSeedingLimitedKey = "idle-seeding-limit-enabled"_l1;
+        constexpr auto idleSeedingLimitKey = "idle-seeding-limit"_l1;
 
-        const QLatin1String downloadQueueEnabledKey("download-queue-enabled");
-        const QLatin1String downloadQueueSizeKey("download-queue-size");
-        const QLatin1String seedQueueEnabledKey("seed-queue-enabled");
-        const QLatin1String seedQueueSizeKey("seed-queue-size");
-        const QLatin1String idleQueueLimitedKey("queue-stalled-enabled");
-        const QLatin1String idleQueueLimitKey("queue-stalled-minutes");
+        constexpr auto downloadQueueEnabledKey = "download-queue-enabled"_l1;
+        constexpr auto downloadQueueSizeKey = "download-queue-size"_l1;
+        constexpr auto seedQueueEnabledKey = "seed-queue-enabled"_l1;
+        constexpr auto seedQueueSizeKey = "seed-queue-size"_l1;
+        constexpr auto idleQueueLimitedKey = "queue-stalled-enabled"_l1;
+        constexpr auto idleQueueLimitKey = "queue-stalled-minutes"_l1;
 
-        const QLatin1String downloadSpeedLimitedKey("speed-limit-down-enabled");
-        const QLatin1String downloadSpeedLimitKey("speed-limit-down");
-        const QLatin1String uploadSpeedLimitedKey("speed-limit-up-enabled");
-        const QLatin1String uploadSpeedLimitKey("speed-limit-up");
-        const QLatin1String alternativeSpeedLimitsEnabledKey("alt-speed-enabled");
-        const QLatin1String alternativeDownloadSpeedLimitKey("alt-speed-down");
-        const QLatin1String alternativeUploadSpeedLimitKey("alt-speed-up");
-        const QLatin1String alternativeSpeedLimitsScheduledKey("alt-speed-time-enabled");
-        const QLatin1String alternativeSpeedLimitsBeginTimeKey("alt-speed-time-begin");
-        const QLatin1String alternativeSpeedLimitsEndTimeKey("alt-speed-time-end");
-        const QLatin1String alternativeSpeedLimitsDaysKey("alt-speed-time-day");
+        constexpr auto downloadSpeedLimitedKey = "speed-limit-down-enabled"_l1;
+        constexpr auto downloadSpeedLimitKey = "speed-limit-down"_l1;
+        constexpr auto uploadSpeedLimitedKey = "speed-limit-up-enabled"_l1;
+        constexpr auto uploadSpeedLimitKey = "speed-limit-up"_l1;
+        constexpr auto alternativeSpeedLimitsEnabledKey = "alt-speed-enabled"_l1;
+        constexpr auto alternativeDownloadSpeedLimitKey = "alt-speed-down"_l1;
+        constexpr auto alternativeUploadSpeedLimitKey = "alt-speed-up"_l1;
+        constexpr auto alternativeSpeedLimitsScheduledKey = "alt-speed-time-enabled"_l1;
+        constexpr auto alternativeSpeedLimitsBeginTimeKey = "alt-speed-time-begin"_l1;
+        constexpr auto alternativeSpeedLimitsEndTimeKey = "alt-speed-time-end"_l1;
+        constexpr auto alternativeSpeedLimitsDaysKey = "alt-speed-time-day"_l1;
 
         inline ServerSettingsData::AlternativeSpeedLimitsDays daysFromInt(int days)
         {
@@ -63,14 +63,14 @@ namespace libtremotesf
             }
         }
 
-        const QLatin1String peerPortKey("peer-port");
-        const QLatin1String randomPortEnabledKey("peer-port-random-on-start");
-        const QLatin1String portForwardingEnabledKey("port-forwarding-enabled");
+        constexpr auto peerPortKey = "peer-port"_l1;
+        constexpr auto randomPortEnabledKey = "peer-port-random-on-start"_l1;
+        constexpr auto portForwardingEnabledKey = "port-forwarding-enabled"_l1;
 
-        const QLatin1String encryptionModeKey("encryption");
-        const QLatin1String encryptionModeAllowed("tolerated");
-        const QLatin1String encryptionModePreferred("preferred");
-        const QLatin1String encryptionModeRequired("required");
+        constexpr auto encryptionModeKey = "encryption"_l1;
+        constexpr auto encryptionModeAllowed = "tolerated"_l1;
+        constexpr auto encryptionModePreferred = "preferred"_l1;
+        constexpr auto encryptionModeRequired = "required"_l1;
 
         inline QString encryptionModeString(ServerSettingsData::EncryptionMode mode)
         {
@@ -86,12 +86,12 @@ namespace libtremotesf
             }
         }
 
-        const QLatin1String utpEnabledKey("utp-enabled");
-        const QLatin1String pexEnabledKey("pex-enabled");
-        const QLatin1String dhtEnabledKey("dht-enabled");
-        const QLatin1String lpdEnabledKey("lpd-enabled");
-        const QLatin1String maximumPeersPerTorrentKey("peer-limit-per-torrent");
-        const QLatin1String maximumPeersGloballyKey("peer-limit-global");
+        constexpr auto utpEnabledKey = "utp-enabled"_l1;
+        constexpr auto pexEnabledKey = "pex-enabled"_l1;
+        constexpr auto dhtEnabledKey = "dht-enabled"_l1;
+        constexpr auto lpdEnabledKey = "lpd-enabled"_l1;
+        constexpr auto maximumPeersPerTorrentKey = "peer-limit-per-torrent"_l1;
+        constexpr auto maximumPeersGloballyKey = "peer-limit-global"_l1;
     }
 
     bool ServerSettingsData::canRenameFiles() const
@@ -643,8 +643,8 @@ namespace libtremotesf
     {
         bool changed = false;
 
-        mData.rpcVersion = serverSettings.value(QLatin1String("rpc-version")).toInt();
-        mData.minimumRpcVersion = serverSettings.value(QLatin1String("rpc-version-minimum")).toInt();
+        mData.rpcVersion = serverSettings.value("rpc-version"_l1).toInt();
+        mData.minimumRpcVersion = serverSettings.value("rpc-version-minimum"_l1).toInt();
 
         setChanged(mData.downloadDirectory, serverSettings.value(downloadDirectoryKey).toString(), changed);
         setChanged(mData.trashTorrentFiles, serverSettings.value(trashTorrentFilesKey).toBool(), changed);

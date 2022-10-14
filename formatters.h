@@ -25,6 +25,9 @@
 #define FORMAT_CONST const
 #endif
 
+// Include it here just because it's useful
+#include "literals.h"
+
 namespace libtremotesf {
     struct SimpleFormatter {
         constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {

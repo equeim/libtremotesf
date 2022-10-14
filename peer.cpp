@@ -6,15 +6,14 @@
 
 #include <QJsonObject>
 
+#include "literals.h"
 #include "stdutils.h"
 
 namespace libtremotesf
 {
-    const QLatin1String Peer::addressKey("address");
-
     Peer::Peer(QString&& address, const QJsonObject& peerJson)
         : address(std::move(address)),
-          client(peerJson.value(QLatin1String("clientName")).toString())
+          client(peerJson.value("clientName"_l1).toString())
     {
         update(peerJson);
     }
@@ -22,10 +21,10 @@ namespace libtremotesf
     bool Peer::update(const QJsonObject& peerJson)
     {
         bool changed = false;
-        setChanged(downloadSpeed, static_cast<long long>(peerJson.value(QLatin1String("rateToClient")).toDouble()), changed);
-        setChanged(uploadSpeed, static_cast<long long>(peerJson.value(QLatin1String("rateToPeer")).toDouble()), changed);
-        setChanged(progress, peerJson.value(QLatin1String("progress")).toDouble(), changed);
-        setChanged(flags, peerJson.value(QLatin1String("flagStr")).toString(), changed);
+        setChanged(downloadSpeed, static_cast<long long>(peerJson.value("rateToClient"_l1).toDouble()), changed);
+        setChanged(uploadSpeed, static_cast<long long>(peerJson.value("rateToPeer"_l1).toDouble()), changed);
+        setChanged(progress, peerJson.value("progress"_l1).toDouble(), changed);
+        setChanged(flags, peerJson.value("flagStr"_l1).toString(), changed);
         return changed;
     }
 }

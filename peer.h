@@ -6,6 +6,7 @@
 #define LIBTREMOTESF_PEER_H
 
 #include <QString>
+#include "literals.h"
 
 class QJsonObject;
 
@@ -13,7 +14,7 @@ namespace libtremotesf
 {
     struct Peer
     {
-        static const QLatin1String addressKey;
+        static constexpr auto addressKey = "address"_l1;
 
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
