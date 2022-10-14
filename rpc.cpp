@@ -28,6 +28,7 @@
 #include "log.h"
 #include "serversettings.h"
 #include "serverstats.h"
+#include "stdutils.h"
 #include "target_os.h"
 #include "torrent.h"
 
@@ -59,11 +60,11 @@ namespace libtremotesf
             }
         }();
 
-        const auto sessionIdFilePrefix = [] {
+        constexpr QLatin1String sessionIdFilePrefix = [] {
             if constexpr (isTargetOsWindows) {
-                return QLatin1String("Transmission/tr_session_id_");
+                return "Transmission/tr_session_id_"_l1;
             } else {
-                return QLatin1String("tr_session_id_");
+                return "tr_session_id_"_l1;
             }
         }();
 
@@ -381,7 +382,7 @@ namespace libtremotesf
                            bandwidthPriority,
                            start);
         } else {
-            logWarning("addTorrentFile: failed to open file, error = {}, error string = {}", file->error(), file->errorString());
+            logWarning("addTorrentFile: failed to open file, error = {}, error string = {}", static_cast<std::underlying_type_t<QFile::FileError>>(file->error()), file->errorString());
             emit torrentAddError();
         }
     }
