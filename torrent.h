@@ -11,6 +11,7 @@
 #include <QObject>
 
 #include "formatters.h"
+#include "literals.h"
 #include "peer.h"
 #include "torrentfile.h"
 #include "tracker.h"
@@ -140,7 +141,7 @@ namespace libtremotesf
         using RatioLimitMode = TorrentData::RatioLimitMode;
         using IdleSeedingLimitMode = TorrentData::IdleSeedingLimitMode;
 
-        static const QLatin1String idKey;
+        static constexpr auto idKey = "id"_l1;
 
         explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
 

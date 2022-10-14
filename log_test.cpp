@@ -82,7 +82,7 @@ private slots:
     }
 
     void stdoutQLatin1String() {
-        const QLatin1String str("foo");
+        const auto str = "foo"_l1;
         printlnStdout(str);
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
@@ -214,7 +214,7 @@ private slots:
     }
 
     void infoQLatin1String() {
-        const QLatin1String str("foo");
+        const auto str = "foo"_l1;
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
