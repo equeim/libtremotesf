@@ -833,6 +833,6 @@ namespace libtremotesf
     }
 }
 
-auto fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
+fmt::format_context::iterator fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
     return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
 }

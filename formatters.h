@@ -30,7 +30,7 @@
 
 namespace libtremotesf {
     struct SimpleFormatter {
-        constexpr auto parse(fmt::format_parse_context& ctx) -> decltype(ctx.begin()) {
+        constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) {
             return ctx.begin();
         }
     };
@@ -38,37 +38,37 @@ namespace libtremotesf {
 
 template<>
 struct fmt::formatter<QString> : formatter<string_view> {
-    auto format(const QString& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QString& string, format_context& ctx) FORMAT_CONST;
 };
 
 class QStringView;
 template<>
 struct fmt::formatter<QStringView> : formatter<string_view> {
-    auto format(const QStringView& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QStringView& string, format_context& ctx) FORMAT_CONST;
 };
 
 class QLatin1String;
 template<>
 struct fmt::formatter<QLatin1String> : formatter<string_view> {
-    auto format(const QLatin1String& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QLatin1String& string, format_context& ctx) FORMAT_CONST;
 };
 
 class QByteArray;
 template<>
 struct fmt::formatter<QByteArray> : formatter<string_view> {
-    auto format(const QByteArray& array, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QByteArray& array, format_context& ctx) FORMAT_CONST;
 };
 
 #if QT_VERSION_MAJOR >= 6
 template<>
 struct fmt::formatter<QUtf8StringView> : formatter<string_view> {
-    auto format(const QUtf8StringView& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QUtf8StringView& string, format_context& ctx) FORMAT_CONST;
 };
 
 class QAnyStringView;
 template<>
 struct fmt::formatter<QAnyStringView> : formatter<QString> {
-    auto format(const QAnyStringView& string, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const QAnyStringView& string, format_context& ctx) FORMAT_CONST;
 };
 #endif
 
@@ -77,7 +77,7 @@ namespace libtremotesf::impl {
 
     template<typename T>
     struct QDebugFormatter : SimpleFormatter {
-        auto format(const T& t, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
+        fmt::format_context::iterator format(const T& t, fmt::format_context& ctx) FORMAT_CONST {
             QString buffer{};
             QDebug stream(&buffer);
             stream.nospace() << t;
@@ -85,14 +85,14 @@ namespace libtremotesf::impl {
         }
     };
 
-    auto formatQEnum(const QMetaEnum& meta, int64_t value, fmt::format_context& ctx) -> decltype(ctx.out());
-    auto formatQEnum(const QMetaEnum& meta, uint64_t value, fmt::format_context& ctx) -> decltype(ctx.out());
+    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, int64_t value, fmt::format_context& ctx);
+    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, uint64_t value, fmt::format_context& ctx);
 
     template<typename T>
     struct QEnumFormatter : SimpleFormatter {
         static_assert(std::is_enum_v<T>);
 
-        auto format(T t, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
+        fmt::format_context::iterator format(T t, fmt::format_context& ctx) FORMAT_CONST {
             const auto meta = QMetaEnum::fromType<T>();
             const auto underlying = static_cast<std::underlying_type_t<T>>(t);
             if constexpr (std::is_signed_v<decltype(underlying)>) {
@@ -106,7 +106,7 @@ namespace libtremotesf::impl {
 
 template<typename T>
 struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> : libtremotesf::SimpleFormatter {
-    auto format(const T& object, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out()) {
+    format_context::iterator format(const T& object, format_context& ctx) FORMAT_CONST {
         QString buffer{};
         QDebug stream(&buffer);
         stream.nospace() << &object;
@@ -120,7 +120,7 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
 
 template<>
 struct fmt::formatter<std::exception> : libtremotesf::SimpleFormatter {
-    auto format(const std::exception& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const std::exception& e, fmt::format_context& ctx) FORMAT_CONST;
 };
 
 template<typename T>
@@ -128,7 +128,7 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception
 
 template<>
 struct fmt::formatter<std::system_error> : libtremotesf::SimpleFormatter {
-    auto format(const std::system_error& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const std::system_error& e, fmt::format_context& ctx) FORMAT_CONST;
 };
 
 template<typename T>
@@ -142,12 +142,12 @@ namespace winrt {
 
 template<>
 struct fmt::formatter<winrt::hstring> : fmt::formatter<QString> {
-    auto format(const winrt::hstring& str, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const winrt::hstring& str, fmt::format_context& ctx) FORMAT_CONST;
 };
 
 template<>
 struct fmt::formatter<winrt::hresult_error> : libtremotesf::SimpleFormatter {
-    auto format(const winrt::hresult_error& e, fmt::format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const winrt::hresult_error& e, fmt::format_context& ctx) FORMAT_CONST;
 };
 #endif
 

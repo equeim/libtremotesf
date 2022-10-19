@@ -267,7 +267,7 @@ namespace libtremotesf
 #ifndef SWIG
 template<>
 struct fmt::formatter<libtremotesf::Torrent> : libtremotesf::SimpleFormatter {
-    auto format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST -> decltype(ctx.out());
+    format_context::iterator format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST;
 };
 #endif // SWIG
 
