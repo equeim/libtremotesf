@@ -29,21 +29,15 @@ class QNetworkAccessManager;
 class QNetworkReply;
 class QTimer;
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     Q_NAMESPACE
 
     class Torrent;
 
-    struct Server
-    {
+    struct Server {
         Q_GADGET
     public:
-        enum class ProxyType {
-            Default,
-            Http,
-            Socks5
-        };
+        enum class ProxyType { Default, Http, Socks5 };
         Q_ENUM(ProxyType)
 
         QString name;
@@ -75,11 +69,7 @@ namespace libtremotesf
         int autoReconnectInterval;
     };
 
-    enum class RpcConnectionState {
-        Disconnected,
-        Connecting,
-        Connected
-    };
+    enum class RpcConnectionState { Disconnected, Connecting, Connected };
     Q_ENUM_NS(RpcConnectionState)
 
     enum class RpcError {
@@ -93,8 +83,7 @@ namespace libtremotesf
     };
     Q_ENUM_NS(RpcError)
 
-    class Rpc : public QObject
-    {
+    class Rpc : public QObject {
         Q_OBJECT
     public:
         using ConnectionState = RpcConnectionState;
@@ -109,19 +98,15 @@ namespace libtremotesf
         libtremotesf::Torrent* torrentByHash(const QString& hash) const;
         Torrent* torrentById(int id) const;
 
-        struct Status
-        {
+        struct Status {
             ConnectionState connectionState{ConnectionState::Disconnected};
             Error error{Error::NoError};
             QString errorMessage{};
             QString detailedErrorMessage{};
 
-            inline bool operator==(const Status& other) const noexcept
-            {
-                return connectionState == other.connectionState&&
-                    error == other.error &&
-                    errorMessage == other.errorMessage &&
-                        detailedErrorMessage == other.detailedErrorMessage;
+            inline bool operator==(const Status& other) const noexcept {
+                return connectionState == other.connectionState && error == other.error &&
+                       errorMessage == other.errorMessage && detailedErrorMessage == other.detailedErrorMessage;
             }
         };
 
@@ -144,28 +129,29 @@ namespace libtremotesf
         void connect();
         void disconnect();
 
-        void addTorrentFile(const QString& filePath,
-                                        const QString& downloadDirectory,
-                                        const QVariantList& unwantedFiles,
-                                        const QVariantList& highPriorityFiles,
-                                        const QVariantList& lowPriorityFiles,
-                                        const QVariantMap& renamedFiles,
-                                        int bandwidthPriority,
-                                        bool start);
+        void addTorrentFile(
+            const QString& filePath,
+            const QString& downloadDirectory,
+            const QVariantList& unwantedFiles,
+            const QVariantList& highPriorityFiles,
+            const QVariantList& lowPriorityFiles,
+            const QVariantMap& renamedFiles,
+            int bandwidthPriority,
+            bool start
+        );
 
-        void addTorrentFile(std::shared_ptr<QFile> file,
-                                        const QString& downloadDirectory,
-                                        const QVariantList& unwantedFiles,
-                                        const QVariantList& highPriorityFiles,
-                                        const QVariantList& lowPriorityFiles,
-                                        const QVariantMap& renamedFiles,
-                                        int bandwidthPriority,
-                                        bool start);
+        void addTorrentFile(
+            std::shared_ptr<QFile> file,
+            const QString& downloadDirectory,
+            const QVariantList& unwantedFiles,
+            const QVariantList& highPriorityFiles,
+            const QVariantList& lowPriorityFiles,
+            const QVariantMap& renamedFiles,
+            int bandwidthPriority,
+            bool start
+        );
 
-        void addTorrentLink(const QString& link,
-                                        const QString& downloadDirectory,
-                                        int bandwidthPriority,
-                                        bool start);
+        void addTorrentLink(const QString& link, const QString& downloadDirectory, int bandwidthPriority, bool start);
 
         void startTorrents(const QVariantList& ids);
         void startTorrentsNow(const QVariantList& ids);
@@ -181,14 +167,13 @@ namespace libtremotesf
 
         void setSessionProperty(const QString& property, const QVariant& value);
         void setSessionProperties(const QVariantMap& properties);
-        void setTorrentProperty(int id, const QString& property, const QVariant& value, bool updateIfSuccessful = false);
+        void
+        setTorrentProperty(int id, const QString& property, const QVariant& value, bool updateIfSuccessful = false);
         void setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles);
         void getTorrentsFiles(const QVariantList& ids, bool scheduled);
         void getTorrentsPeers(const QVariantList& ids, bool scheduled);
 
-        void renameTorrentFile(int torrentId,
-                                           const QString& filePath,
-                                           const QString& newName);
+        void renameTorrentFile(int torrentId, const QString& filePath, const QString& newName);
 
         void getDownloadDirFreeSpace();
         void getFreeSpaceForPath(const QString& path);
@@ -198,8 +183,7 @@ namespace libtremotesf
         void shutdownServer();
 
     private:
-        struct Request
-        {
+        struct Request {
             QLatin1String method;
             QNetworkRequest request;
             QByteArray data;
@@ -224,16 +208,19 @@ namespace libtremotesf
 
         QNetworkReply* postRequest(Request&& request);
 
-        bool retryRequest(Request&& request,
-                          QNetworkReply* previousAttempt);
+        bool retryRequest(Request&& request, QNetworkReply* previousAttempt);
 
-        void postRequest(QLatin1String method,
-                         const QByteArray& data,
-                         const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
+        void postRequest(
+            QLatin1String method,
+            const QByteArray& data,
+            const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {}
+        );
 
-        void postRequest(QLatin1String method,
-                         const QVariantMap& arguments,
-                         const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {});
+        void postRequest(
+            QLatin1String method,
+            const QVariantMap& arguments,
+            const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {}
+        );
 
         void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
 
@@ -285,13 +272,19 @@ namespace libtremotesf
         void onAboutToAddTorrents(size_t count);
         void onAddedTorrents(size_t count);
 
-        void torrentsUpdated(const std::vector<std::pair<int, int>>& removedIndexRanges, const std::vector<std::pair<int, int>>& changedIndexRanges, int addedCount);
+        void torrentsUpdated(
+            const std::vector<std::pair<int, int>>& removedIndexRanges,
+            const std::vector<std::pair<int, int>>& changedIndexRanges,
+            int addedCount
+        );
 
         void torrentFilesUpdated(const libtremotesf::Torrent* torrent, const std::vector<int>& changedIndexes);
-        void torrentPeersUpdated(const libtremotesf::Torrent* torrent,
-                                 const std::vector<std::pair<int, int>>& removedIndexRanges,
-                                 const std::vector<std::pair<int, int>>& changedIndexRanges,
-                                 int addedCount);
+        void torrentPeersUpdated(
+            const libtremotesf::Torrent* torrent,
+            const std::vector<std::pair<int, int>>& removedIndexRanges,
+            const std::vector<std::pair<int, int>>& changedIndexRanges,
+            int addedCount
+        );
 
         void torrentFileRenamed(int torrentId, const QString& filePath, const QString& newName);
 

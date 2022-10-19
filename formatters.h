@@ -14,15 +14,15 @@
 #include <QObject>
 #include <QString>
 #if QT_VERSION_MAJOR >= 6
-#include <QUtf8StringView>
+#    include <QUtf8StringView>
 #endif
 
 #include <fmt/core.h>
 #if FMT_VERSION < 80000
-#include <fmt/format.h>
-#define FORMAT_CONST
+#    include <fmt/format.h>
+#    define FORMAT_CONST
 #else
-#define FORMAT_CONST const
+#    define FORMAT_CONST const
 #endif
 
 // Include it here just because it's useful
@@ -30,9 +30,7 @@
 
 namespace libtremotesf {
     struct SimpleFormatter {
-        constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) {
-            return ctx.begin();
-        }
+        constexpr fmt::format_parse_context::iterator parse(fmt::format_parse_context& ctx) { return ctx.begin(); }
     };
 }
 
@@ -114,9 +112,13 @@ struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> 
     }
 };
 
-#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) template<> struct fmt::formatter<Class> : libtremotesf::impl::QDebugFormatter<Class> {};
+#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) \
+    template<>                                 \
+    struct fmt::formatter<Class> : libtremotesf::impl::QDebugFormatter<Class> {};
 
-#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) template<> struct fmt::formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {};
+#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) \
+    template<>                                \
+    struct fmt::formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {};
 
 template<>
 struct fmt::formatter<std::exception> : libtremotesf::SimpleFormatter {
@@ -132,7 +134,8 @@ struct fmt::formatter<std::system_error> : libtremotesf::SimpleFormatter {
 };
 
 template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::system_error, T>>> : formatter<std::system_error> {};
+struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::system_error, T>>>
+    : formatter<std::system_error> {};
 
 #ifdef Q_OS_WIN
 namespace winrt {

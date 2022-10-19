@@ -9,17 +9,13 @@
 #include "literals.h"
 #include "stdutils.h"
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     Peer::Peer(QString&& address, const QJsonObject& peerJson)
-        : address(std::move(address)),
-          client(peerJson.value("clientName"_l1).toString())
-    {
+        : address(std::move(address)), client(peerJson.value("clientName"_l1).toString()) {
         update(peerJson);
     }
 
-    bool Peer::update(const QJsonObject& peerJson)
-    {
+    bool Peer::update(const QJsonObject& peerJson) {
         bool changed = false;
         setChanged(downloadSpeed, static_cast<long long>(peerJson.value("rateToClient"_l1).toDouble()), changed);
         setChanged(uploadSpeed, static_cast<long long>(peerJson.value("rateToPeer"_l1).toDouble()), changed);

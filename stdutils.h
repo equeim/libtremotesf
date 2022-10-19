@@ -10,16 +10,14 @@
 
 #include <QtGlobal>
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     template<typename C, typename V>
     inline int index_of_i(const C& container, const V& value) {
         return static_cast<int>(std::find(std::begin(container), std::end(container), value) - std::begin(container));
     }
 
     template<typename T, typename std::enable_if_t<std::is_scalar_v<T> && !std::is_floating_point_v<T>, int> = 0>
-    inline void setChanged(T& value, T newValue, bool& changed)
-    {
+    inline void setChanged(T& value, T newValue, bool& changed) {
         if (newValue != value) {
             value = newValue;
             changed = true;
@@ -27,8 +25,7 @@ namespace libtremotesf
     }
 
     template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
-    inline void setChanged(T& value, T newValue, bool& changed)
-    {
+    inline void setChanged(T& value, T newValue, bool& changed) {
         if (!qFuzzyCompare(newValue, value)) {
             value = newValue;
             changed = true;
@@ -36,8 +33,7 @@ namespace libtremotesf
     }
 
     template<typename T, typename std::enable_if_t<!std::is_scalar_v<T>, int> = 0>
-    inline void setChanged(T& value, T&& newValue, bool& changed)
-    {
+    inline void setChanged(T& value, T&& newValue, bool& changed) {
         if (newValue != value) {
             value = std::forward<T>(newValue);
             changed = true;
@@ -45,8 +41,7 @@ namespace libtremotesf
     }
 }
 
-namespace tremotesf
-{
+namespace tremotesf {
     using libtremotesf::index_of_i;
     using libtremotesf::setChanged;
 }

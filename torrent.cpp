@@ -16,10 +16,8 @@
 #include "rpc.h"
 #include "stdutils.h"
 
-namespace libtremotesf
-{
-    namespace
-    {
+namespace libtremotesf {
+    namespace {
         constexpr auto hashStringKey = "hashString"_l1;
         constexpr auto addedDateKey = "addedDate"_l1;
 
@@ -89,8 +87,7 @@ namespace libtremotesf
         constexpr auto removeTrackerKey = "trackerRemove"_l1;
     }
 
-    bool TorrentData::update(const QJsonObject& torrentMap)
-    {
+    bool TorrentData::update(const QJsonObject& torrentMap) {
         bool changed = false;
 
         setChanged(name, torrentMap.value(nameKey).toString(), changed);
@@ -120,16 +117,20 @@ namespace libtremotesf
         setChanged(totalUploaded, static_cast<long long>(torrentMap.value(totalUploadedKey).toDouble()), changed);
         setChanged(ratio, torrentMap.value(ratioKey).toDouble(), changed);
 
-        setChanged(ratioLimitMode, [&] {
-            switch (int mode = torrentMap.value(ratioLimitModeKey).toInt()) {
-            case GlobalRatioLimit:
-            case SingleRatioLimit:
-            case UnlimitedRatio:
-                return static_cast<RatioLimitMode>(mode);
-            default:
-                return GlobalRatioLimit;
-            }
-        }(), changed);
+        setChanged(
+            ratioLimitMode,
+            [&] {
+                switch (int mode = torrentMap.value(ratioLimitModeKey).toInt()) {
+                case GlobalRatioLimit:
+                case SingleRatioLimit:
+                case UnlimitedRatio:
+                    return static_cast<RatioLimitMode>(mode);
+                default:
+                    return GlobalRatioLimit;
+                }
+            }(),
+            changed
+        );
         setChanged(ratioLimit, torrentMap.value(ratioLimitKey).toDouble(), changed);
 
         setChanged(seeders, torrentMap.value(seedersKey).toInt(), changed);
@@ -204,26 +205,34 @@ namespace libtremotesf
         }
 
         setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
-        setChanged(bandwidthPriority, [&] {
-            switch (int priority = torrentMap.value(bandwidthPriorityKey).toInt()) {
-            case LowPriority:
-            case NormalPriority:
-            case HighPriority:
-                return static_cast<Priority>(priority);
-            default:
-                return NormalPriority;
-            }
-        }(), changed);
-        setChanged(idleSeedingLimitMode, [&] {
-            switch (int mode = torrentMap.value(idleSeedingLimitModeKey).toInt()) {
-            case GlobalIdleSeedingLimit:
-            case SingleIdleSeedingLimit:
-            case UnlimitedIdleSeeding:
-                return static_cast<IdleSeedingLimitMode>(mode);
-            default:
-                return GlobalIdleSeedingLimit;
-            }
-        }(), changed);
+        setChanged(
+            bandwidthPriority,
+            [&] {
+                switch (int priority = torrentMap.value(bandwidthPriorityKey).toInt()) {
+                case LowPriority:
+                case NormalPriority:
+                case HighPriority:
+                    return static_cast<Priority>(priority);
+                default:
+                    return NormalPriority;
+                }
+            }(),
+            changed
+        );
+        setChanged(
+            idleSeedingLimitMode,
+            [&] {
+                switch (int mode = torrentMap.value(idleSeedingLimitModeKey).toInt()) {
+                case GlobalIdleSeedingLimit:
+                case SingleIdleSeedingLimit:
+                case UnlimitedIdleSeeding:
+                    return static_cast<IdleSeedingLimitMode>(mode);
+                default:
+                    return GlobalIdleSeedingLimit;
+                }
+            }(),
+            changed
+        );
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
         setChanged(downloadDirectory, torrentMap.value(downloadDirectoryKey).toString(), changed);
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
@@ -284,16 +293,19 @@ namespace libtremotesf
             std::vector<QString> newWebSeeders;
             const auto webSeedersStrings = torrentMap.value(webSeedersKey).toArray();
             newWebSeeders.reserve(static_cast<size_t>(webSeedersStrings.size()));
-            std::transform(webSeedersStrings.begin(), webSeedersStrings.end(), std::back_insert_iterator(newWebSeeders), [](const QJsonValue& i) { return i.toString(); });
+            std::transform(
+                webSeedersStrings.begin(),
+                webSeedersStrings.end(),
+                std::back_insert_iterator(newWebSeeders),
+                [](const QJsonValue& i) { return i.toString(); }
+            );
             setChanged(webSeeders, std::move(newWebSeeders), changed);
         }
 
         return changed;
     }
 
-    Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent)
-        : QObject(parent), mRpc(rpc)
-    {
+    Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
         mData.id = id;
         mData.hashString = torrentMap.value(hashStringKey).toString();
         const auto date = static_cast<long long>(torrentMap.value(addedDateKey).toDouble()) * 1000;
@@ -302,324 +314,168 @@ namespace libtremotesf
         update(torrentMap);
     }
 
-    int Torrent::id() const
-    {
-        return mData.id;
-    }
+    int Torrent::id() const { return mData.id; }
 
-    const QString& Torrent::hashString() const
-    {
-        return mData.hashString;
-    }
+    const QString& Torrent::hashString() const { return mData.hashString; }
 
-    const QString& Torrent::name() const
-    {
-        return mData.name;
-    }
+    const QString& Torrent::name() const { return mData.name; }
 
-    Torrent::Status Torrent::status() const
-    {
-        return mData.status;
-    }
+    Torrent::Status Torrent::status() const { return mData.status; }
 
-    QString Torrent::errorString() const
-    {
-        return mData.errorString;
-    }
+    QString Torrent::errorString() const { return mData.errorString; }
 
-    int Torrent::queuePosition() const
-    {
-        return mData.queuePosition;
-    }
+    int Torrent::queuePosition() const { return mData.queuePosition; }
 
-    long long Torrent::totalSize() const
-    {
-        return mData.totalSize;
-    }
+    long long Torrent::totalSize() const { return mData.totalSize; }
 
-    long long Torrent::completedSize() const
-    {
-        return mData.completedSize;
-    }
+    long long Torrent::completedSize() const { return mData.completedSize; }
 
-    long long Torrent::leftUntilDone() const
-    {
-        return mData.leftUntilDone;
-    }
+    long long Torrent::leftUntilDone() const { return mData.leftUntilDone; }
 
-    long long Torrent::sizeWhenDone() const
-    {
-        return mData.sizeWhenDone;
-    }
+    long long Torrent::sizeWhenDone() const { return mData.sizeWhenDone; }
 
-    double Torrent::percentDone() const
-    {
-        return mData.percentDone;
-    }
+    double Torrent::percentDone() const { return mData.percentDone; }
 
-    bool Torrent::isFinished() const
-    {
-        return mData.leftUntilDone == 0;
-    }
+    bool Torrent::isFinished() const { return mData.leftUntilDone == 0; }
 
-    double Torrent::recheckProgress() const
-    {
-        return mData.recheckProgress;
-    }
+    double Torrent::recheckProgress() const { return mData.recheckProgress; }
 
-    int Torrent::eta() const
-    {
-        return mData.eta;
-    }
+    int Torrent::eta() const { return mData.eta; }
 
-    bool Torrent::isMetadataComplete() const
-    {
-        return mData.metadataComplete;
-    }
+    bool Torrent::isMetadataComplete() const { return mData.metadataComplete; }
 
-    long long Torrent::downloadSpeed() const
-    {
-        return mData.downloadSpeed;
-    }
+    long long Torrent::downloadSpeed() const { return mData.downloadSpeed; }
 
-    long long Torrent::uploadSpeed() const
-    {
-        return mData.uploadSpeed;
-    }
+    long long Torrent::uploadSpeed() const { return mData.uploadSpeed; }
 
-    bool Torrent::isDownloadSpeedLimited() const
-    {
-        return mData.downloadSpeedLimited;
-    }
+    bool Torrent::isDownloadSpeedLimited() const { return mData.downloadSpeedLimited; }
 
-    void Torrent::setDownloadSpeedLimited(bool limited)
-    {
+    void Torrent::setDownloadSpeedLimited(bool limited) {
         mData.downloadSpeedLimited = limited;
         mRpc->setTorrentProperty(id(), downloadSpeedLimitedKey, limited);
     }
 
-    int Torrent::downloadSpeedLimit() const
-    {
-        return mData.downloadSpeedLimit;
-    }
+    int Torrent::downloadSpeedLimit() const { return mData.downloadSpeedLimit; }
 
-    void Torrent::setDownloadSpeedLimit(int limit)
-    {
+    void Torrent::setDownloadSpeedLimit(int limit) {
         mData.downloadSpeedLimit = limit;
         mRpc->setTorrentProperty(id(), downloadSpeedLimitKey, limit);
     }
 
-    bool Torrent::isUploadSpeedLimited() const
-    {
-        return mData.uploadSpeedLimited;
-    }
+    bool Torrent::isUploadSpeedLimited() const { return mData.uploadSpeedLimited; }
 
-    void Torrent::setUploadSpeedLimited(bool limited)
-    {
+    void Torrent::setUploadSpeedLimited(bool limited) {
         mData.uploadSpeedLimited = limited;
         mRpc->setTorrentProperty(id(), uploadSpeedLimitedKey, limited);
     }
 
-    int Torrent::uploadSpeedLimit() const
-    {
-        return mData.uploadSpeedLimit;
-    }
+    int Torrent::uploadSpeedLimit() const { return mData.uploadSpeedLimit; }
 
-    void Torrent::setUploadSpeedLimit(int limit)
-    {
+    void Torrent::setUploadSpeedLimit(int limit) {
         mData.uploadSpeedLimit = limit;
         mRpc->setTorrentProperty(id(), uploadSpeedLimitKey, limit);
     }
 
-    long long Torrent::totalDownloaded() const
-    {
-        return mData.totalDownloaded;
-    }
+    long long Torrent::totalDownloaded() const { return mData.totalDownloaded; }
 
-    long long Torrent::totalUploaded() const
-    {
-        return mData.totalUploaded;
-    }
+    long long Torrent::totalUploaded() const { return mData.totalUploaded; }
 
-    double Torrent::ratio() const
-    {
-        return mData.ratio;
-    }
+    double Torrent::ratio() const { return mData.ratio; }
 
-    Torrent::RatioLimitMode Torrent::ratioLimitMode() const
-    {
-        return mData.ratioLimitMode;
-    }
+    Torrent::RatioLimitMode Torrent::ratioLimitMode() const { return mData.ratioLimitMode; }
 
-    void Torrent::setRatioLimitMode(Torrent::RatioLimitMode mode)
-    {
+    void Torrent::setRatioLimitMode(Torrent::RatioLimitMode mode) {
         mData.ratioLimitMode = mode;
         mRpc->setTorrentProperty(id(), ratioLimitModeKey, mode);
     }
 
-    double Torrent::ratioLimit() const
-    {
-        return mData.ratioLimit;
-    }
+    double Torrent::ratioLimit() const { return mData.ratioLimit; }
 
-    void Torrent::setRatioLimit(double limit)
-    {
+    void Torrent::setRatioLimit(double limit) {
         mData.ratioLimit = limit;
         mRpc->setTorrentProperty(id(), ratioLimitKey, limit);
     }
 
-    int Torrent::seeders() const
-    {
-        return mData.seeders;
-    }
+    int Torrent::seeders() const { return mData.seeders; }
 
-    int Torrent::leechers() const
-    {
-        return mData.leechers;
-    }
+    int Torrent::leechers() const { return mData.leechers; }
 
-    int Torrent::peersLimit() const
-    {
-        return mData.peersLimit;
-    }
+    int Torrent::peersLimit() const { return mData.peersLimit; }
 
-    void Torrent::setPeersLimit(int limit)
-    {
+    void Torrent::setPeersLimit(int limit) {
         mData.peersLimit = limit;
         mRpc->setTorrentProperty(id(), peersLimitKey, limit);
     }
 
-    const QDateTime& Torrent::addedDate() const
-    {
-        return mData.addedDate;
-    }
+    const QDateTime& Torrent::addedDate() const { return mData.addedDate; }
 
-    const QDateTime& Torrent::activityDate() const
-    {
-        return mData.activityDate;
-    }
+    const QDateTime& Torrent::activityDate() const { return mData.activityDate; }
 
-    const QDateTime& Torrent::doneDate() const
-    {
-        return mData.doneDate;
-    }
+    const QDateTime& Torrent::doneDate() const { return mData.doneDate; }
 
-    bool Torrent::honorSessionLimits() const
-    {
-        return mData.honorSessionLimits;
-    }
+    bool Torrent::honorSessionLimits() const { return mData.honorSessionLimits; }
 
-    void Torrent::setHonorSessionLimits(bool honor)
-    {
+    void Torrent::setHonorSessionLimits(bool honor) {
         mData.honorSessionLimits = honor;
         mRpc->setTorrentProperty(id(), honorSessionLimitsKey, honor);
     }
 
-    Torrent::Priority Torrent::bandwidthPriority() const
-    {
-        return mData.bandwidthPriority;
-    }
+    Torrent::Priority Torrent::bandwidthPriority() const { return mData.bandwidthPriority; }
 
-    void Torrent::setBandwidthPriority(Priority priority)
-    {
+    void Torrent::setBandwidthPriority(Priority priority) {
         mData.bandwidthPriority = priority;
         mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priority);
     }
 
-    Torrent::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const
-    {
-        return mData.idleSeedingLimitMode;
-    }
+    Torrent::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
 
-    void Torrent::setIdleSeedingLimitMode(Torrent::IdleSeedingLimitMode mode)
-    {
+    void Torrent::setIdleSeedingLimitMode(Torrent::IdleSeedingLimitMode mode) {
         mData.idleSeedingLimitMode = mode;
         mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, mode);
     }
 
-    int Torrent::idleSeedingLimit() const
-    {
-        return mData.idleSeedingLimit;
-    }
+    int Torrent::idleSeedingLimit() const { return mData.idleSeedingLimit; }
 
-    void Torrent::setIdleSeedingLimit(int limit)
-    {
+    void Torrent::setIdleSeedingLimit(int limit) {
         mData.idleSeedingLimit = limit;
         mRpc->setTorrentProperty(id(), idleSeedingLimitKey, limit);
     }
 
-    const QString& Torrent::downloadDirectory() const
-    {
-        return mData.downloadDirectory;
-    }
+    const QString& Torrent::downloadDirectory() const { return mData.downloadDirectory; }
 
-    bool Torrent::isSingleFile() const
-    {
-        return mData.singleFile;
-    }
+    bool Torrent::isSingleFile() const { return mData.singleFile; }
 
-    const QString& Torrent::creator() const
-    {
-        return mData.creator;
-    }
+    const QString& Torrent::creator() const { return mData.creator; }
 
-    const QDateTime& Torrent::creationDate() const
-    {
-        return mData.creationDate;
-    }
+    const QDateTime& Torrent::creationDate() const { return mData.creationDate; }
 
-    const QString& Torrent::comment() const
-    {
-        return mData.comment;
-    }
+    const QString& Torrent::comment() const { return mData.comment; }
 
-    const std::vector<Tracker>& Torrent::trackers() const
-    {
-        return mData.trackers;
-    }
+    const std::vector<Tracker>& Torrent::trackers() const { return mData.trackers; }
 
-    bool Torrent::isTrackersAnnounceUrlsChanged() const
-    {
-        return mData.trackersAnnounceUrlsChanged;
-    }
+    bool Torrent::isTrackersAnnounceUrlsChanged() const { return mData.trackersAnnounceUrlsChanged; }
 
-    void Torrent::addTrackers(const QStringList& announceUrls)
-    {
+    void Torrent::addTrackers(const QStringList& announceUrls) {
         mRpc->setTorrentProperty(id(), addTrackerKey, announceUrls, true);
     }
 
-    void Torrent::setTracker(int trackerId, const QString& announce)
-    {
+    void Torrent::setTracker(int trackerId, const QString& announce) {
         mRpc->setTorrentProperty(id(), replaceTrackerKey, QVariantList{trackerId, announce}, true);
     }
 
-    void Torrent::removeTrackers(const QVariantList& ids)
-    {
+    void Torrent::removeTrackers(const QVariantList& ids) {
         mRpc->setTorrentProperty(id(), removeTrackerKey, ids, true);
     }
 
-    const std::vector<QString>& Torrent::webSeeders() const
-    {
-        return mData.webSeeders;
-    }
+    const std::vector<QString>& Torrent::webSeeders() const { return mData.webSeeders; }
 
-    int Torrent::activeWebSeeders() const
-    {
-        return mData.activeWebSeeders;
-    }
+    int Torrent::activeWebSeeders() const { return mData.activeWebSeeders; }
 
-    const TorrentData& Torrent::data() const
-    {
-        return mData;
-    }
+    const TorrentData& Torrent::data() const { return mData; }
 
-    bool Torrent::isFilesEnabled() const
-    {
-        return mFilesEnabled;
-    }
+    bool Torrent::isFilesEnabled() const { return mFilesEnabled; }
 
-    void Torrent::setFilesEnabled(bool enabled)
-    {
+    void Torrent::setFilesEnabled(bool enabled) {
         if (enabled != mFilesEnabled) {
             mFilesEnabled = enabled;
             if (mFilesEnabled) {
@@ -630,21 +486,13 @@ namespace libtremotesf
         }
     }
 
-    const std::vector<TorrentFile>& Torrent::files() const
-    {
-        return mFiles;
+    const std::vector<TorrentFile>& Torrent::files() const { return mFiles; }
+
+    void Torrent::setFilesWanted(const QVariantList& files, bool wanted) {
+        mRpc->setTorrentProperty(id(), wanted ? wantedFilesKey : unwantedFilesKey, files);
     }
 
-    void Torrent::setFilesWanted(const QVariantList& files, bool wanted)
-    {
-        mRpc->setTorrentProperty(id(),
-                                 wanted ? wantedFilesKey
-                                        : unwantedFilesKey,
-                                 files);
-    }
-
-    void Torrent::setFilesPriority(const QVariantList& files, TorrentFile::Priority priority)
-    {
+    void Torrent::setFilesPriority(const QVariantList& files, TorrentFile::Priority priority) {
         QLatin1String propertyName;
         switch (priority) {
         case TorrentFile::LowPriority:
@@ -660,18 +508,13 @@ namespace libtremotesf
         mRpc->setTorrentProperty(id(), propertyName, files);
     }
 
-    void Torrent::renameFile(const QString& path, const QString& newName)
-    {
+    void Torrent::renameFile(const QString& path, const QString& newName) {
         mRpc->renameTorrentFile(id(), path, newName);
     }
 
-    bool Torrent::isPeersEnabled() const
-    {
-        return mPeersEnabled;
-    }
+    bool Torrent::isPeersEnabled() const { return mPeersEnabled; }
 
-    void Torrent::setPeersEnabled(bool enabled)
-    {
+    void Torrent::setPeersEnabled(bool enabled) {
         if (enabled != mPeersEnabled) {
             mPeersEnabled = enabled;
             if (mPeersEnabled) {
@@ -682,13 +525,9 @@ namespace libtremotesf
         }
     }
 
-    const std::vector<Peer>& Torrent::peers() const
-    {
-        return mPeers;
-    }
+    const std::vector<Peer>& Torrent::peers() const { return mPeers; }
 
-    bool Torrent::isUpdated() const
-    {
+    bool Torrent::isUpdated() const {
         bool updated = true;
         if (mFilesEnabled && !mFilesUpdated) {
             updated = false;
@@ -699,24 +538,21 @@ namespace libtremotesf
         return updated;
     }
 
-    void Torrent::checkThatFilesUpdated()
-    {
+    void Torrent::checkThatFilesUpdated() {
         if (mFilesEnabled && !mFilesUpdated) {
             logWarning("Files were not updated for {}", *this);
             mFilesUpdated = true;
         }
     }
 
-    void Torrent::checkThatPeersUpdated()
-    {
+    void Torrent::checkThatPeersUpdated() {
         if (mPeersEnabled && !mPeersUpdated) {
             logWarning("Peers were not updated for {}", *this);
             mPeersUpdated = true;
         }
     }
 
-    bool Torrent::update(const QJsonObject& torrentMap)
-    {
+    bool Torrent::update(const QJsonObject& torrentMap) {
         mFilesUpdated = false;
         mPeersUpdated = false;
         const bool c = mData.update(torrentMap);
@@ -727,8 +563,7 @@ namespace libtremotesf
         return c;
     }
 
-    void Torrent::updateFiles(const QJsonObject &torrentMap)
-    {
+    void Torrent::updateFiles(const QJsonObject& torrentMap) {
         std::vector<int> changed;
 
         const QJsonArray fileStats(torrentMap.value("fileStats"_l1).toArray());
@@ -768,23 +603,22 @@ namespace libtremotesf
 
         protected:
             std::vector<NewPeer>::iterator
-            findNewItemForItem(std::vector<NewPeer> &newPeers, const Peer &peer) override {
-                const auto &address = peer.address;
-                return std::find_if(newPeers.begin(), newPeers.end(),
-                                    [address](const auto &newPeer) {
-                                        const auto&[json, newPeerAddress] = newPeer;
-                                        return newPeerAddress == address;
-                                    });
+            findNewItemForItem(std::vector<NewPeer>& newPeers, const Peer& peer) override {
+                const auto& address = peer.address;
+                return std::find_if(newPeers.begin(), newPeers.end(), [address](const auto& newPeer) {
+                    const auto& [json, newPeerAddress] = newPeer;
+                    return newPeerAddress == address;
+                });
             }
 
-            void onAboutToRemoveItems(size_t, size_t) override {};
+            void onAboutToRemoveItems(size_t, size_t) override{};
 
             void onRemovedItems(size_t first, size_t last) override {
                 removedIndexRanges.emplace_back(static_cast<int>(first), static_cast<int>(last));
             }
 
-            bool updateItem(Peer &peer, NewPeer &&newPeer) override {
-                const auto&[json, address] = newPeer;
+            bool updateItem(Peer& peer, NewPeer&& newPeer) override {
+                const auto& [json, address] = newPeer;
                 return peer.update(json);
             }
 
@@ -792,21 +626,18 @@ namespace libtremotesf
                 changedIndexRanges.emplace_back(static_cast<int>(first), static_cast<int>(last));
             }
 
-            Peer createItemFromNewItem(NewPeer &&newPeer) override {
-                auto&[json, address] = newPeer;
+            Peer createItemFromNewItem(NewPeer&& newPeer) override {
+                auto& [json, address] = newPeer;
                 return Peer(std::move(address), json);
             }
 
             void onAboutToAddItems(size_t) override {}
 
-            void onAddedItems(size_t count) override {
-                addedCount = static_cast<int>(count);
-            };
+            void onAddedItems(size_t count) override { addedCount = static_cast<int>(count); };
         };
     }
 
-    void Torrent::updatePeers(const QJsonObject &torrentMap)
-    {
+    void Torrent::updatePeers(const QJsonObject& torrentMap) {
         std::vector<NewPeer> newPeers;
         {
             const QJsonArray peers(torrentMap.value("peers"_l1).toArray());
@@ -824,15 +655,16 @@ namespace libtremotesf
         mPeersUpdated = true;
 
         emit peersUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
-        emit mRpc->torrentPeersUpdated(this, updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
+        emit mRpc
+            ->torrentPeersUpdated(this, updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
     }
 
-    void Torrent::checkSingleFile(const QJsonObject& torrentMap)
-    {
+    void Torrent::checkSingleFile(const QJsonObject& torrentMap) {
         mData.singleFile = (torrentMap.value(prioritiesKey).toArray().size() == 1);
     }
 }
 
-fmt::format_context::iterator fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
+fmt::format_context::iterator
+fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
     return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
 }
