@@ -10,16 +10,9 @@
 class QString;
 class QJsonObject;
 
-namespace libtremotesf
-{
-    struct TorrentFile
-    {
-        enum Priority
-        {
-            LowPriority = -1,
-            NormalPriority,
-            HighPriority
-        };
+namespace libtremotesf {
+    struct TorrentFile {
+        enum Priority { LowPriority = -1, NormalPriority, HighPriority };
 
         explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
         bool update(const QJsonObject& fileStatsMap);

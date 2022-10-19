@@ -14,35 +14,33 @@
 
 #include <fmt/core.h>
 #if FMT_VERSION < 80000
-#define FORMAT_STRING fmt::string_view
+#    define FORMAT_STRING fmt::string_view
 #else
-#define FORMAT_STRING fmt::format_string<Args...>
+#    define FORMAT_STRING fmt::format_string<Args...>
 #endif
 
 #if defined(__GNUC__)
-#define ALWAYS_INLINE [[gnu::always_inline]]
+#    define ALWAYS_INLINE [[gnu::always_inline]]
 #elif defined(_MSC_VER)
-#define ALWAYS_INLINE __forceinline
+#    define ALWAYS_INLINE __forceinline
 #else
-#define ALWAYS_INLINE
+#    define ALWAYS_INLINE
 #endif
 
-namespace libtremotesf
-{
-    namespace impl
-    {
+namespace libtremotesf {
+    namespace impl {
         template<class T>
-        inline constexpr bool is_exception_v =
-                std::is_base_of_v<std::exception, T>
+        inline constexpr bool is_exception_v = std::is_base_of_v<std::exception, T>
 #ifdef Q_OS_WIN
-                || std::is_base_of_v<winrt::hresult_error, T>
+                                               || std::is_base_of_v<winrt::hresult_error, T>
 #endif
-        ;
+            ;
 
         struct QMessageLoggerDelegate {
-            constexpr explicit QMessageLoggerDelegate(QtMsgType type, const char* fileName, int lineNumber, const char* functionName)
-                : type(type),
-                  context(fileName, lineNumber, functionName, "default") {}
+            constexpr explicit QMessageLoggerDelegate(
+                QtMsgType type, const char* fileName, int lineNumber, const char* functionName
+            )
+                : type(type), context(fileName, lineNumber, functionName, "default") {}
 
             void log(const QString& string) const;
 
@@ -58,14 +56,16 @@ namespace libtremotesf
                 log(fmt::format(fmt, std::forward<Args>(args)...));
             }
 
-            template<typename T, typename = std::enable_if_t<!std::is_convertible_v<T, QString> && !std::is_convertible_v<T, std::string_view>>>
+            template<
+                typename T,
+                typename =
+                    std::enable_if_t<!std::is_convertible_v<T, QString> && !std::is_convertible_v<T, std::string_view>>>
             void log(const T& value) const {
                 using Type = std::remove_cv_t<std::remove_reference_t<T>>;
                 if constexpr (
                     std::is_same_v<Type, QStringView>
 #if QT_VERSION_MAJOR >= 6
-                    || std::is_same_v<Type, QUtf8StringView>
-                    || std::is_same_v<Type, QAnyStringView>
+                    || std::is_same_v<Type, QUtf8StringView> || std::is_same_v<Type, QAnyStringView>
 #endif
                 ) {
                     log(value.toString());
@@ -92,14 +92,20 @@ namespace libtremotesf
 
         private:
             template<bool PrintCausedBy>
-            void logExceptionRecursively(const std::exception& e) const { return logExceptionRecursivelyImpl<std::exception, PrintCausedBy>(e); }
+            void logExceptionRecursively(const std::exception& e) const {
+                return logExceptionRecursivelyImpl<std::exception, PrintCausedBy>(e);
+            }
 
             template<bool PrintCausedBy>
-            void logExceptionRecursively(const std::system_error& e) const { return logExceptionRecursivelyImpl<std::system_error, PrintCausedBy>(e); }
+            void logExceptionRecursively(const std::system_error& e) const {
+                return logExceptionRecursivelyImpl<std::system_error, PrintCausedBy>(e);
+            }
 
 #ifdef Q_OS_WIN
             template<bool PrintCausedBy>
-            void logExceptionRecursively(const winrt::hresult_error& e) const { return logExceptionRecursivelyImpl<winrt::hresult_error, PrintCausedBy>(e); }
+            void logExceptionRecursively(const winrt::hresult_error& e) const {
+                return logExceptionRecursivelyImpl<winrt::hresult_error, PrintCausedBy>(e);
+            }
 #endif
 
             template<typename E, bool PrintCausedBy>
@@ -109,13 +115,21 @@ namespace libtremotesf
             QMessageLogContext context;
         };
 
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, true>(const std::exception&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, false>(const std::exception&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, true>(const std::system_error&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, false>(const std::system_error&) const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, true>(const std::exception&) const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::exception, false>(const std::exception&) const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, true>(const std::system_error&) const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<std::system_error, false>(const std::system_error&) const;
 #ifdef Q_OS_WIN
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, true>(const winrt::hresult_error&) const;
-        extern template void QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, false>(const winrt::hresult_error&) const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, true>(const winrt::hresult_error&)
+            const;
+        extern template void
+        QMessageLoggerDelegate::logExceptionRecursivelyImpl<winrt::hresult_error, false>(const winrt::hresult_error&)
+            const;
 #endif
 
         inline constexpr auto printlnFormatString = "{}\n";
@@ -132,12 +146,12 @@ namespace libtremotesf
     }
 }
 
-namespace tremotesf
-{
+namespace tremotesf {
     using libtremotesf::printlnStdout;
 }
 
-#define QMLD(type) libtremotesf::impl::QMessageLoggerDelegate(type, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
+#define QMLD(type) \
+    libtremotesf::impl::QMessageLoggerDelegate(type, QT_MESSAGELOG_FILE, QT_MESSAGELOG_LINE, QT_MESSAGELOG_FUNC)
 #define logDebug(...)                QMLD(QtDebugMsg).log(__VA_ARGS__)
 #define logDebugWithException(...)   QMLD(QtDebugMsg).logWithException(__VA_ARGS__)
 #define logInfo(...)                 QMLD(QtInfoMsg).log(__VA_ARGS__)

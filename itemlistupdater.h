@@ -20,7 +20,10 @@ namespace libtremotesf {
         inline constexpr bool is_equality_comparable_v = false;
 
         template<typename T, typename U>
-        inline constexpr bool is_equality_comparable_v<T, U, std::enable_if_t<std::is_same_v<decltype(std::declval<T>() == std::declval<U>()), bool>>> = true;
+        inline constexpr bool is_equality_comparable_v<
+            T,
+            U,
+            std::enable_if_t<std::is_same_v<decltype(std::declval<T>() == std::declval<U>()), bool>>> = true;
     }
 
     class ItemBatchProcessor {
@@ -76,11 +79,15 @@ namespace libtremotesf {
             if (!items.empty()) {
                 auto removedBatchProcessor = ItemBatchProcessor([&](size_t first, size_t last) {
                     onAboutToRemoveItems(first, last);
-                    items.erase(items.begin() + static_cast<ptrdiff_t>(first), items.begin() + static_cast<ptrdiff_t>(last));
+                    items.erase(
+                        items.begin() + static_cast<ptrdiff_t>(first),
+                        items.begin() + static_cast<ptrdiff_t>(last)
+                    );
                     onRemovedItems(first, last);
                 });
 
-                auto changedBatchProcessor = ItemBatchProcessor([&](size_t first, size_t last) { onChangedItems(first, last); });
+                auto changedBatchProcessor =
+                    ItemBatchProcessor([&](size_t first, size_t last) { onChangedItems(first, last); });
 
                 for (size_t i = 0, max = items.size(); i < max; ++i) {
                     Item* item = &items[i];
@@ -127,7 +134,8 @@ namespace libtremotesf {
          * @return iterator to the NewItem with the same identity as Item, or end iterator
          * Default implementation simply checks for equality of items or throws logic_error if they are not comparable
          */
-        inline virtual typename NewItemContainer::iterator findNewItemForItem(NewItemContainer& container, const Item& item) {
+        inline virtual typename NewItemContainer::iterator
+        findNewItemForItem(NewItemContainer& container, const Item& item) {
             if constexpr (impl::is_equality_comparable_v<NewItem, Item>) {
                 return std::find_if(container.begin(), container.end(), [&item](const NewItem& newItem) {
                     return newItem == item;
@@ -148,7 +156,9 @@ namespace libtremotesf {
          * Default implementation simply returns false
          * (with default implementation of findNewItemForItem() Item and NewItem will be always equal)
          */
-        inline virtual bool updateItem([[maybe_unused]] Item& item, [[maybe_unused]] NewItem&& newItem) { return false; };
+        inline virtual bool updateItem([[maybe_unused]] Item& item, [[maybe_unused]] NewItem&& newItem) {
+            return false;
+        };
         virtual void onChangedItems(size_t first, size_t last) = 0;
 
         /**

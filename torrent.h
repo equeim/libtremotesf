@@ -18,16 +18,13 @@
 
 class QJsonObject;
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     class Rpc;
 
-    struct TorrentData
-    {
+    struct TorrentData {
         Q_GADGET
     public:
-        enum Status
-        {
+        enum Status {
             Paused,
             Downloading,
             Seeding,
@@ -41,28 +38,13 @@ namespace libtremotesf
         };
         Q_ENUM(Status)
 
-        enum Priority
-        {
-            LowPriority = -1,
-            NormalPriority,
-            HighPriority
-        };
+        enum Priority { LowPriority = -1, NormalPriority, HighPriority };
         Q_ENUM(Priority)
 
-        enum RatioLimitMode
-        {
-            GlobalRatioLimit,
-            SingleRatioLimit,
-            UnlimitedRatio
-        };
+        enum RatioLimitMode { GlobalRatioLimit, SingleRatioLimit, UnlimitedRatio };
         Q_ENUM(RatioLimitMode)
 
-        enum IdleSeedingLimitMode
-        {
-            GlobalIdleSeedingLimit,
-            SingleIdleSeedingLimit,
-            UnlimitedIdleSeeding
-        };
+        enum IdleSeedingLimitMode { GlobalIdleSeedingLimit, SingleIdleSeedingLimit, UnlimitedIdleSeeding };
         Q_ENUM(IdleSeedingLimitMode)
 
         bool update(const QJsonObject& torrentMap);
@@ -132,8 +114,7 @@ namespace libtremotesf
         int activeWebSeeders = 0;
     };
 
-    class Torrent : public QObject
-    {
+    class Torrent : public QObject {
         Q_OBJECT
     public:
         using Status = TorrentData::Status;
@@ -240,6 +221,7 @@ namespace libtremotesf
         void updatePeers(const QJsonObject& torrentMap);
 
         void checkSingleFile(const QJsonObject& torrentMap);
+
     private:
         Rpc* mRpc;
 
@@ -258,7 +240,11 @@ namespace libtremotesf
         void changed();
 
         void filesUpdated(const std::vector<int>& changedIndexes);
-        void peersUpdated(const std::vector<std::pair<int, int>>& removedIndexRanges, const std::vector<std::pair<int, int>>& changedIndexRanges, int addedCount);
+        void peersUpdated(
+            const std::vector<std::pair<int, int>>& removedIndexRanges,
+            const std::vector<std::pair<int, int>>& changedIndexRanges,
+            int addedCount
+        );
         void fileRenamed(const QString& filePath, const QString& newName);
     };
 }

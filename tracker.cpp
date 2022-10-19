@@ -13,12 +13,9 @@
 #include "literals.h"
 #include "stdutils.h"
 
-namespace libtremotesf
-{
-    namespace
-    {
-        Tracker::Status statusFromInt(int status)
-        {
+namespace libtremotesf {
+    namespace {
+        Tracker::Status statusFromInt(int status) {
             switch (status) {
             case Tracker::Inactive:
             case Tracker::Active:
@@ -31,63 +28,33 @@ namespace libtremotesf
         }
     }
 
-    Tracker::Tracker(int id, const QJsonObject& trackerMap)
-        : mId(id)
-    {
-        update(trackerMap);
-    }
+    Tracker::Tracker(int id, const QJsonObject& trackerMap) : mId(id) { update(trackerMap); }
 
-    int Tracker::id() const
-    {
-        return mId;
-    }
+    int Tracker::id() const { return mId; }
 
-    const QString& Tracker::announce() const
-    {
-        return mAnnounce;
-    }
+    const QString& Tracker::announce() const { return mAnnounce; }
 
 #if QT_VERSION_MAJOR < 6
-    const QString& Tracker::site() const
-    {
-        return mSite;
-    }
+    const QString& Tracker::site() const { return mSite; }
 #endif
 
-    Tracker::AnnounceHostInfo Tracker::announceHostInfo() const
-    {
+    Tracker::AnnounceHostInfo Tracker::announceHostInfo() const {
         auto host = QUrl(mAnnounce).host();
         bool isIpAddress = !QHostAddress(host).isNull();
         return {std::move(host), isIpAddress};
     }
 
-    Tracker::Status Tracker::status() const
-    {
-        return mStatus;
-    }
+    Tracker::Status Tracker::status() const { return mStatus; }
 
-    QString Tracker::errorMessage() const
-    {
-        return mErrorMessage;
-    }
+    QString Tracker::errorMessage() const { return mErrorMessage; }
 
-    int Tracker::peers() const
-    {
-        return mPeers;
-    }
+    int Tracker::peers() const { return mPeers; }
 
-    long long Tracker::nextUpdateTime() const
-    {
-        return mNextUpdateTime;
-    }
+    long long Tracker::nextUpdateTime() const { return mNextUpdateTime; }
 
-    int Tracker::nextUpdateEta() const
-    {
-        return mNextUpdateEta;
-    }
+    int Tracker::nextUpdateEta() const { return mNextUpdateEta; }
 
-    Tracker::UpdateResult Tracker::update(const QJsonObject& trackerMap)
-    {
+    Tracker::UpdateResult Tracker::update(const QJsonObject& trackerMap) {
         bool changed = false;
         bool announceUrlChanged = false;
 
@@ -106,11 +73,13 @@ namespace libtremotesf
 #endif
         }
 
-        const bool scrapeError = (!trackerMap.value("lastScrapeSucceeded"_l1).toBool() &&
-                                  trackerMap.value("lastScrapeTime"_l1).toInt() != 0);
+        const bool scrapeError =
+            (!trackerMap.value("lastScrapeSucceeded"_l1).toBool() && trackerMap.value("lastScrapeTime"_l1).toInt() != 0
+            );
 
-        const bool announceError = (!trackerMap.value("lastAnnounceSucceeded"_l1).toBool() &&
-                                    trackerMap.value("lastAnnounceTime"_l1).toInt() != 0);
+        const bool announceError =
+            (!trackerMap.value("lastAnnounceSucceeded"_l1).toBool() &&
+             trackerMap.value("lastAnnounceTime"_l1).toInt() != 0);
 
         if (scrapeError || announceError) {
             setChanged(mStatus, Error, changed);

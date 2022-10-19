@@ -10,16 +10,13 @@
 
 class QJsonObject;
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     class Rpc;
 
-    struct ServerSettingsData
-    {
+    struct ServerSettingsData {
         Q_GADGET
     public:
-        enum AlternativeSpeedLimitsDays
-        {
+        enum AlternativeSpeedLimitsDays {
             Sunday = 1, // (1 << 0)
             Monday = 2, // (1 << 1)
             Tuesday = 4, // (1 << 2)
@@ -33,12 +30,7 @@ namespace libtremotesf
         };
         Q_ENUM(AlternativeSpeedLimitsDays)
 
-        enum EncryptionMode
-        {
-            AllowedEncryption,
-            PreferredEncryption,
-            RequiredEncryption
-        };
+        enum EncryptionMode { AllowedEncryption, PreferredEncryption, RequiredEncryption };
         Q_ENUM(EncryptionMode)
 
         bool canRenameFiles() const;
@@ -91,8 +83,7 @@ namespace libtremotesf
         int maximumPeersGlobally = 0;
     };
 
-    class ServerSettings : public QObject
-    {
+    class ServerSettings : public QObject {
         Q_OBJECT
     public:
         explicit ServerSettings(Rpc* rpc = nullptr, QObject* parent = nullptr);
@@ -190,6 +181,7 @@ namespace libtremotesf
         void save() const;
 
         const ServerSettingsData& data() const;
+
     private:
         Rpc* mRpc;
         ServerSettingsData mData;

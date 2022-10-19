@@ -9,12 +9,10 @@
 
 class QJsonObject;
 
-namespace libtremotesf
-{
+namespace libtremotesf {
     class Rpc;
 
-    class SessionStats
-    {
+    class SessionStats {
     public:
         long long downloaded() const;
         long long uploaded() const;
@@ -30,8 +28,7 @@ namespace libtremotesf
         int mSessionCount;
     };
 
-    class ServerStats : public QObject
-    {
+    class ServerStats : public QObject {
         Q_OBJECT
     public:
         explicit ServerStats(QObject* parent = nullptr);

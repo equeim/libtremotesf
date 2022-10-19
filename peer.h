@@ -10,18 +10,14 @@
 
 class QJsonObject;
 
-namespace libtremotesf
-{
-    struct Peer
-    {
+namespace libtremotesf {
+    struct Peer {
         static constexpr auto addressKey = "address"_l1;
 
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
 
-        bool operator==(const Peer& other) const {
-            return address == other.address;
-        }
+        bool operator==(const Peer& other) const { return address == other.address; }
 
         QString address{};
         QString client{};

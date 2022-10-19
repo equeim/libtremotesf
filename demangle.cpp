@@ -9,15 +9,15 @@
 #include <QScopeGuard>
 
 #if defined(__has_include)
-# if __has_include(<cxxabi.h>)
-#  define HAVE_CXXABI_H
-# endif
-#elif defined( __GLIBCXX__ ) || defined( __GLIBCPP__ )
-# define HAVE_CXXABI_H
+#    if __has_include(<cxxabi.h>)
+#        define HAVE_CXXABI_H
+#    endif
+#elif defined(__GLIBCXX__) || defined(__GLIBCPP__)
+#    define HAVE_CXXABI_H
 #endif
 
 #ifdef HAVE_CXXABI_H
-#include <cxxabi.h>
+#    include <cxxabi.h>
 #endif
 
 namespace libtremotesf::impl {
@@ -25,14 +25,15 @@ namespace libtremotesf::impl {
     std::string demangleTypeName(const char* typeName) {
         int status{};
         char* demangled = abi::__cxa_demangle(typeName, nullptr, nullptr, &status);
-        const auto guard = QScopeGuard([&] { if (demangled) free(demangled); });
+        const auto guard = QScopeGuard([&] {
+            if (demangled) free(demangled);
+        });
         return demangled ? demangled : typeName;
     }
 #else
     namespace {
         template<typename T, size_t N>
-        [[maybe_unused]]
-        void removeSubstring(std::string& str, T (&substring)[N]) {
+        [[maybe_unused]] void removeSubstring(std::string& str, T (&substring)[N]) {
             constexpr auto substringLen = N - 1;
             while (true) {
                 size_t pos = 0;

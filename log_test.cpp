@@ -9,8 +9,8 @@
 #include <QVariant>
 
 #ifdef Q_OS_WIN
-#include <guiddef.h>
-#include <winrt/base.h>
+#    include <guiddef.h>
+#    include <winrt/base.h>
 #endif
 
 #include <fmt/format.h>
@@ -97,9 +97,9 @@ private slots:
         printlnStdout(str);
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
-#if FMT_VERSION >= 80000
+#    if FMT_VERSION >= 80000
         printlnStdout(fmt::runtime("{}"), str);
-#endif
+#    endif
     }
 
     void stdoutQAnyStringView() {
@@ -107,9 +107,9 @@ private slots:
         printlnStdout(str);
         printlnStdout("{}", str);
         printlnStdout(FMT_STRING("{}"), str);
-#if FMT_VERSION >= 80000
+#    if FMT_VERSION >= 80000
         printlnStdout(fmt::runtime("{}"), str);
-#endif
+#    endif
     }
 #endif
 
@@ -161,7 +161,6 @@ private slots:
         printlnStdout(fmt::runtime("{}"), value);
 #endif
     }
-
 
     void infoStringLiteral() {
         logInfo("foo");
@@ -229,9 +228,9 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-#if FMT_VERSION >= 80000
+#    if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
-#endif
+#    endif
     }
 
     void infoQAnyStringView() {
@@ -239,9 +238,9 @@ private slots:
         logInfo(str);
         logInfo("{}", str);
         logInfo(FMT_STRING("{}"), str);
-#if FMT_VERSION >= 80000
+#    if FMT_VERSION >= 80000
         logInfo(fmt::runtime("{}"), str);
-#endif
+#    endif
     }
 #endif
 

@@ -9,19 +9,10 @@
 
 class QJsonObject;
 
-namespace libtremotesf
-{
-    class Tracker
-    {
+namespace libtremotesf {
+    class Tracker {
     public:
-        enum Status
-        {
-            Inactive,
-            Active,
-            Queued,
-            Updating,
-            Error
-        };
+        enum Status { Inactive, Active, Queued, Updating, Error };
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
@@ -49,18 +40,14 @@ namespace libtremotesf
         };
         UpdateResult update(const QJsonObject& trackerMap);
 
-        inline bool operator==(const Tracker& other) const
-        {
-            return mId == other.mId &&
-                    mAnnounce == other.mAnnounce &&
+        inline bool operator==(const Tracker& other) const {
+            return mId == other.mId && mAnnounce == other.mAnnounce &&
 #if QT_VERSION_MAJOR < 6
-                    mSite == other.mSite &&
+                   mSite == other.mSite &&
 #endif
-                    mErrorMessage == other.mErrorMessage &&
-                    mStatus == other.mStatus &&
-                    mNextUpdateEta == other.mNextUpdateEta &&
-                    mNextUpdateTime == other.mNextUpdateTime &&
-                    mPeers == other.mPeers;
+                   mErrorMessage == other.mErrorMessage && mStatus == other.mStatus &&
+                   mNextUpdateEta == other.mNextUpdateEta && mNextUpdateTime == other.mNextUpdateTime &&
+                   mPeers == other.mPeers;
         }
 
         inline bool operator!=(const Tracker& other) const { return !(*this == other); }
