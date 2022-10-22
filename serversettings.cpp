@@ -5,7 +5,9 @@
 #include "serversettings.h"
 
 #include <QJsonObject>
+#include <QRegularExpression>
 
+#include "literals.h"
 #include "rpc.h"
 #include "stdutils.h"
 
@@ -41,6 +43,8 @@ namespace libtremotesf {
         constexpr auto alternativeSpeedLimitsBeginTimeKey = "alt-speed-time-begin"_l1;
         constexpr auto alternativeSpeedLimitsEndTimeKey = "alt-speed-time-end"_l1;
         constexpr auto alternativeSpeedLimitsDaysKey = "alt-speed-time-day"_l1;
+
+        constexpr auto configDirKey = "config-dir"_l1;
 
         inline ServerSettingsData::AlternativeSpeedLimitsDays daysFromInt(int days) {
             switch (days) {
@@ -107,6 +111,13 @@ namespace libtremotesf {
     bool ServerSettings::canShowFreeSpaceForPath() const { return mData.canShowFreeSpaceForPath(); }
 
     bool ServerSettings::hasSessionIdFile() const { return mData.hasSessionIdFile(); }
+
+    bool ServerSettings::isRunningOnWindows() const {
+        const QRegularExpression windowsPathRegex(R"(^[A-Za-z]:[\\/].*$)"_l1);
+        return windowsPathRegex.match(mData.configDirectory).hasMatch() ||
+               windowsPathRegex.match(mData.downloadDirectory).hasMatch() ||
+               windowsPathRegex.match(mData.incompleteDirectory).hasMatch();
+    }
 
     const QString& ServerSettings::downloadDirectory() const { return mData.downloadDirectory; }
 
@@ -464,6 +475,7 @@ namespace libtremotesf {
 
         mData.rpcVersion = serverSettings.value("rpc-version"_l1).toInt();
         mData.minimumRpcVersion = serverSettings.value("rpc-version-minimum"_l1).toInt();
+        mData.configDirectory = serverSettings.value(configDirKey).toString();
 
         setChanged(mData.downloadDirectory, serverSettings.value(downloadDirectoryKey).toString(), changed);
         setChanged(mData.trashTorrentFiles, serverSettings.value(trashTorrentFilesKey).toBool(), changed);

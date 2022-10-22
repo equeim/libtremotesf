@@ -131,22 +131,10 @@ namespace libtremotesf {
     Rpc::Rpc(QObject* parent)
         : QObject(parent),
           mNetwork(new QNetworkAccessManager(this)),
-          mAuthenticationRequested(false),
-          mUpdateDisabled(false),
-          mUpdating(false),
-          mAuthentication(false),
-          mTimeoutMillis(0),
-          mAutoReconnectEnabled(false),
-          mLocal(false),
-          mRpcVersionChecked(false),
-          mServerSettingsUpdated(false),
-          mTorrentsUpdated(false),
-          mServerStatsUpdated(false),
           mUpdateTimer(new QTimer(this)),
           mAutoReconnectTimer(new QTimer(this)),
           mServerSettings(new ServerSettings(this, this)),
-          mServerStats(new ServerStats(this)),
-          mStatus() {
+          mServerStats(new ServerStats(this)) {
         mNetwork->setAutoDeleteReplies(true);
         QObject::connect(
             mNetwork,
@@ -201,6 +189,8 @@ namespace libtremotesf {
     const QString& Rpc::detailedErrorMessage() const { return mStatus.detailedErrorMessage; }
 
     bool Rpc::isLocal() const { return mLocal; }
+
+    bool Rpc::isServerRunningOnWindows() const { return mServerRunningOnWindows; }
 
     int Rpc::torrentsCount() const { return static_cast<int>(mTorrents.size()); }
 
@@ -304,6 +294,7 @@ namespace libtremotesf {
         mPassword.clear();
         mTimeoutMillis = 0;
         mLocal = false;
+        mServerRunningOnWindows = false;
         mAutoReconnectEnabled = false;
         mAutoReconnectTimer->stop();
     }
@@ -756,6 +747,7 @@ namespace libtremotesf {
             mUpdating = false;
 
             mAuthenticationRequested = false;
+            mServerRunningOnWindows = false;
             mRpcVersionChecked = false;
             mServerSettingsUpdated = false;
             mTorrentsUpdated = false;
@@ -825,6 +817,11 @@ namespace libtremotesf {
                             mLocal = isSessionIdFileExists();
                             if (!mLocal) {
                                 mLocal = isAddressLocal(mServerUrl.host());
+                            }
+                            if (mLocal) {
+                                mServerRunningOnWindows = isTargetOsWindows;
+                            } else {
+                                mServerRunningOnWindows = mServerSettings->isRunningOnWindows();
                             }
 
                             getTorrents();
