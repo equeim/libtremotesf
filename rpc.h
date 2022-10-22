@@ -117,6 +117,7 @@ namespace libtremotesf {
         const QString& errorMessage() const;
         const QString& detailedErrorMessage() const;
         bool isLocal() const;
+        bool isServerRunningOnWindows() const;
 
         int torrentsCount() const;
 
@@ -226,38 +227,39 @@ namespace libtremotesf {
 
         bool isSessionIdFileExists() const;
 
-        QNetworkAccessManager* mNetwork;
-        std::unordered_set<QNetworkReply*> mActiveNetworkRequests;
-        std::unordered_map<QNetworkReply*, int> mRetryingNetworkRequests;
+        QNetworkAccessManager* mNetwork{};
+        std::unordered_set<QNetworkReply*> mActiveNetworkRequests{};
+        std::unordered_map<QNetworkReply*, int> mRetryingNetworkRequests{};
 
-        bool mAuthenticationRequested;
-        QByteArray mSessionId;
+        bool mAuthenticationRequested{};
+        QByteArray mSessionId{};
 
-        bool mUpdateDisabled;
-        bool mUpdating;
+        bool mUpdateDisabled{};
+        bool mUpdating{};
 
-        QUrl mServerUrl;
-        bool mAuthentication;
-        QSslConfiguration mSslConfiguration;
-        QList<QSslError> mExpectedSslErrors;
-        QString mUsername;
-        QString mPassword;
-        int mTimeoutMillis;
-        bool mAutoReconnectEnabled;
-        bool mLocal;
+        QUrl mServerUrl{};
+        bool mAuthentication{};
+        QSslConfiguration mSslConfiguration{};
+        QList<QSslError> mExpectedSslErrors{};
+        QString mUsername{};
+        QString mPassword{};
+        int mTimeoutMillis{};
+        bool mAutoReconnectEnabled{};
+        bool mLocal{};
+        bool mServerRunningOnWindows{};
 
-        bool mRpcVersionChecked;
-        bool mServerSettingsUpdated;
-        bool mTorrentsUpdated;
-        bool mServerStatsUpdated;
-        QTimer* mUpdateTimer;
-        QTimer* mAutoReconnectTimer;
+        bool mRpcVersionChecked{};
+        bool mServerSettingsUpdated{};
+        bool mTorrentsUpdated{};
+        bool mServerStatsUpdated{};
+        QTimer* mUpdateTimer{};
+        QTimer* mAutoReconnectTimer{};
 
-        ServerSettings* mServerSettings;
-        std::vector<std::unique_ptr<Torrent>> mTorrents;
-        ServerStats* mServerStats;
+        ServerSettings* mServerSettings{};
+        std::vector<std::unique_ptr<Torrent>> mTorrents{};
+        ServerStats* mServerStats{};
 
-        Status mStatus;
+        Status mStatus{};
 
     signals:
         void aboutToDisconnect();
