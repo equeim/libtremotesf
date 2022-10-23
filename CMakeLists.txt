@@ -31,6 +31,8 @@ endif()
 add_library(
     libtremotesf
     OBJECT
+    addressutils.cpp
+    addressutils.h
     demangle.cpp
     demangle.h
     formatters.cpp

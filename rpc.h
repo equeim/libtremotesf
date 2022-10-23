@@ -7,6 +7,7 @@
 
 #include <functional>
 #include <memory>
+#include <optional>
 #include <vector>
 #include <unordered_map>
 #include <unordered_set>
@@ -179,7 +180,7 @@ namespace libtremotesf {
         void getDownloadDirFreeSpace();
         void getFreeSpaceForPath(const QString& path);
 
-        void updateData();
+        void updateData(bool updateServerSettings = true);
 
         void shutdownServer();
 
@@ -202,8 +203,10 @@ namespace libtremotesf {
         void checkTorrentsSingleFile(const QVariantList& torrentIds);
         void getServerStats();
 
-        void checkIfTorrentsUpdated();
-        void startUpdateTimer();
+        void maybeFinishUpdatingTorrents();
+        bool checkIfUpdateCompleted();
+        bool checkIfConnectionCompleted();
+        void maybeFinishUpdateOrConnection();
 
         void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator);
 
@@ -225,6 +228,8 @@ namespace libtremotesf {
 
         void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
 
+        void checkIfServerIsLocal();
+        void checkIfServerIsRunningOnWindows();
         bool isSessionIdFileExists() const;
 
         QNetworkAccessManager* mNetwork{};
@@ -245,10 +250,11 @@ namespace libtremotesf {
         QString mPassword{};
         int mTimeoutMillis{};
         bool mAutoReconnectEnabled{};
-        bool mLocal{};
-        bool mServerRunningOnWindows{};
 
-        bool mRpcVersionChecked{};
+        std::optional<bool> mServerIsLocal{};
+        std::optional<int> mPendingHostInfoLookupId{};
+        bool mServerIsRunningOnWindows{};
+
         bool mServerSettingsUpdated{};
         bool mTorrentsUpdated{};
         bool mServerStatsUpdated{};
