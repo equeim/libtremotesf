@@ -6,15 +6,14 @@
 
 #include <QAuthenticator>
 #include <QCoreApplication>
+#include <QDir>
 #include <QFutureWatcher>
-#include <QHostAddress>
-#include <QHostInfo>
 #include <QJsonArray>
 #include <QJsonDocument>
 #include <QJsonObject>
-#include <QMetaEnum>
+#include <QHostAddress>
+#include <QHostInfo>
 #include <QNetworkAccessManager>
-#include <QNetworkInterface>
 #include <QNetworkProxy>
 #include <QNetworkReply>
 #include <QTimer>
@@ -24,6 +23,7 @@
 #include <QStandardPaths>
 #include <QtConcurrentRun>
 
+#include "addressutils.h"
 #include "itemlistupdater.h"
 #include "log.h"
 #include "serversettings.h"
@@ -35,6 +35,7 @@ SPECIALIZE_FORMATTER_FOR_Q_ENUM(QNetworkReply::NetworkError)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
 
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QHostAddress)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
 
 namespace libtremotesf {
@@ -76,21 +77,6 @@ namespace libtremotesf {
 
         inline bool isResultSuccessful(const QJsonObject& parseResult) {
             return (parseResult.value("result"_l1).toString() == "success"_l1);
-        }
-
-        bool isAddressLocal(const QString& address) {
-            if (address == QHostInfo::localHostName()) {
-                return true;
-            }
-
-            const QHostAddress ipAddress(address);
-
-            if (ipAddress.isNull()) {
-                return address == QHostInfo::fromName(QHostAddress(QHostAddress::LocalHost).toString()).hostName() ||
-                       address == QHostInfo::fromName(QHostAddress(QHostAddress::LocalHostIPv6).toString()).hostName();
-            }
-
-            return ipAddress.isLoopback() || QNetworkInterface::allAddresses().contains(ipAddress);
         }
 
         QString readFileAsBase64String(QFile& file) {
@@ -150,7 +136,7 @@ namespace libtremotesf {
         });
 
         mUpdateTimer->setSingleShot(true);
-        QObject::connect(mUpdateTimer, &QTimer::timeout, this, &Rpc::updateData);
+        QObject::connect(mUpdateTimer, &QTimer::timeout, this, [=] { updateData(); });
     }
 
     ServerSettings* Rpc::serverSettings() const { return mServerSettings; }
@@ -188,9 +174,9 @@ namespace libtremotesf {
 
     const QString& Rpc::detailedErrorMessage() const { return mStatus.detailedErrorMessage; }
 
-    bool Rpc::isLocal() const { return mLocal; }
+    bool Rpc::isLocal() const { return mServerIsLocal.value_or(false); }
 
-    bool Rpc::isServerRunningOnWindows() const { return mServerRunningOnWindows; }
+    bool Rpc::isServerRunningOnWindows() const { return mServerIsRunningOnWindows; }
 
     int Rpc::torrentsCount() const { return static_cast<int>(mTorrents.size()); }
 
@@ -293,8 +279,6 @@ namespace libtremotesf {
         mUsername.clear();
         mPassword.clear();
         mTimeoutMillis = 0;
-        mLocal = false;
-        mServerRunningOnWindows = false;
         mAutoReconnectEnabled = false;
         mAutoReconnectTimer->stop();
     }
@@ -580,8 +564,8 @@ namespace libtremotesf {
                         for (const auto& torrent : mTorrents) {
                             torrent->checkThatFilesUpdated();
                         }
-                        checkIfTorrentsUpdated();
-                        startUpdateTimer();
+                        maybeFinishUpdatingTorrents();
+                        maybeFinishUpdateOrConnection();
                     }
                 }
             }
@@ -607,8 +591,8 @@ namespace libtremotesf {
                         for (const auto& torrent : mTorrents) {
                             torrent->checkThatPeersUpdated();
                         }
-                        checkIfTorrentsUpdated();
-                        startUpdateTimer();
+                        maybeFinishUpdatingTorrents();
+                        maybeFinishUpdateOrConnection();
                     }
                 }
             }
@@ -673,9 +657,11 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::updateData() {
-        if (isConnected() && !mUpdating) {
-            mServerSettingsUpdated = false;
+    void Rpc::updateData(bool updateServerSettings) {
+        if (connectionState() != ConnectionState::Disconnected && !mUpdating) {
+            if (updateServerSettings) {
+                mServerSettingsUpdated = false;
+            }
             mTorrentsUpdated = false;
             mServerStatsUpdated = false;
 
@@ -683,9 +669,17 @@ namespace libtremotesf {
 
             mUpdating = true;
 
-            getServerSettings();
+            if (updateServerSettings) {
+                getServerSettings();
+            }
             getTorrents();
             getServerStats();
+        } else {
+            logWarning(
+                "updateData: called in incorrect state, connectionState = {}, updating = {}",
+                connectionState(),
+                mUpdating
+            );
         }
     }
 
@@ -744,11 +738,15 @@ namespace libtremotesf {
                 reply->abort();
             }
 
-            mUpdating = false;
-
             mAuthenticationRequested = false;
-            mServerRunningOnWindows = false;
-            mRpcVersionChecked = false;
+            mSessionId.clear();
+            mUpdating = false;
+            mServerIsLocal = std::nullopt;
+            if (mPendingHostInfoLookupId.has_value()) {
+                QHostInfo::abortHostLookup(*mPendingHostInfoLookupId);
+                mPendingHostInfoLookupId = std::nullopt;
+            }
+            mServerIsRunningOnWindows = false;
             mServerSettingsUpdated = false;
             mTorrentsUpdated = false;
             mServerStatsUpdated = false;
@@ -765,7 +763,6 @@ namespace libtremotesf {
         }
         case ConnectionState::Connecting:
             logInfo("Connecting");
-            mUpdating = true;
             break;
         case ConnectionState::Connected: {
             logInfo("Connected");
@@ -804,29 +801,17 @@ namespace libtremotesf {
                 if (success) {
                     mServerSettings->update(getReplyArguments(parseResult));
                     mServerSettingsUpdated = true;
-                    if (mRpcVersionChecked) {
-                        startUpdateTimer();
-                    } else {
-                        mRpcVersionChecked = true;
-
+                    if (connectionState() == ConnectionState::Connecting) {
                         if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooNew});
                         } else if (mServerSettings->rpcVersion() < minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooOld});
                         } else {
-                            mLocal = isSessionIdFileExists();
-                            if (!mLocal) {
-                                mLocal = isAddressLocal(mServerUrl.host());
-                            }
-                            if (mLocal) {
-                                mServerRunningOnWindows = isTargetOsWindows;
-                            } else {
-                                mServerRunningOnWindows = mServerSettings->isRunningOnWindows();
-                            }
-
-                            getTorrents();
-                            getServerStats();
+                            updateData(false);
+                            checkIfServerIsLocal();
                         }
+                    } else {
+                        maybeFinishUpdateOrConnection();
                     }
                 }
             }
@@ -1008,10 +993,10 @@ namespace libtremotesf {
                 TorrentsListUpdater updater(*this);
                 updater.update(mTorrents, std::move(newTorrents));
 
-                checkIfTorrentsUpdated();
-                const bool wasConnected = isConnected();
-                startUpdateTimer();
-                if (isConnected() && wasConnected) {
+                maybeFinishUpdatingTorrents();
+                const bool wasConnecting = connectionState() == ConnectionState::Connecting;
+                maybeFinishUpdateOrConnection();
+                if (!wasConnecting) {
                     emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
                 }
 
@@ -1056,13 +1041,13 @@ namespace libtremotesf {
                 if (success) {
                     mServerStats->update(getReplyArguments(parseResult));
                     mServerStatsUpdated = true;
-                    startUpdateTimer();
+                    maybeFinishUpdateOrConnection();
                 }
             }
         );
     }
 
-    void Rpc::checkIfTorrentsUpdated() {
+    void Rpc::maybeFinishUpdatingTorrents() {
         if (mUpdating && !mTorrentsUpdated) {
             for (const std::unique_ptr<Torrent>& torrent : mTorrents) {
                 if (!torrent->isUpdated()) {
@@ -1073,15 +1058,29 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::startUpdateTimer() {
-        if (mUpdating && mServerSettingsUpdated && mTorrentsUpdated && mServerStatsUpdated) {
-            if (connectionState() == ConnectionState::Connecting) {
+    bool Rpc::checkIfUpdateCompleted() { return mServerSettingsUpdated && mTorrentsUpdated && mServerStatsUpdated; }
+
+    bool Rpc::checkIfConnectionCompleted() { return checkIfUpdateCompleted() && mServerIsLocal.has_value(); }
+
+    void Rpc::maybeFinishUpdateOrConnection() {
+        const bool connecting = connectionState() == ConnectionState::Connecting;
+        if (!mUpdating && !connecting) return;
+        if (mUpdating) {
+            if (checkIfUpdateCompleted()) {
+                mUpdating = false;
+            } else {
+                return;
+            }
+        }
+        if (connecting) {
+            if (checkIfConnectionCompleted()) {
                 setStatus(Status{ConnectionState::Connected});
+            } else {
+                return;
             }
-            if (!mUpdateDisabled) {
-                mUpdateTimer->start();
-            }
-            mUpdating = false;
+        }
+        if (!mUpdateDisabled) {
+            mUpdateTimer->start();
         }
     }
 
@@ -1301,10 +1300,68 @@ namespace libtremotesf {
         }
     }
 
+    void Rpc::checkIfServerIsLocal() {
+        logInfo("checkIfServerIsLocal() called");
+        if (isSessionIdFileExists()) {
+            mServerIsLocal = true;
+            logInfo("checkIfServerIsLocal: server is running locally: true");
+            checkIfServerIsRunningOnWindows();
+            return;
+        }
+        const auto host = mServerUrl.host();
+        if (auto localIp = isLocalIpAddress(host); localIp.has_value()) {
+            mServerIsLocal = *localIp;
+            logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
+            checkIfServerIsRunningOnWindows();
+            return;
+        }
+        logInfo("checkIfServerIsLocal: resolving IP address for host name {}", host);
+        mPendingHostInfoLookupId = QHostInfo::lookupHost(host, this, [=](const QHostInfo& info) {
+            logInfo("checkIfServerIsLocal: resolved IP address for host name {}", host);
+            const auto addresses = info.addresses();
+            if (!addresses.isEmpty()) {
+                logInfo("checkIfServerIsLocal: IP addresses:");
+                for (const auto& address : addresses) {
+                    logInfo("checkIfServerIsLocal: - {}", address);
+                }
+                logInfo("checkIfServerIsLocal: checking first address");
+                mServerIsLocal = isLocalIpAddress(addresses.first());
+            } else {
+                mServerIsLocal = false;
+            }
+            logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
+            mPendingHostInfoLookupId = std::nullopt;
+            checkIfServerIsRunningOnWindows();
+            maybeFinishUpdateOrConnection();
+        });
+    }
+
+    void Rpc::checkIfServerIsRunningOnWindows() {
+        if (!mServerIsLocal.has_value()) return;
+        if (*mServerIsLocal) {
+            mServerIsRunningOnWindows = isTargetOsWindows;
+        } else {
+            mServerIsRunningOnWindows = mServerSettings->isRunningOnWindows();
+        }
+        if (mServerIsRunningOnWindows) {
+            logInfo("Server is running on Windows");
+        } else {
+            logInfo("Server is not running on Windows");
+        }
+    }
+
     bool Rpc::isSessionIdFileExists() const {
         if constexpr (targetOs != TargetOs::UnixAndroid) {
-            if (mServerSettings->hasSessionIdFile()) {
-                return !QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId).isEmpty();
+            if (mServerSettings->hasSessionIdFile() && !mSessionId.isEmpty()) {
+                const auto file = QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId);
+                if (!file.isEmpty()) {
+                    logInfo(
+                        "isSessionIdFileExists: found transmission-daemon session id file {}",
+                        QDir::toNativeSeparators(file)
+                    );
+                    return true;
+                }
+                logInfo("isSessionIdFileExists: did not find transmission-daemon session id file");
             }
         }
         return false;
