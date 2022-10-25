@@ -16,32 +16,20 @@ jobs:
   build-linux:
     strategy:
       matrix:
-        container-image: ['fedora:35', 'fedora:36', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'ubuntu:22.04']
-        qt-version: [5]
+        container-image: ['fedora:35', 'fedora:36', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'ubuntu:22.04', 'ubuntu:22.10']
+        qt-version: [5, 6]
         compiler: [gcc, clang]
-        include:
-        - container-image: 'fedora:35'
+        exclude:
+        - container-image: 'mageia:8'
           qt-version: 6
           compiler: gcc
-        - container-image: 'fedora:35'
+        - container-image: 'mageia:8'
           qt-version: 6
           compiler: clang
-        - container-image: 'fedora:36'
+        - container-image: 'debian:11'
           qt-version: 6
           compiler: gcc
-        - container-image: 'fedora:36'
-          qt-version: 6
-          compiler: clang
-        - container-image: 'opensuse/tumbleweed:latest'
-          qt-version: 6
-          compiler: gcc
-        - container-image: 'opensuse/tumbleweed:latest'
-          qt-version: 6
-          compiler: clang
-        - container-image: 'ubuntu:22.04'
-          qt-version: 6
-          compiler: gcc
-        - container-image: 'ubuntu:22.04'
+        - container-image: 'debian:11'
           qt-version: 6
           compiler: clang
 
