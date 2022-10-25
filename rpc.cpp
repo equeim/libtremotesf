@@ -37,6 +37,7 @@ SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QHostAddress)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
+SPECIALIZE_FORMATTER_FOR_QDEBUG(QUrl)
 
 namespace libtremotesf {
     namespace {
@@ -203,18 +204,39 @@ namespace libtremotesf {
         mNetwork->clearAccessCache();
         disconnect();
 
-        QLatin1String scheme;
+        mServerUrl.clear();
         if (server.https) {
-            scheme = "https://"_l1;
+            mServerUrl.setScheme("https"_l1);
         } else {
-            scheme = "http://"_l1;
+            mServerUrl.setScheme("http"_l1);
         }
-        const QString urlString = scheme % server.address % QLatin1Char(':') % QString::number(server.port) %
-                                  QLatin1Char('/') % server.apiPath;
-        mServerUrl =
-            QUrl(urlString, QUrl::TolerantMode).adjusted(QUrl::StripTrailingSlash | QUrl::NormalizePathSegments);
+        mServerUrl.setHost(server.address);
+        if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+            logWarning("Error setting URL hostname: {}", error);
+        }
+        mServerUrl.setPort(server.port);
+        if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+            logWarning("Error setting URL port: {}", error);
+        }
+        if (auto i = server.apiPath.indexOf('?'); i != -1) {
+            mServerUrl.setPath(server.apiPath.mid(0, i));
+            if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+                logWarning("Error setting URL path: {}", error);
+            }
+            if ((i + 1) < server.apiPath.size()) {
+                mServerUrl.setQuery(server.apiPath.mid(i + 1));
+                if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+                    logWarning("Error setting URL query: {}", error);
+                }
+            }
+        } else {
+            mServerUrl.setPath(server.apiPath);
+            if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+                logWarning("Error setting URL path: {}", error);
+            }
+        }
         if (!mServerUrl.isValid()) {
-            logWarning("Failed to parse URL from {}", urlString);
+            logWarning("URL {} is invalid", mServerUrl);
         }
 
         switch (server.proxyType) {
