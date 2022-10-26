@@ -47,7 +47,7 @@ namespace libtremotesf {
         enum IdleSeedingLimitMode { GlobalIdleSeedingLimit, SingleIdleSeedingLimit, UnlimitedIdleSeeding };
         Q_ENUM(IdleSeedingLimitMode)
 
-        bool update(const QJsonObject& torrentMap);
+        bool update(const QJsonObject& torrentMap, const Rpc* rpc);
 
         int id = 0;
         QString hashString;
@@ -125,6 +125,8 @@ namespace libtremotesf {
         static constexpr auto idKey = "id"_l1;
 
         explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
+        // For testing only
+        explicit Torrent() = default;
 
         int id() const;
         const QString& hashString() const;

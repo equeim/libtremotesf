@@ -13,6 +13,7 @@
 
 #include "itemlistupdater.h"
 #include "log.h"
+#include "pathutils.h"
 #include "rpc.h"
 #include "stdutils.h"
 
@@ -87,7 +88,7 @@ namespace libtremotesf {
         constexpr auto removeTrackerKey = "trackerRemove"_l1;
     }
 
-    bool TorrentData::update(const QJsonObject& torrentMap) {
+    bool TorrentData::update(const QJsonObject& torrentMap, const Rpc* rpc) {
         bool changed = false;
 
         setChanged(name, torrentMap.value(nameKey).toString(), changed);
@@ -234,7 +235,11 @@ namespace libtremotesf {
             changed
         );
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
-        setChanged(downloadDirectory, torrentMap.value(downloadDirectoryKey).toString(), changed);
+        setChanged(
+            downloadDirectory,
+            normalizeRemotePath(torrentMap.value(downloadDirectoryKey).toString(), rpc),
+            changed
+        );
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
 
         const auto newCreationDateTime = static_cast<long long>(torrentMap.value(creationDateKey).toDouble()) * 1000;
@@ -555,7 +560,7 @@ namespace libtremotesf {
     bool Torrent::update(const QJsonObject& torrentMap) {
         mFilesUpdated = false;
         mPeersUpdated = false;
-        const bool c = mData.update(torrentMap);
+        const bool c = mData.update(torrentMap, mRpc);
         emit updated();
         if (c) {
             emit changed();
