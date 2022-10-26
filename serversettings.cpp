@@ -8,6 +8,7 @@
 #include <QRegularExpression>
 
 #include "literals.h"
+#include "pathutils.h"
 #include "rpc.h"
 #include "stdutils.h"
 
@@ -123,7 +124,7 @@ namespace libtremotesf {
 
     void ServerSettings::setDownloadDirectory(const QString& directory) {
         if (directory != mData.downloadDirectory) {
-            mData.downloadDirectory = directory;
+            mData.downloadDirectory = normalizeRemotePath(directory, mRpc);
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(downloadDirectoryKey, mData.downloadDirectory);
             }
@@ -170,7 +171,7 @@ namespace libtremotesf {
 
     void ServerSettings::setIncompleteDirectory(const QString& directory) {
         if (directory != mData.incompleteDirectory) {
-            mData.incompleteDirectory = directory;
+            mData.incompleteDirectory = normalizeRemotePath(directory, mRpc);
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(incompleteDirectoryKey, mData.incompleteDirectory);
             }
@@ -475,9 +476,13 @@ namespace libtremotesf {
 
         mData.rpcVersion = serverSettings.value("rpc-version"_l1).toInt();
         mData.minimumRpcVersion = serverSettings.value("rpc-version-minimum"_l1).toInt();
-        mData.configDirectory = serverSettings.value(configDirKey).toString();
+        mData.configDirectory = normalizeRemotePath(serverSettings.value(configDirKey).toString(), mRpc);
 
-        setChanged(mData.downloadDirectory, serverSettings.value(downloadDirectoryKey).toString(), changed);
+        setChanged(
+            mData.downloadDirectory,
+            normalizeRemotePath(serverSettings.value(downloadDirectoryKey).toString(), mRpc),
+            changed
+        );
         setChanged(mData.trashTorrentFiles, serverSettings.value(trashTorrentFilesKey).toBool(), changed);
         setChanged(mData.startAddedTorrents, serverSettings.value(startAddedTorrentsKey).toBool(), changed);
         setChanged(mData.renameIncompleteFiles, serverSettings.value(renameIncompleteFilesKey).toBool(), changed);
@@ -486,7 +491,7 @@ namespace libtremotesf {
             serverSettings.value(incompleteDirectoryEnabledKey).toBool(),
             changed
         );
-        setChanged(mData.incompleteDirectory, serverSettings.value(incompleteDirectoryKey).toString(), changed);
+        setChanged(mData.incompleteDirectory, normalizeRemotePath(serverSettings.value(incompleteDirectoryKey).toString(), mRpc), changed);
 
         setChanged(mData.ratioLimited, serverSettings.value(ratioLimitedKey).toBool(), changed);
         setChanged(mData.ratioLimit, serverSettings.value(ratioLimitKey).toDouble(), changed);

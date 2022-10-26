@@ -134,7 +134,7 @@ private slots:
     }
 
     void stdoutTorrent() {
-        const Torrent value(0, {}, nullptr);
+        const Torrent value{};
         printlnStdout(value);
         printlnStdout("{}", value);
         printlnStdout(FMT_STRING("{}"), value);
@@ -265,7 +265,7 @@ private slots:
     }
 
     void infoTorrent() {
-        const Torrent value(0, {}, nullptr);
+        const Torrent value{};
         logInfo(value);
         logInfo("{}", value);
         logInfo(FMT_STRING("{}"), value);

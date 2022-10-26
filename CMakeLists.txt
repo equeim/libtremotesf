@@ -41,6 +41,8 @@ add_library(
     literals.h
     log.cpp
     log.h
+    pathutils.cpp
+    pathutils.h
     peer.cpp
     peer.h
     rpc.cpp
