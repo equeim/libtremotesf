@@ -88,7 +88,7 @@ namespace libtremotesf {
         constexpr auto removeTrackerKey = "trackerRemove"_l1;
     }
 
-    bool TorrentData::update(const QJsonObject& torrentMap, const Rpc* rpc) {
+    bool TorrentData::update(const QJsonObject& torrentMap) {
         bool changed = false;
 
         setChanged(name, torrentMap.value(nameKey).toString(), changed);
@@ -237,7 +237,7 @@ namespace libtremotesf {
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
         setChanged(
             downloadDirectory,
-            normalizeRemotePath(torrentMap.value(downloadDirectoryKey).toString(), rpc),
+            normalizePath(torrentMap.value(downloadDirectoryKey).toString()),
             changed
         );
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
@@ -560,7 +560,7 @@ namespace libtremotesf {
     bool Torrent::update(const QJsonObject& torrentMap) {
         mFilesUpdated = false;
         mPeersUpdated = false;
-        const bool c = mData.update(torrentMap, mRpc);
+        const bool c = mData.update(torrentMap);
         emit updated();
         if (c) {
             emit changed();

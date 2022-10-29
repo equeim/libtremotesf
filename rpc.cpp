@@ -177,8 +177,6 @@ namespace libtremotesf {
 
     bool Rpc::isLocal() const { return mServerIsLocal.value_or(false); }
 
-    bool Rpc::isServerRunningOnWindows() const { return mServerIsRunningOnWindows; }
-
     int Rpc::torrentsCount() const { return static_cast<int>(mTorrents.size()); }
 
     bool Rpc::isUpdateDisabled() const { return mUpdateDisabled; }
@@ -768,7 +766,6 @@ namespace libtremotesf {
                 QHostInfo::abortHostLookup(*mPendingHostInfoLookupId);
                 mPendingHostInfoLookupId = std::nullopt;
             }
-            mServerIsRunningOnWindows = false;
             mServerSettingsUpdated = false;
             mTorrentsUpdated = false;
             mServerStatsUpdated = false;
@@ -1327,14 +1324,12 @@ namespace libtremotesf {
         if (isSessionIdFileExists()) {
             mServerIsLocal = true;
             logInfo("checkIfServerIsLocal: server is running locally: true");
-            checkIfServerIsRunningOnWindows();
             return;
         }
         const auto host = mServerUrl.host();
         if (auto localIp = isLocalIpAddress(host); localIp.has_value()) {
             mServerIsLocal = *localIp;
             logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
-            checkIfServerIsRunningOnWindows();
             return;
         }
         logInfo("checkIfServerIsLocal: resolving IP address for host name {}", host);
@@ -1353,23 +1348,8 @@ namespace libtremotesf {
             }
             logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
             mPendingHostInfoLookupId = std::nullopt;
-            checkIfServerIsRunningOnWindows();
             maybeFinishUpdateOrConnection();
         });
-    }
-
-    void Rpc::checkIfServerIsRunningOnWindows() {
-        if (!mServerIsLocal.has_value()) return;
-        if (*mServerIsLocal) {
-            mServerIsRunningOnWindows = isTargetOsWindows;
-        } else {
-            mServerIsRunningOnWindows = mServerSettings->isRunningOnWindows();
-        }
-        if (mServerIsRunningOnWindows) {
-            logInfo("Server is running on Windows");
-        } else {
-            logInfo("Server is not running on Windows");
-        }
     }
 
     bool Rpc::isSessionIdFileExists() const {

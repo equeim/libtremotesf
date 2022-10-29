@@ -5,7 +5,6 @@
 #include "serversettings.h"
 
 #include <QJsonObject>
-#include <QRegularExpression>
 
 #include "literals.h"
 #include "pathutils.h"
@@ -44,8 +43,6 @@ namespace libtremotesf {
         constexpr auto alternativeSpeedLimitsBeginTimeKey = "alt-speed-time-begin"_l1;
         constexpr auto alternativeSpeedLimitsEndTimeKey = "alt-speed-time-end"_l1;
         constexpr auto alternativeSpeedLimitsDaysKey = "alt-speed-time-day"_l1;
-
-        constexpr auto configDirKey = "config-dir"_l1;
 
         inline ServerSettingsData::AlternativeSpeedLimitsDays daysFromInt(int days) {
             switch (days) {
@@ -113,18 +110,11 @@ namespace libtremotesf {
 
     bool ServerSettings::hasSessionIdFile() const { return mData.hasSessionIdFile(); }
 
-    bool ServerSettings::isRunningOnWindows() const {
-        const QRegularExpression windowsPathRegex(R"(^[A-Za-z]:[\\/].*$)"_l1);
-        return windowsPathRegex.match(mData.configDirectory).hasMatch() ||
-               windowsPathRegex.match(mData.downloadDirectory).hasMatch() ||
-               windowsPathRegex.match(mData.incompleteDirectory).hasMatch();
-    }
-
     const QString& ServerSettings::downloadDirectory() const { return mData.downloadDirectory; }
 
     void ServerSettings::setDownloadDirectory(const QString& directory) {
         if (directory != mData.downloadDirectory) {
-            mData.downloadDirectory = normalizeRemotePath(directory, mRpc);
+            mData.downloadDirectory = directory;
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(downloadDirectoryKey, mData.downloadDirectory);
             }
@@ -171,7 +161,7 @@ namespace libtremotesf {
 
     void ServerSettings::setIncompleteDirectory(const QString& directory) {
         if (directory != mData.incompleteDirectory) {
-            mData.incompleteDirectory = normalizeRemotePath(directory, mRpc);
+            mData.incompleteDirectory = directory;
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(incompleteDirectoryKey, mData.incompleteDirectory);
             }
@@ -476,11 +466,10 @@ namespace libtremotesf {
 
         mData.rpcVersion = serverSettings.value("rpc-version"_l1).toInt();
         mData.minimumRpcVersion = serverSettings.value("rpc-version-minimum"_l1).toInt();
-        mData.configDirectory = normalizeRemotePath(serverSettings.value(configDirKey).toString(), mRpc);
 
         setChanged(
             mData.downloadDirectory,
-            normalizeRemotePath(serverSettings.value(downloadDirectoryKey).toString(), mRpc),
+            normalizePath(serverSettings.value(downloadDirectoryKey).toString()),
             changed
         );
         setChanged(mData.trashTorrentFiles, serverSettings.value(trashTorrentFilesKey).toBool(), changed);
@@ -491,7 +480,7 @@ namespace libtremotesf {
             serverSettings.value(incompleteDirectoryEnabledKey).toBool(),
             changed
         );
-        setChanged(mData.incompleteDirectory, normalizeRemotePath(serverSettings.value(incompleteDirectoryKey).toString(), mRpc), changed);
+        setChanged(mData.incompleteDirectory, normalizePath(serverSettings.value(incompleteDirectoryKey).toString()), changed);
 
         setChanged(mData.ratioLimited, serverSettings.value(ratioLimitedKey).toBool(), changed);
         setChanged(mData.ratioLimit, serverSettings.value(ratioLimitKey).toDouble(), changed);
