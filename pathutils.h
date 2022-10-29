@@ -8,15 +8,13 @@
 #include <QString>
 
 namespace libtremotesf {
-    class Rpc;
-
-    QString normalizeRemotePath(const QString& path, const Rpc* rpc);
-    QString toNativeRemoteSeparators(const QString& path, const Rpc* rpc);
+    QString normalizePath(const QString& path);
+    QString toNativeSeparators(const QString& path);
 }
 
 namespace tremotesf {
-    using libtremotesf::normalizeRemotePath;
-    using libtremotesf::toNativeRemoteSeparators;
+    using libtremotesf::normalizePath;
+    using libtremotesf::toNativeSeparators;
 }
 
 #endif // TREMOTESF_RPC_PATHUTILS_H

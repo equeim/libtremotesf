@@ -118,7 +118,6 @@ namespace libtremotesf {
         const QString& errorMessage() const;
         const QString& detailedErrorMessage() const;
         bool isLocal() const;
-        bool isServerRunningOnWindows() const;
 
         int torrentsCount() const;
 
@@ -229,7 +228,6 @@ namespace libtremotesf {
         void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
 
         void checkIfServerIsLocal();
-        void checkIfServerIsRunningOnWindows();
         bool isSessionIdFileExists() const;
 
         QNetworkAccessManager* mNetwork{};
@@ -253,7 +251,6 @@ namespace libtremotesf {
 
         std::optional<bool> mServerIsLocal{};
         std::optional<int> mPendingHostInfoLookupId{};
-        bool mServerIsRunningOnWindows{};
 
         bool mServerSettingsUpdated{};
         bool mTorrentsUpdated{};
