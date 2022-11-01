@@ -13,19 +13,18 @@
 #include <unordered_set>
 
 #include <QByteArray>
-#include <QFile>
 #include <QNetworkRequest>
 #include <QObject>
 #include <QSslConfiguration>
 #include <QUrl>
 #include <QVariantList>
 
+#include "formatters.h"
 #include "serversettings.h"
 #include "serverstats.h"
 
-#include "formatters.h"
-
 class QAuthenticator;
+class QFile;
 class QNetworkAccessManager;
 class QNetworkReply;
 class QTimer;
