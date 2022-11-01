@@ -91,6 +91,7 @@ namespace libtremotesf {
         using Error = RpcError;
 
         explicit Rpc(QObject* parent = nullptr);
+        ~Rpc() override;
 
         ServerSettings* serverSettings() const;
         ServerStats* serverStats() const;
