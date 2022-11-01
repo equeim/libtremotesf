@@ -260,7 +260,8 @@ namespace libtremotesf {
         QTimer* mAutoReconnectTimer{};
 
         ServerSettings* mServerSettings{};
-        std::vector<std::unique_ptr<Torrent>> mTorrents{};
+        // Don't use member initializer to workaround Android NDK bug (https://github.com/android/ndk/issues/1798)
+        std::vector<std::unique_ptr<Torrent>> mTorrents;
         ServerStats* mServerStats{};
 
         Status mStatus{};
