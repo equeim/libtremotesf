@@ -140,6 +140,8 @@ namespace libtremotesf {
         QObject::connect(mUpdateTimer, &QTimer::timeout, this, [=] { updateData(); });
     }
 
+    Rpc::~Rpc() = default;
+
     ServerSettings* Rpc::serverSettings() const { return mServerSettings; }
 
     ServerStats* Rpc::serverStats() const { return mServerStats; }
