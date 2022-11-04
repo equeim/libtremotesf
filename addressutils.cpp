@@ -23,6 +23,11 @@ namespace libtremotesf {
             logInfo("isLocalIpAddress: address is loopback, return true");
             return true;
         }
+        const auto addresses = QNetworkInterface::allAddresses();
+        logInfo("isLocalIpAddress: this machine's IP addresses:");
+        for (const auto& address : addresses) {
+            logInfo("isLocalIpAddress: - {}", address);
+        }
         if (QNetworkInterface::allAddresses().contains(ipAddress)) {
             logInfo("isLocalIpAddress: address is this machine's IP address, return true");
             return true;
