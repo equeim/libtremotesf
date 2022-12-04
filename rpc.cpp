@@ -854,12 +854,10 @@ namespace libtremotesf {
             ItemListUpdater::update(torrents, std::move(newTorrents));
         }
 
-        std::vector<std::pair<int, int>> removedIndexRanges;
-        std::vector<std::pair<int, int>> changedIndexRanges;
-        int addedCount = 0;
-        QVariantList checkSingleFileIds;
-        QVariantList getFilesIds;
-        QVariantList getPeersIds;
+        std::vector<std::pair<int, int>> removedIndexRanges{};
+        std::vector<std::pair<int, int>> changedIndexRanges{};
+        int addedCount{};
+        QVariantList checkSingleFileIds{};
 
     protected:
         std::vector<NewTorrent>::iterator
@@ -890,23 +888,15 @@ namespace libtremotesf {
 
             const bool changed = torrent->update(json);
             if (changed) {
-                if (!wasFinished && torrent->isFinished() &&
-                    !wasPaused
-                    // Don't emit torrentFinished() if torrent's size became smaller
-                    // since there is high chance that it happened because user unselected some files
-                    // and torrent immediately became finished. We don't want notification in that case
-                    && torrent->sizeWhenDone() >= oldSizeWhenDone) {
+                // Don't emit torrentFinished() if torrent's size became smaller
+                // since there is high chance that it happened because user unselected some files
+                // and torrent immediately became finished. We don't want notification in that case
+                if (!wasFinished && torrent->isFinished() && !wasPaused && torrent->sizeWhenDone() >= oldSizeWhenDone) {
                     emit mRpc.torrentFinished(torrent.get());
                 }
                 if (!metadataWasComplete && torrent->isMetadataComplete()) {
                     checkSingleFileIds.push_back(id);
                 }
-            }
-            if (torrent->isFilesEnabled()) {
-                getFilesIds.push_back(id);
-            }
-            if (torrent->isPeersEnabled()) {
-                getPeersIds.push_back(id);
             }
 
             return changed;
@@ -1024,11 +1014,21 @@ namespace libtremotesf {
                 if (!updater.checkSingleFileIds.isEmpty()) {
                     checkTorrentsSingleFile(updater.checkSingleFileIds);
                 }
-                if (!updater.getFilesIds.isEmpty()) {
-                    getTorrentsFiles(updater.getFilesIds, true);
+                QVariantList getFilesIds{};
+                QVariantList getPeersIds{};
+                for (const auto& torrent : mTorrents) {
+                    if (torrent->isFilesEnabled()) {
+                        getFilesIds.push_back(torrent->id());
+                    }
+                    if (torrent->isPeersEnabled()) {
+                        getPeersIds.push_back(torrent->id());
+                    }
                 }
-                if (!updater.getPeersIds.isEmpty()) {
-                    getTorrentsPeers(updater.getPeersIds, true);
+                if (getFilesIds.isEmpty()) {
+                    getTorrentsFiles(getFilesIds, true);
+                }
+                if (getPeersIds.isEmpty()) {
+                    getTorrentsPeers(getPeersIds, true);
                 }
             }
         );
