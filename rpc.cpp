@@ -845,19 +845,10 @@ namespace libtremotesf {
     public:
         inline explicit TorrentsListUpdater(Rpc& rpc) : mRpc(rpc) {}
 
-        void update(std::vector<std::unique_ptr<Torrent>>& torrents, std::vector<NewTorrent>&& newTorrents) override {
-            if (newTorrents.size() > torrents.size()) {
-                checkSingleFileIds.reserve(
-                    static_cast<decltype(checkSingleFileIds)::size_type>(newTorrents.size() - torrents.size())
-                );
-            }
-            ItemListUpdater::update(torrents, std::move(newTorrents));
-        }
-
         std::vector<std::pair<int, int>> removedIndexRanges{};
         std::vector<std::pair<int, int>> changedIndexRanges{};
         int addedCount{};
-        QVariantList checkSingleFileIds{};
+        QVariantList metadataCompletedIds{};
 
     protected:
         std::vector<NewTorrent>::iterator
@@ -895,7 +886,7 @@ namespace libtremotesf {
                     emit mRpc.torrentFinished(torrent.get());
                 }
                 if (!metadataWasComplete && torrent->isMetadataComplete()) {
-                    checkSingleFileIds.push_back(id);
+                    metadataCompletedIds.push_back(id);
                 }
             }
 
@@ -914,7 +905,7 @@ namespace libtremotesf {
                 emit mRpc.torrentAdded(torrent.get());
             }
             if (torrent->isMetadataComplete()) {
-                checkSingleFileIds.push_back(id);
+                metadataCompletedIds.push_back(id);
             }
             return torrent;
         }
@@ -1011,8 +1002,8 @@ namespace libtremotesf {
                     emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
                 }
 
-                if (!updater.checkSingleFileIds.isEmpty()) {
-                    checkTorrentsSingleFile(updater.checkSingleFileIds);
+                if (!updater.metadataCompletedIds.isEmpty()) {
+                    checkTorrentsSingleFile(updater.metadataCompletedIds);
                 }
                 QVariantList getFilesIds{};
                 QVariantList getPeersIds{};
