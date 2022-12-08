@@ -4,39 +4,30 @@
 
 #include "rpc.h"
 
-#include <QAuthenticator>
 #include <QCoreApplication>
 #include <QDir>
 #include <QFutureWatcher>
 #include <QJsonArray>
-#include <QJsonDocument>
 #include <QJsonObject>
 #include <QHostAddress>
 #include <QHostInfo>
-#include <QNetworkAccessManager>
 #include <QNetworkProxy>
-#include <QNetworkReply>
 #include <QTimer>
 #include <QSslCertificate>
 #include <QSslKey>
-#include <QStringBuilder>
 #include <QStandardPaths>
 #include <QtConcurrentRun>
 
 #include "addressutils.h"
 #include "itemlistupdater.h"
 #include "log.h"
+#include "requestrouter.h"
 #include "serversettings.h"
 #include "serverstats.h"
 #include "target_os.h"
 #include "torrent.h"
 
-SPECIALIZE_FORMATTER_FOR_Q_ENUM(QNetworkReply::NetworkError)
-SPECIALIZE_FORMATTER_FOR_Q_ENUM(QSslError::SslError)
-
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QHostAddress)
-SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QUrl)
 
 namespace libtremotesf {
@@ -44,9 +35,6 @@ namespace libtremotesf {
         // Transmission 2.40+
         constexpr int minimumRpcVersion = 14;
 
-        constexpr int maxRetryAttempts = 3;
-
-        const auto sessionIdHeader = QByteArrayLiteral("X-Transmission-Session-Id");
         constexpr auto torrentsKey = "torrents"_l1;
         constexpr auto torrentDuplicateKey = "torrent-duplicate"_l1;
 
@@ -65,20 +53,6 @@ namespace libtremotesf {
                 return "tr_session_id_"_l1;
             }
         }();
-
-        inline QByteArray makeRequestData(const QString& method, const QVariantMap& arguments) {
-            return QJsonDocument::fromVariant(
-                       QVariantMap{{QStringLiteral("method"), method}, {QStringLiteral("arguments"), arguments}}
-            ).toJson(QJsonDocument::Compact);
-        }
-
-        inline QJsonObject getReplyArguments(const QJsonObject& parseResult) {
-            return parseResult.value("arguments"_l1).toObject();
-        }
-
-        inline bool isResultSuccessful(const QJsonObject& parseResult) {
-            return (parseResult.value("result"_l1).toString() == "success"_l1);
-        }
 
         QString readFileAsBase64String(QFile& file) {
             if (!file.isOpen() && !file.open(QIODevice::ReadOnly)) {
@@ -115,21 +89,15 @@ namespace libtremotesf {
         }
     }
 
+    using namespace impl;
+
     Rpc::Rpc(QObject* parent)
         : QObject(parent),
-          mNetwork(new QNetworkAccessManager(this)),
+          mRequestRouter(new RequestRouter(this)),
           mUpdateTimer(new QTimer(this)),
           mAutoReconnectTimer(new QTimer(this)),
           mServerSettings(new ServerSettings(this, this)),
           mServerStats(new ServerStats(this)) {
-        mNetwork->setAutoDeleteReplies(true);
-        QObject::connect(
-            mNetwork,
-            &QNetworkAccessManager::authenticationRequired,
-            this,
-            &Rpc::onAuthenticationRequired
-        );
-
         mAutoReconnectTimer->setSingleShot(true);
         QObject::connect(mAutoReconnectTimer, &QTimer::timeout, this, [=] {
             logInfo("Auto reconnection");
@@ -138,6 +106,19 @@ namespace libtremotesf {
 
         mUpdateTimer->setSingleShot(true);
         QObject::connect(mUpdateTimer, &QTimer::timeout, this, [=] { updateData(); });
+
+        QObject::connect(
+            mRequestRouter,
+            &RequestRouter::requestFailed,
+            this,
+            [=](RpcError error, const QString& errorMessage, const QString& detailedErrorMessage) {
+                setStatus({RpcConnectionState::Disconnected, error, errorMessage, detailedErrorMessage});
+                if (mAutoReconnectEnabled && !mUpdateDisabled) {
+                    logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
+                    mAutoReconnectTimer->start();
+                }
+            }
+        );
     }
 
     Rpc::~Rpc() = default;
@@ -201,90 +182,83 @@ namespace libtremotesf {
     }
 
     void Rpc::setServer(const Server& server) {
-        mNetwork->clearAccessCache();
         disconnect();
 
-        mServerUrl.clear();
+        RequestRouter::RequestsConfiguration configuration{};
         if (server.https) {
-            mServerUrl.setScheme("https"_l1);
+            configuration.serverUrl.setScheme("https"_l1);
         } else {
-            mServerUrl.setScheme("http"_l1);
+            configuration.serverUrl.setScheme("http"_l1);
         }
-        mServerUrl.setHost(server.address);
-        if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+        configuration.serverUrl.setHost(server.address);
+        if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
             logWarning("Error setting URL hostname: {}", error);
         }
-        mServerUrl.setPort(server.port);
-        if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+        configuration.serverUrl.setPort(server.port);
+        if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
             logWarning("Error setting URL port: {}", error);
         }
         if (auto i = server.apiPath.indexOf('?'); i != -1) {
-            mServerUrl.setPath(server.apiPath.mid(0, i));
-            if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+            configuration.serverUrl.setPath(server.apiPath.mid(0, i));
+            if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
                 logWarning("Error setting URL path: {}", error);
             }
             if ((i + 1) < server.apiPath.size()) {
-                mServerUrl.setQuery(server.apiPath.mid(i + 1));
-                if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+                configuration.serverUrl.setQuery(server.apiPath.mid(i + 1));
+                if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
                     logWarning("Error setting URL query: {}", error);
                 }
             }
         } else {
-            mServerUrl.setPath(server.apiPath);
-            if (auto error = mServerUrl.errorString(); !error.isEmpty()) {
+            //std::to_string(/*server.port*/);
+            configuration.serverUrl.setPath(server.apiPath);
+            if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
                 logWarning("Error setting URL path: {}", error);
             }
         }
-        if (!mServerUrl.isValid()) {
-            logWarning("URL {} is invalid", mServerUrl);
+        if (!configuration.serverUrl.isValid()) {
+            logWarning("URL {} is invalid", configuration.serverUrl);
         }
 
         switch (server.proxyType) {
         case Server::ProxyType::Default:
-            mNetwork->setProxy(QNetworkProxy::applicationProxy());
             break;
         case Server::ProxyType::Http:
-            mNetwork->setProxy(QNetworkProxy(
+            configuration.proxy = QNetworkProxy(
                 QNetworkProxy::HttpProxy,
                 server.proxyHostname,
                 static_cast<quint16>(server.proxyPort),
                 server.proxyUser,
                 server.proxyPassword
-            ));
+            );
             break;
         case Server::ProxyType::Socks5:
-            mNetwork->setProxy(QNetworkProxy(
+            configuration.proxy = QNetworkProxy(
                 QNetworkProxy::Socks5Proxy,
                 server.proxyHostname,
                 static_cast<quint16>(server.proxyPort),
                 server.proxyUser,
                 server.proxyPassword
-            ));
+            );
             break;
         }
 
-        mSslConfiguration = QSslConfiguration::defaultConfiguration();
-        mExpectedSslErrors.clear();
-
         if (server.selfSignedCertificateEnabled) {
-            const auto certificates(QSslCertificate::fromData(server.selfSignedCertificate, QSsl::Pem));
-            mExpectedSslErrors.reserve(certificates.size() * 3);
-            for (const auto& certificate : certificates) {
-                mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
-                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
-                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificateInChain, certificate));
-            }
+            configuration.serverCertificateChain = QSslCertificate::fromData(server.selfSignedCertificate, QSsl::Pem);
         }
 
         if (server.clientCertificateEnabled) {
-            mSslConfiguration.setLocalCertificate(QSslCertificate(server.clientCertificate, QSsl::Pem));
-            mSslConfiguration.setPrivateKey(QSslKey(server.clientCertificate, QSsl::Rsa));
+            configuration.clientCertificate = QSslCertificate(server.clientCertificate, QSsl::Pem);
+            configuration.clientPrivateKey = QSslKey(server.clientCertificate, QSsl::Rsa);
         }
 
-        mAuthentication = server.authentication;
-        mUsername = server.username;
-        mPassword = server.password;
-        mTimeoutMillis = server.timeout * 1000; // msecs
+        configuration.authentication = server.authentication;
+        configuration.username = server.username;
+        configuration.password = server.password;
+        configuration.timeout = std::chrono::seconds(server.timeout); // server.timeout is in seconds
+
+        mRequestRouter->setConfiguration(std::move(configuration));
+
         mUpdateTimer->setInterval(server.updateInterval * 1000); // msecs
 
         mAutoReconnectEnabled = server.autoReconnectEnabled;
@@ -294,19 +268,14 @@ namespace libtremotesf {
 
     void Rpc::resetServer() {
         disconnect();
-        mServerUrl.clear();
-        mSslConfiguration = QSslConfiguration::defaultConfiguration();
-        mExpectedSslErrors.clear();
-        mAuthentication = false;
-        mUsername.clear();
-        mPassword.clear();
-        mTimeoutMillis = 0;
+        mRequestRouter->setConfiguration({});
         mAutoReconnectEnabled = false;
         mAutoReconnectTimer->stop();
     }
 
     void Rpc::connect() {
-        if (connectionState() == ConnectionState::Disconnected && !mServerUrl.isEmpty()) {
+        if (connectionState() == ConnectionState::Disconnected &&
+            !mRequestRouter->configuration().serverUrl.isEmpty()) {
             setStatus(Status{ConnectionState::Connecting});
             getServerSettings();
         }
@@ -365,7 +334,7 @@ namespace libtremotesf {
             return;
         }
         const auto future = QtConcurrent::run([=, file = std::move(file)]() {
-            return makeRequestData(
+            return RequestRouter::makeRequestData(
                 "torrent-add"_l1,
                 {{"metainfo"_l1, readFileAsBase64String(*file)},
                  {"download-dir"_l1, downloadDirectory},
@@ -379,27 +348,29 @@ namespace libtremotesf {
         auto watcher = new QFutureWatcher<QByteArray>(this);
         QObject::connect(watcher, &QFutureWatcher<QByteArray>::finished, this, [=] {
             if (isConnected()) {
-                postRequest("torrent-add"_l1, watcher->result(), [=](const auto& parseResult, bool success) {
-                    if (success) {
-                        const auto arguments(getReplyArguments(parseResult));
-                        if (arguments.contains(torrentDuplicateKey)) {
-                            emit torrentAddDuplicate();
-                        } else {
-                            if (!renamedFiles.isEmpty()) {
-                                const QJsonObject torrentJson(arguments.value("torrent-added"_l1).toObject());
-                                if (!torrentJson.isEmpty()) {
-                                    const int id = torrentJson.value(Torrent::idKey).toInt();
-                                    for (auto i = renamedFiles.begin(), end = renamedFiles.end(); i != end; ++i) {
-                                        renameTorrentFile(id, i.key(), i.value().toString());
+                mRequestRouter
+                    ->postRequest("torrent-add"_l1, watcher->result(), [=](const RequestRouter::Response& response) {
+                        if (response.success) {
+                            if (response.arguments.contains(torrentDuplicateKey)) {
+                                emit torrentAddDuplicate();
+                            } else {
+                                if (!renamedFiles.isEmpty()) {
+                                    const QJsonObject torrentJson(
+                                        response.arguments.value("torrent-added"_l1).toObject()
+                                    );
+                                    if (!torrentJson.isEmpty()) {
+                                        const int id = torrentJson.value(Torrent::idKey).toInt();
+                                        for (auto i = renamedFiles.begin(), end = renamedFiles.end(); i != end; ++i) {
+                                            renameTorrentFile(id, i.key(), i.value().toString());
+                                        }
                                     }
                                 }
+                                updateData();
                             }
-                            updateData();
+                        } else {
+                            emit torrentAddError();
                         }
-                    } else {
-                        emit torrentAddError();
-                    }
-                });
+                    });
                 watcher->deleteLater();
             }
         });
@@ -408,15 +379,15 @@ namespace libtremotesf {
 
     void Rpc::addTorrentLink(const QString& link, const QString& downloadDirectory, int bandwidthPriority, bool start) {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "torrent-add"_l1,
                 {{"filename"_l1, link},
                  {"download-dir"_l1, downloadDirectory},
                  {"bandwidthPriority"_l1, bandwidthPriority},
                  {"paused"_l1, !start}},
-                [=](const auto& parseResult, bool success) {
-                    if (success) {
-                        if (getReplyArguments(parseResult).contains(torrentDuplicateKey)) {
+                [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        if (response.arguments.contains(torrentDuplicateKey)) {
                             emit torrentAddDuplicate();
                         } else {
                             updateData();
@@ -431,41 +402,44 @@ namespace libtremotesf {
 
     void Rpc::startTorrents(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("torrent-start"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("torrent-start"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::startTorrentsNow(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("torrent-start-now"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("torrent-start-now"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::pauseTorrents(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("torrent-stop"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("torrent-stop"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::removeTorrents(const QVariantList& ids, bool deleteFiles) {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "torrent-remove"_l1,
                 {{"ids"_l1, ids}, {"delete-local-data"_l1, deleteFiles}},
-                [=](const auto&, bool success) {
-                    if (success) {
+                [=](const RequestRouter::Response& response) {
+                    if (response.success) {
                         updateData();
                     }
                 }
@@ -475,57 +449,62 @@ namespace libtremotesf {
 
     void Rpc::checkTorrents(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("torrent-verify"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("torrent-verify"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::moveTorrentsToTop(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("queue-move-top"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("queue-move-top"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::moveTorrentsUp(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("queue-move-up"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("queue-move-up"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::moveTorrentsDown(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("queue-move-down"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("queue-move-down"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::moveTorrentsToBottom(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("queue-move-bottom"_l1, {{"ids"_l1, ids}}, [=](const auto&, bool success) {
-                if (success) {
-                    updateData();
-                }
-            });
+            mRequestRouter
+                ->postRequest("queue-move-bottom"_l1, {{"ids"_l1, ids}}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        updateData();
+                    }
+                });
         }
     }
 
     void Rpc::reannounceTorrents(const QVariantList& ids) {
         if (isConnected()) {
-            postRequest("torrent-reannounce"_l1, {{"ids"_l1, ids}});
+            mRequestRouter->postRequest("torrent-reannounce"_l1, {{"ids"_l1, ids}});
         }
     }
 
@@ -535,17 +514,17 @@ namespace libtremotesf {
 
     void Rpc::setSessionProperties(const QVariantMap& properties) {
         if (isConnected()) {
-            postRequest("session-set"_l1, properties);
+            mRequestRouter->postRequest("session-set"_l1, properties);
         }
     }
 
     void Rpc::setTorrentProperty(int id, const QString& property, const QVariant& value, bool updateIfSuccessful) {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "torrent-set"_l1,
                 {{"ids"_l1, QVariantList{id}}, {property, value}},
-                [=](const auto&, bool success) {
-                    if (success && updateIfSuccessful) {
+                [=](const RequestRouter::Response& response) {
+                    if (response.success && updateIfSuccessful) {
                         updateData();
                     }
                 }
@@ -555,11 +534,11 @@ namespace libtremotesf {
 
     void Rpc::setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles) {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "torrent-set-location"_l1,
                 {{"ids"_l1, ids}, {"location"_l1, location}, {"move"_l1, moveFiles}},
-                [=](const auto&, bool success) {
-                    if (success) {
+                [=](const RequestRouter::Response& response) {
+                    if (response.success) {
                         updateData();
                     }
                 }
@@ -568,12 +547,12 @@ namespace libtremotesf {
     }
 
     void Rpc::getTorrentsFiles(const QVariantList& ids, bool scheduled) {
-        postRequest(
+        mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QStringList{"id"_l1, "files"_l1, "fileStats"_l1}}, {"ids"_l1, ids}},
-            [=](const auto& parseResult, bool success) {
-                if (success) {
-                    const QJsonArray torrents(getReplyArguments(parseResult).value(torrentsKey).toArray());
+            [=](const RequestRouter::Response& response) {
+                if (response.success) {
+                    const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
                         const QJsonObject torrentMap(torrentJson.toObject());
                         const int torrentId = torrentMap.value(Torrent::idKey).toInt();
@@ -595,12 +574,12 @@ namespace libtremotesf {
     }
 
     void Rpc::getTorrentsPeers(const QVariantList& ids, bool scheduled) {
-        postRequest(
+        mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QStringList{"id"_l1, "peers"_l1}}, {"ids"_l1, ids}},
-            [=](const auto& parseResult, bool success) {
-                if (success) {
-                    const QJsonArray torrents(getReplyArguments(parseResult).value(torrentsKey).toArray());
+            [=](const RequestRouter::Response& response) {
+                if (response.success) {
+                    const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
                         const QJsonObject torrentMap(torrentJson.toObject());
                         const int torrentId = torrentMap.value(Torrent::idKey).toInt();
@@ -623,16 +602,15 @@ namespace libtremotesf {
 
     void Rpc::renameTorrentFile(int torrentId, const QString& filePath, const QString& newName) {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "torrent-rename-path"_l1,
                 {{"ids"_l1, QVariantList{torrentId}}, {"path"_l1, filePath}, {"name"_l1, newName}},
-                [=](const auto& parseResult, bool success) {
-                    if (success) {
+                [=](const RequestRouter::Response& response) {
+                    if (response.success) {
                         Torrent* torrent = torrentById(torrentId);
                         if (torrent) {
-                            const QJsonObject arguments(getReplyArguments(parseResult));
-                            const QString path(arguments.value("path"_l1).toString());
-                            const QString newName(arguments.value("name"_l1).toString());
+                            const QString path(response.arguments.value("path"_l1).toString());
+                            const QString newName(response.arguments.value("name"_l1).toString());
                             emit torrent->fileRenamed(path, newName);
                             emit torrentFileRenamed(torrentId, path, newName);
                             updateData();
@@ -645,7 +623,7 @@ namespace libtremotesf {
 
     void Rpc::getDownloadDirFreeSpace() {
         if (isConnected()) {
-            postRequest(
+            mRequestRouter->postRequest(
                 "download-dir-free-space"_l1,
                 QByteArrayLiteral("{"
                                   "\"arguments\":{"
@@ -655,11 +633,11 @@ namespace libtremotesf {
                                   "},"
                                   "\"method\":\"session-get\""
                                   "}"),
-                [=](const auto& parseResult, bool success) {
-                    if (success) {
-                        emit gotDownloadDirFreeSpace(static_cast<long long>(
-                            getReplyArguments(parseResult).value("download-dir-free-space"_l1).toDouble()
-                        ));
+                [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        emit gotDownloadDirFreeSpace(
+                            static_cast<long long>(response.arguments.value("download-dir-free-space"_l1).toDouble())
+                        );
                     }
                 }
             );
@@ -668,14 +646,15 @@ namespace libtremotesf {
 
     void Rpc::getFreeSpaceForPath(const QString& path) {
         if (isConnected()) {
-            postRequest("free-space"_l1, {{"path"_l1, path}}, [=](const auto& parseResult, bool success) {
-                emit gotFreeSpaceForPath(
-                    path,
-                    success,
-                    success ? static_cast<long long>(getReplyArguments(parseResult).value("size-bytes"_l1).toDouble())
-                            : 0
-                );
-            });
+            mRequestRouter
+                ->postRequest("free-space"_l1, {{"path"_l1, path}}, [=](const RequestRouter::Response& response) {
+                    emit gotFreeSpaceForPath(
+                        path,
+                        response.success,
+                        response.success ? static_cast<long long>(response.arguments.value("size-bytes"_l1).toDouble())
+                                         : 0
+                    );
+                });
         }
     }
 
@@ -707,12 +686,13 @@ namespace libtremotesf {
 
     void Rpc::shutdownServer() {
         if (isConnected()) {
-            postRequest("session-close"_l1, QVariantMap{}, [=](const QJsonObject&, bool success) {
-                if (success) {
-                    logInfo("Successfully sent shutdown request, disconnecting");
-                    disconnect();
-                }
-            });
+            mRequestRouter
+                ->postRequest("session-close"_l1, QVariantMap{}, [=](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        logInfo("Successfully sent shutdown request, disconnecting");
+                        disconnect();
+                    }
+                });
         }
     }
 
@@ -751,17 +731,8 @@ namespace libtremotesf {
         case ConnectionState::Disconnected: {
             logInfo("Disconnected");
 
-            mNetwork->clearAccessCache();
+            mRequestRouter->cancelPendingRequestsAndClearSessionId();
 
-            const auto activeRequests(mActiveNetworkRequests);
-            mActiveNetworkRequests.clear();
-            mRetryingNetworkRequests.clear();
-            for (QNetworkReply* reply : activeRequests) {
-                reply->abort();
-            }
-
-            mAuthenticationRequested = false;
-            mSessionId.clear();
             mUpdating = false;
             mServerIsLocal = std::nullopt;
             if (mPendingHostInfoLookupId.has_value()) {
@@ -815,12 +786,12 @@ namespace libtremotesf {
     }
 
     void Rpc::getServerSettings() {
-        postRequest(
+        mRequestRouter->postRequest(
             "session-get"_l1,
             QByteArrayLiteral("{\"method\":\"session-get\"}"),
-            [=](const auto& parseResult, bool success) {
-                if (success) {
-                    mServerSettings->update(getReplyArguments(parseResult));
+            [=](const RequestRouter::Response& response) {
+                if (response.success) {
+                    mServerSettings->update(response.arguments);
                     mServerSettingsUpdated = true;
                     if (connectionState() == ConnectionState::Connecting) {
                         if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
@@ -922,7 +893,7 @@ namespace libtremotesf {
     };
 
     void Rpc::getTorrents() {
-        postRequest(
+        mRequestRouter->postRequest(
             "torrent-get"_l1,
             QByteArrayLiteral("{"
                               "\"arguments\":{"
@@ -976,14 +947,14 @@ namespace libtremotesf {
                               "},"
                               "\"method\":\"torrent-get\""
                               "}"),
-            [=](const auto& parseResult, bool success) {
-                if (!success) {
+            [=](const RequestRouter::Response& response) {
+                if (!response.success) {
                     return;
                 }
 
                 std::vector<NewTorrent> newTorrents;
                 {
-                    const QJsonArray torrentsJsons(getReplyArguments(parseResult).value("torrents"_l1).toArray());
+                    const QJsonArray torrentsJsons = response.arguments.value("torrents"_l1).toArray();
                     newTorrents.reserve(static_cast<size_t>(torrentsJsons.size()));
                     for (const auto& i : torrentsJsons) {
                         QJsonObject torrentJson(i.toObject());
@@ -1026,12 +997,12 @@ namespace libtremotesf {
     }
 
     void Rpc::checkTorrentsSingleFile(const QVariantList& torrentIds) {
-        postRequest(
+        mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QVariantList{"id"_l1, "priorities"_l1}}, {"ids"_l1, torrentIds}},
-            [=](const auto& parseResult, bool success) {
-                if (success) {
-                    const QJsonArray torrents(getReplyArguments(parseResult).value(torrentsKey).toArray());
+            [=](const RequestRouter::Response& response) {
+                if (response.success) {
+                    const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& i : torrents) {
                         const QJsonObject torrentMap(i.toObject());
                         const int torrentId = torrentMap.value(Torrent::idKey).toInt();
@@ -1046,12 +1017,12 @@ namespace libtremotesf {
     }
 
     void Rpc::getServerStats() {
-        postRequest(
+        mRequestRouter->postRequest(
             "session-stats"_l1,
             QByteArrayLiteral("{\"method\":\"session-stats\"}"),
-            [=](const auto& parseResult, bool success) {
-                if (success) {
-                    mServerStats->update(getReplyArguments(parseResult));
+            [=](const RequestRouter::Response& response) {
+                if (response.success) {
+                    mServerStats->update(response.arguments);
                     mServerStatsUpdated = true;
                     maybeFinishUpdateOrConnection();
                 }
@@ -1096,222 +1067,6 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator) {
-        if (mAuthentication && !mAuthenticationRequested) {
-            authenticator->setUser(mUsername);
-            authenticator->setPassword(mPassword);
-            mAuthenticationRequested = true;
-        }
-    }
-
-    QNetworkReply* Rpc::postRequest(Request&& request) {
-        QNetworkReply* reply = mNetwork->post(request.request, request.data);
-        mActiveNetworkRequests.insert(reply);
-
-        reply->ignoreSslErrors(mExpectedSslErrors);
-        auto sslErrors = std::make_shared<QList<QSslError>>();
-
-        QObject::connect(reply, &QNetworkReply::sslErrors, this, [sslErrors](const QList<QSslError>& errors) {
-            for (const QSslError& error : errors) {
-                logWarning("{} on {}", error, error.certificate().toText());
-            }
-            *sslErrors = errors;
-        });
-
-        QObject::connect(reply, &QNetworkReply::finished, this, [=, request = std::move(request)]() mutable {
-            onRequestFinished(reply, *sslErrors, std::move(request));
-        });
-
-        return reply;
-    }
-
-    bool Rpc::retryRequest(Request&& request, QNetworkReply* previousAttempt) {
-        int retryAttempts{};
-        if (const auto found = mRetryingNetworkRequests.find(previousAttempt);
-            found != mRetryingNetworkRequests.end()) {
-            retryAttempts = found->second;
-            mRetryingNetworkRequests.erase(found);
-        } else {
-            retryAttempts = 0;
-        }
-        ++retryAttempts;
-        if (retryAttempts > maxRetryAttempts) {
-            return false;
-        }
-
-        request.setSessionId(mSessionId);
-
-        logWarning("Retrying '{}' request, retry attempts = {}", request.method, retryAttempts);
-        QNetworkReply* reply = postRequest(std::move(request));
-        mRetryingNetworkRequests.emplace(reply, retryAttempts);
-
-        return true;
-    }
-
-    void Rpc::postRequest(
-        QLatin1String method,
-        const QByteArray& data,
-        const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse
-    ) {
-        Request request{method, QNetworkRequest(mServerUrl), data, callOnSuccessParse};
-        request.setSessionId(mSessionId);
-        request.request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"_l1);
-        request.request.setSslConfiguration(mSslConfiguration);
-        request.request.setTransferTimeout(mTimeoutMillis);
-        postRequest(std::move(request));
-    }
-
-    void Rpc::postRequest(
-        QLatin1String method,
-        const QVariantMap& arguments,
-        const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse
-    ) {
-        postRequest(method, makeRequestData(method, arguments), callOnSuccessParse);
-    }
-
-    void Rpc::onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request) {
-        if (mActiveNetworkRequests.erase(reply) == 0) {
-            return;
-        }
-
-        if (connectionState() == ConnectionState::Disconnected) {
-            return;
-        }
-
-        if (reply->error() == QNetworkReply::NoError) {
-            mRetryingNetworkRequests.erase(reply);
-            const QByteArray replyData(reply->readAll());
-
-            const auto future = QtConcurrent::run([replyData] {
-                QJsonParseError error{};
-                QJsonObject result(QJsonDocument::fromJson(replyData, &error).object());
-                const bool parsedOk = (error.error == QJsonParseError::NoError);
-                return std::pair<QJsonObject, bool>(std::move(result), parsedOk);
-            });
-            auto watcher = new QFutureWatcher<std::pair<QJsonObject, bool>>(this);
-            QObject::connect(watcher, &QFutureWatcher<std::pair<QJsonObject, bool>>::finished, this, [=] {
-                const auto result = watcher->result();
-                if (connectionState() != ConnectionState::Disconnected) {
-                    const QJsonObject& parseResult = result.first;
-                    const bool parsedOk = result.second;
-                    if (parsedOk) {
-                        const bool success = isResultSuccessful(parseResult);
-                        if (!success) {
-                            logWarning("method '{}' failed, response: {}", request.method, parseResult);
-                        }
-                        if (request.callOnSuccessParse) {
-                            request.callOnSuccessParse(parseResult, success);
-                        }
-                    } else {
-                        logWarning("Parsing error");
-                        setStatus(Status{ConnectionState::Disconnected, Error::ParseError});
-                    }
-                }
-                watcher->deleteLater();
-            });
-            watcher->setFuture(future);
-
-            return;
-        }
-
-        if (reply->error() == QNetworkReply::ContentConflictError && reply->hasRawHeader(sessionIdHeader)) {
-            const auto newSessionId(reply->rawHeader(sessionIdHeader));
-            if (newSessionId != request.request.rawHeader(sessionIdHeader)) {
-                logInfo("Session id changed, retrying '{}' request", request.method);
-                mSessionId = reply->rawHeader(sessionIdHeader);
-                // Retry without incrementing retryAttempts
-                request.setSessionId(mSessionId);
-                postRequest(std::move(request));
-                return;
-            }
-        }
-
-        logWarning("'{}' request error {} {}", request.method, reply->error(), reply->errorString());
-        if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
-            httpStatusCode.isValid()) {
-            logWarning(
-                "HTTP status code {} {}",
-                httpStatusCode.toInt(),
-                reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()
-            );
-        }
-
-        const auto createErrorStatus = [&](Error error) {
-            auto detailedErrorMessage =
-                QString::fromStdString(fmt::format("{}: {}", reply->error(), reply->errorString()));
-            if (reply->url() == request.request.url()) {
-                detailedErrorMessage += QString::fromStdString(fmt::format("\nURL: {}", reply->url().toString()));
-            } else {
-                detailedErrorMessage += QString::fromStdString(fmt::format(
-                    "\nOriginal URL: {}\nRedirected URL: {}",
-                    request.request.url().toString(),
-                    reply->url().toString()
-                ));
-            }
-            if (auto httpStatusCode = reply->attribute(QNetworkRequest::HttpStatusCodeAttribute);
-                httpStatusCode.isValid()) {
-                detailedErrorMessage += QString::fromStdString(fmt::format(
-                    "\nHTTP status code: {} {}\nEncrypted: {}\nHTTP/2 was used: {}",
-                    httpStatusCode.toInt(),
-                    reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString(),
-                    reply->attribute(QNetworkRequest::ConnectionEncryptedAttribute).toBool(),
-                    reply->attribute(QNetworkRequest::Http2WasUsedAttribute).toBool()
-                ));
-                if (!reply->rawHeaderPairs().isEmpty()) {
-                    detailedErrorMessage += "\nReply headers:"_l1;
-                    for (const QNetworkReply::RawHeaderPair& pair : reply->rawHeaderPairs()) {
-                        detailedErrorMessage +=
-                            QString::fromStdString(fmt::format("\n  {}: {}", pair.first, pair.second));
-                    }
-                }
-            } else {
-                detailedErrorMessage += "\nDid not establish HTTP connection"_l1;
-            }
-            if (!sslErrors.isEmpty()) {
-                detailedErrorMessage += QString::fromStdString(fmt::format("\n\n{} TLS errors:", sslErrors.size()));
-                int i = 1;
-                for (const QSslError& sslError : sslErrors) {
-                    detailedErrorMessage += QString::fromStdString(fmt::format(
-                        "\n\n {}. {}: {} on certificate:\n - {}",
-                        i,
-                        sslError.error(),
-                        sslError.errorString(),
-                        sslError.certificate().toText()
-                    ));
-                    ++i;
-                }
-            }
-            return Status{ConnectionState::Disconnected, error, reply->errorString(), std::move(detailedErrorMessage)};
-        };
-
-        switch (reply->error()) {
-        case QNetworkReply::AuthenticationRequiredError:
-            logWarning("Authentication error");
-            setStatus(createErrorStatus(Error::AuthenticationError));
-            break;
-        case QNetworkReply::OperationCanceledError:
-        case QNetworkReply::TimeoutError:
-            logWarning("Timed out");
-            if (!retryRequest(std::move(request), reply)) {
-                setStatus(createErrorStatus(Error::TimedOut));
-                if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                    logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
-                    mAutoReconnectTimer->start();
-                }
-            }
-            break;
-        default: {
-            if (!retryRequest(std::move(request), reply)) {
-                setStatus(createErrorStatus(Error::ConnectionError));
-                if (mAutoReconnectEnabled && !mUpdateDisabled) {
-                    logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
-                    mAutoReconnectTimer->start();
-                }
-            }
-        }
-        }
-    }
-
     void Rpc::checkIfServerIsLocal() {
         logInfo("checkIfServerIsLocal() called");
         if (isSessionIdFileExists()) {
@@ -1319,7 +1074,7 @@ namespace libtremotesf {
             logInfo("checkIfServerIsLocal: server is running locally: true");
             return;
         }
-        const auto host = mServerUrl.host();
+        const auto host = mRequestRouter->configuration().serverUrl.host();
         if (auto localIp = isLocalIpAddress(host); localIp.has_value()) {
             mServerIsLocal = *localIp;
             logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
@@ -1347,8 +1102,9 @@ namespace libtremotesf {
 
     bool Rpc::isSessionIdFileExists() const {
         if constexpr (targetOs != TargetOs::UnixAndroid) {
-            if (mServerSettings->hasSessionIdFile() && !mSessionId.isEmpty()) {
-                const auto file = QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mSessionId);
+            if (mServerSettings->hasSessionIdFile() && !mRequestRouter->sessionId().isEmpty()) {
+                const auto file =
+                    QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mRequestRouter->sessionId());
                 if (!file.isEmpty()) {
                     logInfo(
                         "isSessionIdFileExists: found transmission-daemon session id file {}",
@@ -1361,6 +1117,4 @@ namespace libtremotesf {
         }
         return false;
     }
-
-    void Rpc::Request::setSessionId(const QByteArray& sessionId) { request.setRawHeader(sessionIdHeader, sessionId); }
 }

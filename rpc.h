@@ -32,6 +32,10 @@ class QTimer;
 namespace libtremotesf {
     Q_NAMESPACE
 
+    namespace impl {
+        class RequestRouter;
+    }
+
     class Torrent;
 
     struct Server {
@@ -184,15 +188,6 @@ namespace libtremotesf {
         void shutdownServer();
 
     private:
-        struct Request {
-            QLatin1String method;
-            QNetworkRequest request;
-            QByteArray data;
-            std::function<void(const QJsonObject&, bool)> callOnSuccessParse;
-
-            void setSessionId(const QByteArray& sessionId);
-        };
-
         void setStatus(Status&& status);
         void resetStateOnConnectionStateChanged(ConnectionState oldConnectionState, size_t& removedTorrentsCount);
         void emitSignalsOnConnectionStateChanged(ConnectionState oldConnectionState, size_t removedTorrentsCount);
@@ -207,46 +202,14 @@ namespace libtremotesf {
         bool checkIfConnectionCompleted();
         void maybeFinishUpdateOrConnection();
 
-        void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator);
-
-        QNetworkReply* postRequest(Request&& request);
-
-        bool retryRequest(Request&& request, QNetworkReply* previousAttempt);
-
-        void postRequest(
-            QLatin1String method,
-            const QByteArray& data,
-            const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {}
-        );
-
-        void postRequest(
-            QLatin1String method,
-            const QVariantMap& arguments,
-            const std::function<void(const QJsonObject&, bool)>& callOnSuccessParse = {}
-        );
-
-        void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
-
         void checkIfServerIsLocal();
-        bool isSessionIdFileExists() const;
+        [[nodiscard]] bool isSessionIdFileExists() const;
 
-        QNetworkAccessManager* mNetwork{};
-        std::unordered_set<QNetworkReply*> mActiveNetworkRequests{};
-        std::unordered_map<QNetworkReply*, int> mRetryingNetworkRequests{};
-
-        bool mAuthenticationRequested{};
-        QByteArray mSessionId{};
+        impl::RequestRouter* mRequestRouter{};
 
         bool mUpdateDisabled{};
         bool mUpdating{};
 
-        QUrl mServerUrl{};
-        bool mAuthentication{};
-        QSslConfiguration mSslConfiguration{};
-        QList<QSslError> mExpectedSslErrors{};
-        QString mUsername{};
-        QString mPassword{};
-        int mTimeoutMillis{};
         bool mAutoReconnectEnabled{};
 
         std::optional<bool> mServerIsLocal{};

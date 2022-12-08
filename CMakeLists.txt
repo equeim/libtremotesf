@@ -51,6 +51,8 @@ add_library(
     peer.h
     rpc.cpp
     rpc.h
+    requestrouter.cpp
+    requestrouter.h
     serversettings.cpp
     serversettings.h
     serverstats.cpp
@@ -84,6 +86,14 @@ if (BUILD_TESTING AND NOT ANDROID)
     add_executable(demangle_test demangle_test.cpp)
     add_test(NAME demangle_test COMMAND demangle_test)
     target_link_libraries(demangle_test libtremotesf Qt::Test)
+
+    set(HTTPLIB_REQUIRE_OPENSSL ON)
+    add_subdirectory(3rdparty/cpp-httplib)
+
+    add_executable(requestrouter_test requestrouter_test.cpp)
+    target_compile_definitions(requestrouter_test PRIVATE TEST_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test-data")
+    add_test(NAME requestrouter_test COMMAND requestrouter_test)
+    target_link_libraries(requestrouter_test libtremotesf Qt::Test httplib::httplib)
 endif()
 
 set_common_options_on_targets()

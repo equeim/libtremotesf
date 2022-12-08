@@ -9,6 +9,6 @@ Source: https://github.com/equeim/libtremotesf
 # Copyright: $YEAR $NAME <$CONTACT>
 # License: ...
 
-Files: README.md *.json
+Files: README.md *.json test-data/*.pem
 Copyright: 2015-2022 Alexey Rochev
 License: CC0-1.0
