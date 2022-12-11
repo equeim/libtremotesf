@@ -9,10 +9,18 @@ else()
 endif()
 cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION}..3.23)
 
-project(libtremotesf CXX)
-
 option(TREMOTESF_QT6 "Build with Qt 6" ON)
 option(TREMOTESF_BUILD_TESTS "Build tests" ON)
+
+if ((DEFINED VCPKG_TARGET_TRIPLET) AND (NOT DEFINED VCPKG_MANIFEST_FEATURES))
+    if (TREMOTESF_QT6)
+        set(VCPKG_MANIFEST_FEATURES qt6)
+    else()
+        set(VCPKG_MANIFEST_FEATURES qt5)
+    endif()
+endif()
+
+project(libtremotesf CXX)
 
 if (TREMOTESF_BUILD_TESTS)
     enable_testing()
