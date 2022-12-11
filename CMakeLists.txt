@@ -10,8 +10,6 @@ endif()
 cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION}..3.23)
 
 option(TREMOTESF_QT6 "Build with Qt 6" ON)
-option(TREMOTESF_BUILD_TESTS "Build tests" ON)
-
 if ((DEFINED VCPKG_TARGET_TRIPLET) AND (NOT DEFINED VCPKG_MANIFEST_FEATURES))
     if (TREMOTESF_QT6)
         set(VCPKG_MANIFEST_FEATURES qt6)
@@ -22,9 +20,7 @@ endif()
 
 project(libtremotesf CXX)
 
-if (TREMOTESF_BUILD_TESTS)
-    enable_testing()
-endif()
+include(CTest)
 
 set(CMAKE_INCLUDE_CURRENT_DIR ON)
 set(CMAKE_AUTOMOC ON)
@@ -74,7 +70,7 @@ target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR
 
 qt_import_plugins(libtremotesf EXCLUDE_BY_TYPE bearer)
 
-if (TREMOTESF_BUILD_TESTS AND NOT ANDROID)
+if (BUILD_TESTING AND NOT ANDROID)
     find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Test)
 
     add_executable(itemlistupdater_test itemlistupdater_test.cpp)
