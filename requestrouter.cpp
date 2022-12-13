@@ -56,39 +56,47 @@ namespace libtremotesf::impl {
 
     void RequestRouter::setConfiguration(RequestsConfiguration configuration) {
         mConfiguration = std::move(configuration);
+
         mNetwork->setProxy(mConfiguration.proxy);
         mNetwork->clearAccessCache();
 
+        const bool https = mConfiguration.serverUrl.scheme() == "https"_l1;
+
         mSslConfiguration = QSslConfiguration::defaultConfiguration();
-        if (!mConfiguration.clientCertificate.isNull()) {
-            mSslConfiguration.setLocalCertificate(mConfiguration.clientCertificate);
-        }
-        if (!mConfiguration.clientPrivateKey.isNull()) {
-            mSslConfiguration.setPrivateKey(mConfiguration.clientPrivateKey);
-        }
-        mExpectedSslErrors.clear();
-        mExpectedSslErrors.reserve(mConfiguration.serverCertificateChain.size() * 3);
-        for (const auto& certificate : mConfiguration.serverCertificateChain) {
-            mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
-            mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
-            mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificateInChain, certificate));
+        if (https) {
+            if (!mConfiguration.clientCertificate.isNull()) {
+                mSslConfiguration.setLocalCertificate(mConfiguration.clientCertificate);
+            }
+            if (!mConfiguration.clientPrivateKey.isNull()) {
+                mSslConfiguration.setPrivateKey(mConfiguration.clientPrivateKey);
+            }
+            mExpectedSslErrors.clear();
+            mExpectedSslErrors.reserve(mConfiguration.serverCertificateChain.size() * 3);
+            for (const auto& certificate : mConfiguration.serverCertificateChain) {
+                mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
+                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
+                mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificateInChain, certificate));
+            }
         }
 
         if (!mConfiguration.serverUrl.isEmpty()) {
-            logDebug("Server url: {}", mConfiguration.serverUrl.toString());
+            logDebug("Connection configuration:");
+            logDebug(" - Server url: {}", mConfiguration.serverUrl.toString());
             if (mConfiguration.proxy.type() != QNetworkProxy::NoProxy) {
-                logDebug("Proxy: {}", mConfiguration.proxy);
+                logDebug(" - Proxy: {}", mConfiguration.proxy);
             }
-            logDebug("Timeout: {}", mConfiguration.timeout);
-            logDebug("HTTP Basic access authentication: {}", mConfiguration.authentication);
-            logDebug(
-                "Manually validating server's certificate chain: {}",
-                !mConfiguration.serverCertificateChain.isEmpty()
-            );
-            logDebug(
-                "Client certificate authentication: {}",
-                !mConfiguration.clientCertificate.isNull() && !mConfiguration.clientPrivateKey.isNull()
-            );
+            logDebug(" - Timeout: {}", mConfiguration.timeout);
+            logDebug(" - HTTP Basic access authentication: {}", mConfiguration.authentication);
+            if (https) {
+                logDebug(
+                    " - Manually validating server's certificate chain: {}",
+                    !mConfiguration.serverCertificateChain.isEmpty()
+                );
+                logDebug(
+                    " - Client certificate authentication: {}",
+                    !mConfiguration.clientCertificate.isNull() && !mConfiguration.clientPrivateKey.isNull()
+                );
+            }
         }
     }
 
