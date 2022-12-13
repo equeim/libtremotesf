@@ -243,7 +243,7 @@ namespace libtremotesf {
             break;
         }
 
-        if (server.selfSignedCertificateEnabled) {
+        if (server.https && server.selfSignedCertificateEnabled) {
             configuration.serverCertificateChain = QSslCertificate::fromData(server.selfSignedCertificate, QSsl::Pem);
         }
 
