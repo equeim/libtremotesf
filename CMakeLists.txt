@@ -88,7 +88,7 @@ if (BUILD_TESTING AND NOT ANDROID)
     target_link_libraries(demangle_test libtremotesf Qt::Test)
 
     set(HTTPLIB_REQUIRE_OPENSSL ON)
-    add_subdirectory(3rdparty/cpp-httplib)
+    add_subdirectory(3rdparty/cpp-httplib EXCLUDE_FROM_ALL)
 
     add_executable(requestrouter_test requestrouter_test.cpp)
     target_compile_definitions(requestrouter_test PRIVATE TEST_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test-data")
