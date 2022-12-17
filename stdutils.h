@@ -16,12 +16,9 @@ namespace libtremotesf {
         return static_cast<int>(std::find(std::begin(container), std::end(container), value) - std::begin(container));
     }
 
-    template<typename T, typename std::enable_if_t<std::is_scalar_v<T> && !std::is_floating_point_v<T>, int> = 0>
-    inline void setChanged(T& value, T newValue, bool& changed) {
-        if (newValue != value) {
-            value = newValue;
-            changed = true;
-        }
+    namespace impl {
+        template<typename T>
+        constexpr bool isCheapToCopy = std::is_trivially_copyable_v<T> && sizeof(T) <= (sizeof(void*) * 2);
     }
 
     template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
@@ -32,7 +29,15 @@ namespace libtremotesf {
         }
     }
 
-    template<typename T, typename std::enable_if_t<!std::is_scalar_v<T>, int> = 0>
+    template<typename T, typename std::enable_if_t<!std::is_floating_point_v<T> && impl::isCheapToCopy<T>, int> = 0>
+    inline void setChanged(T& value, T newValue, bool& changed) {
+        if (newValue != value) {
+            value = newValue;
+            changed = true;
+        }
+    }
+
+    template<typename T, typename std::enable_if_t<!std::is_floating_point_v<T> && !impl::isCheapToCopy<T>, int> = 0>
     inline void setChanged(T& value, T&& newValue, bool& changed) {
         if (newValue != value) {
             value = std::forward<T>(newValue);
