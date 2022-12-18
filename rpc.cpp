@@ -988,10 +988,10 @@ namespace libtremotesf {
                         getPeersIds.push_back(torrent->id());
                     }
                 }
-                if (getFilesIds.isEmpty()) {
+                if (!getFilesIds.isEmpty()) {
                     getTorrentsFiles(getFilesIds, true);
                 }
-                if (getPeersIds.isEmpty()) {
+                if (!getPeersIds.isEmpty()) {
                     getTorrentsPeers(getPeersIds, true);
                 }
             }
