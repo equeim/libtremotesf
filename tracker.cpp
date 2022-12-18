@@ -18,10 +18,9 @@ namespace libtremotesf {
         Tracker::Status statusFromInt(int intStatus) {
             switch (auto status = static_cast<Tracker::Status>(intStatus)) {
             case Tracker::Status::Inactive:
-            case Tracker::Status::Active:
-            case Tracker::Status::Queued:
+            case Tracker::Status::WaitingForUpdate:
+            case Tracker::Status::QueuedForUpdate:
             case Tracker::Status::Updating:
-            case Tracker::Status::Error:
                 return static_cast<Tracker::Status>(status);
             }
             return Tracker::Status::Inactive;
@@ -80,19 +79,15 @@ namespace libtremotesf {
         const bool announceError =
             (!trackerMap.value("lastAnnounceSucceeded"_l1).toBool() &&
              trackerMap.value("lastAnnounceTime"_l1).toInt() != 0);
-
-        if (scrapeError || announceError) {
-            setChanged(mStatus, Status::Error, changed);
-            if (scrapeError) {
-                setChanged(mErrorMessage, trackerMap.value("lastScrapeResult"_l1).toString(), changed);
-            } else {
-                setChanged(mErrorMessage, trackerMap.value("lastAnnounceResult"_l1).toString(), changed);
-            }
+        if (scrapeError) {
+            setChanged(mErrorMessage, trackerMap.value("lastScrapeResult"_l1).toString(), changed);
+        } else if (announceError) {
+            setChanged(mErrorMessage, trackerMap.value("lastAnnounceResult"_l1).toString(), changed);
         } else {
-            setChanged(mStatus, statusFromInt(trackerMap.value("announceState"_l1).toInt()), changed);
             setChanged(mErrorMessage, {}, changed);
         }
 
+        setChanged(mStatus, statusFromInt(trackerMap.value("announceState"_l1).toInt()), changed);
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
 
         const long long nextUpdateTime = static_cast<long long>(trackerMap.value("nextAnnounceTime"_l1).toDouble());
