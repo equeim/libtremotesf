@@ -95,6 +95,8 @@ namespace libtremotesf {
 
     bool ServerSettingsData::hasSessionIdFile() const { return (rpcVersion >= 16); }
 
+    bool ServerSettingsData::hasTableMode() const { return (rpcVersion >= 16); }
+
     ServerSettings::ServerSettings(Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc), mSaveOnSet(true) {}
 
     int ServerSettings::rpcVersion() const { return mData.rpcVersion; }
@@ -106,6 +108,8 @@ namespace libtremotesf {
     bool ServerSettings::canShowFreeSpaceForPath() const { return mData.canShowFreeSpaceForPath(); }
 
     bool ServerSettings::hasSessionIdFile() const { return mData.hasSessionIdFile(); }
+
+    bool ServerSettings::hasTableMode() const { return mData.hasTableMode(); }
 
     const QString& ServerSettings::downloadDirectory() const { return mData.downloadDirectory; }
 

@@ -5,13 +5,14 @@
 #ifndef LIBTREMOTESF_TORRENT_H
 #define LIBTREMOTESF_TORRENT_H
 
+#include <optional>
 #include <vector>
 
 #include <QDateTime>
+#include <QJsonArray>
 #include <QObject>
 
 #include "formatters.h"
-#include "literals.h"
 #include "peer.h"
 #include "torrentfile.h"
 #include "tracker.h"
@@ -48,7 +49,11 @@ namespace libtremotesf {
         enum class IdleSeedingLimitMode { Global, Single, Unlimited };
         Q_ENUM(IdleSeedingLimitMode)
 
-        bool update(const QJsonObject& torrentMap);
+        [[nodiscard]] bool update(const QJsonObject& object, bool firstTime);
+
+        enum class UpdateKey;
+        [[nodiscard]] bool
+        update(const std::vector<std::optional<UpdateKey>>& keys, const QJsonArray& values, bool firstTime);
 
         int id = 0;
         QString hashString;
@@ -114,18 +119,30 @@ namespace libtremotesf {
 
         [[nodiscard]] bool isDownloadingStalled() const;
         [[nodiscard]] bool isSeedingStalled() const;
+
+    private:
+        void updateProperty(TorrentData::UpdateKey key, const QJsonValue& value, bool& changed, bool firstTime);
     };
 
     class Torrent : public QObject {
         Q_OBJECT
     public:
-#ifndef SWIG
-        static constexpr auto idKey = "id"_l1;
-#endif
-
-        explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
+        explicit Torrent(int id, const QJsonObject& object, Rpc* rpc, QObject* parent = nullptr);
+        explicit Torrent(
+            int id,
+            const std::vector<std::optional<TorrentData::UpdateKey>>& keys,
+            const QJsonArray& values,
+            Rpc* rpc,
+            QObject* parent = nullptr
+        );
         // For testing only
         explicit Torrent() = default;
+
+        static QVariantList updateFields();
+        static std::optional<int> idFromJson(const QJsonObject& object);
+        static std::optional<QJsonArray::size_type>
+        idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys);
+        static std::vector<std::optional<TorrentData::UpdateKey>> mapUpdateKeys(const QJsonArray& stringKeys);
 
         int id() const;
         const QString& hashString() const;
@@ -221,7 +238,9 @@ namespace libtremotesf {
         void checkThatFilesUpdated();
         void checkThatPeersUpdated();
 
-        bool update(const QJsonObject& torrentMap);
+        [[nodiscard]] bool update(const QJsonObject& object);
+        [[nodiscard]] bool
+        update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values);
         void updateFiles(const QJsonObject& torrentMap);
         void updatePeers(const QJsonObject& torrentMap);
 
