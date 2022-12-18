@@ -168,6 +168,20 @@ namespace libtremotesf {
 
         setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
 
+        const auto newAddedDateTime = static_cast<long long>(torrentMap.value(addedDateKey).toDouble()) * 1000;
+        if (newAddedDateTime > 0) {
+            if (newAddedDateTime != addedDateTime) {
+                addedDateTime = newAddedDateTime;
+                addedDate.setMSecsSinceEpoch(newAddedDateTime);
+                changed = true;
+            }
+        } else {
+            if (!addedDate.isNull()) {
+                addedDateTime = -1;
+                addedDate = QDateTime();
+                changed = true;
+            }
+        }
         const auto newActivityDateTime = static_cast<long long>(torrentMap.value(activityDateKey).toDouble()) * 1000;
         if (newActivityDateTime > 0) {
             if (newActivityDateTime != activityDateTime) {
@@ -287,9 +301,6 @@ namespace libtremotesf {
     Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
         mData.id = id;
         mData.hashString = torrentMap.value(hashStringKey).toString();
-        const auto date = static_cast<long long>(torrentMap.value(addedDateKey).toDouble()) * 1000;
-        mData.addedDate = QDateTime::fromMSecsSinceEpoch(date);
-        mData.addedDateTime = date;
         update(torrentMap);
     }
 
