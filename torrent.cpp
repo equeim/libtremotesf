@@ -97,6 +97,25 @@ namespace libtremotesf {
         setChanged(magnetLink, torrentMap.value(magnetLinkKey).toString(), changed);
 
         setChanged(
+            status,
+            [&] {
+                switch (auto status = static_cast<Status>(torrentMap.value(statusKey).toInt())) {
+                case Status::Paused:
+                case Status::QueuedForChecking:
+                case Status::Checking:
+                case Status::QueuedForDownloading:
+                case Status::Downloading:
+                case Status::QueuedForSeeding:
+                case Status::Seeding:
+                    return status;
+                default:
+                    return Status::Paused;
+                }
+            }(),
+            changed
+        );
+
+        setChanged(
             error,
             [&] {
                 switch (auto error = static_cast<Error>(torrentMap.value(errorKey).toInt())) {
@@ -153,39 +172,6 @@ namespace libtremotesf {
 
         setChanged(seeders, torrentMap.value(seedersKey).toInt(), changed);
         setChanged(leechers, torrentMap.value(leechersKey).toInt(), changed);
-
-        const bool hasActivePeers = (seeders != 0 || activeWebSeeders != 0 || leechers != 0);
-
-        switch (torrentMap.value(statusKey).toInt()) {
-        case 0:
-            setChanged(status, Status::Paused, changed);
-            break;
-        case 1:
-            setChanged(status, Status::QueuedForChecking, changed);
-            break;
-        case 2:
-            setChanged(status, Status::Checking, changed);
-            break;
-        case 3:
-            setChanged(status, Status::QueuedForDownloading, changed);
-            break;
-        case 4:
-            if (hasActivePeers) {
-                setChanged(status, Status::Downloading, changed);
-            } else {
-                setChanged(status, Status::StalledDownloading, changed);
-            }
-            break;
-        case 5:
-            setChanged(status, Status::QueuedForSeeding, changed);
-            break;
-        case 6:
-            if (hasActivePeers) {
-                setChanged(status, Status::Seeding, changed);
-            } else {
-                setChanged(status, Status::StalledSeeding, changed);
-            }
-        }
 
         setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
 
@@ -320,6 +306,10 @@ namespace libtremotesf {
         return changed;
     }
 
+    bool TorrentData::isDownloadingStalled() const { return seeders == 0 && activeWebSeeders == 0; }
+
+    bool TorrentData::isSeedingStalled() const { return leechers == 0; }
+
     Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
         mData.id = id;
         mData.hashString = torrentMap.value(hashStringKey).toString();
@@ -336,6 +326,10 @@ namespace libtremotesf {
     const QString& Torrent::name() const { return mData.name; }
 
     TorrentData::Status Torrent::status() const { return mData.status; }
+
+    bool Torrent::isDownloadingStalled() const { return mData.isDownloadingStalled(); }
+
+    bool Torrent::isSeedingStalled() const { return mData.isSeedingStalled(); }
 
     TorrentData::Error Torrent::error() const { return mData.error; }
 

@@ -26,14 +26,12 @@ namespace libtremotesf {
     public:
         enum class Status {
             Paused,
-            Downloading,
-            Seeding,
-            StalledDownloading,
-            StalledSeeding,
-            QueuedForDownloading,
-            QueuedForSeeding,
+            QueuedForChecking,
             Checking,
-            QueuedForChecking
+            QueuedForDownloading,
+            Downloading,
+            QueuedForSeeding,
+            Seeding
         };
         Q_ENUM(Status)
 
@@ -117,6 +115,9 @@ namespace libtremotesf {
 
         std::vector<QString> webSeeders;
         int activeWebSeeders = 0;
+
+        [[nodiscard]] bool isDownloadingStalled() const;
+        [[nodiscard]] bool isSeedingStalled() const;
     };
 
     class Torrent : public QObject {
@@ -133,6 +134,8 @@ namespace libtremotesf {
         const QString& name() const;
 
         TorrentData::Status status() const;
+        [[nodiscard]] bool isDownloadingStalled() const;
+        [[nodiscard]] bool isSeedingStalled() const;
         TorrentData::Error error() const;
         bool hasError() const;
         const QString& errorString() const;
