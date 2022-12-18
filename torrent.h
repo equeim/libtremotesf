@@ -33,10 +33,12 @@ namespace libtremotesf {
             QueuedForDownloading,
             QueuedForSeeding,
             Checking,
-            QueuedForChecking,
-            Errored
+            QueuedForChecking
         };
         Q_ENUM(Status)
+
+        enum class Error { None, TrackerWarning, TrackerError, LocalError };
+        Q_ENUM(Error)
 
         enum class Priority { Low = -1, Normal, High };
         Q_ENUM(Priority)
@@ -55,8 +57,10 @@ namespace libtremotesf {
         QString name;
         QString magnetLink;
 
-        QString errorString;
         Status status{};
+        Error error{};
+        QString errorString{};
+
         int queuePosition = 0;
 
         long long totalSize = 0;
@@ -129,7 +133,9 @@ namespace libtremotesf {
         const QString& name() const;
 
         TorrentData::Status status() const;
-        QString errorString() const;
+        TorrentData::Error error() const;
+        bool hasError() const;
+        const QString& errorString() const;
         int queuePosition() const;
 
         long long totalSize() const;
@@ -248,6 +254,7 @@ namespace libtremotesf {
 }
 
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Status)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Error)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Priority)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::RatioLimitMode)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::IdleSeedingLimitMode)
