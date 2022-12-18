@@ -12,7 +12,16 @@ class QJsonObject;
 namespace libtremotesf {
     class Tracker {
     public:
-        enum class Status { Inactive, Active, Queued, Updating, Error };
+        enum class Status {
+            // Tracker is inactive, possibly due to error
+            Inactive,
+            // Waiting for announce/scrape
+            WaitingForUpdate,
+            // Queued for immediate announce/scrape
+            QueuedForUpdate,
+            // We are announcing/scraping
+            Updating,
+        };
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
