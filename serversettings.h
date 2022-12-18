@@ -38,6 +38,7 @@ namespace libtremotesf {
         bool canRenameFiles() const;
         bool canShowFreeSpaceForPath() const;
         bool hasSessionIdFile() const;
+        bool hasTableMode() const;
 
         int rpcVersion = 0;
         int minimumRpcVersion = 0;
@@ -96,6 +97,7 @@ namespace libtremotesf {
         bool canRenameFiles() const;
         bool canShowFreeSpaceForPath() const;
         bool hasSessionIdFile() const;
+        bool hasTableMode() const;
 
         const QString& downloadDirectory() const;
         void setDownloadDirectory(const QString& directory);

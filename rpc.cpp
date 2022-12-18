@@ -355,13 +355,11 @@ namespace libtremotesf {
                                 emit torrentAddDuplicate();
                             } else {
                                 if (!renamedFiles.isEmpty()) {
-                                    const QJsonObject torrentJson(
-                                        response.arguments.value("torrent-added"_l1).toObject()
-                                    );
-                                    if (!torrentJson.isEmpty()) {
-                                        const int id = torrentJson.value(Torrent::idKey).toInt();
+                                    const auto torrentJson = response.arguments.value("torrent-added"_l1).toObject();
+                                    const auto id = Torrent::idFromJson(torrentJson);
+                                    if (id.has_value()) {
                                         for (auto i = renamedFiles.begin(), end = renamedFiles.end(); i != end; ++i) {
-                                            renameTorrentFile(id, i.key(), i.value().toString());
+                                            renameTorrentFile(*id, i.key(), i.value().toString());
                                         }
                                     }
                                 }
@@ -556,11 +554,13 @@ namespace libtremotesf {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
-                        const QJsonObject torrentMap(torrentJson.toObject());
-                        const int torrentId = torrentMap.value(Torrent::idKey).toInt();
-                        Torrent* torrent = torrentById(torrentId);
-                        if (torrent && torrent->isFilesEnabled()) {
-                            torrent->updateFiles(torrentMap);
+                        const auto object = torrentJson.toObject();
+                        const auto torrentId = Torrent::idFromJson(object);
+                        if (torrentId.has_value()) {
+                            Torrent* torrent = torrentById(*torrentId);
+                            if (torrent && torrent->isFilesEnabled()) {
+                                torrent->updateFiles(object);
+                            }
                         }
                     }
                     if (scheduled) {
@@ -583,11 +583,13 @@ namespace libtremotesf {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
-                        const QJsonObject torrentMap(torrentJson.toObject());
-                        const int torrentId = torrentMap.value(Torrent::idKey).toInt();
-                        Torrent* torrent = torrentById(torrentId);
-                        if (torrent && torrent->isPeersEnabled()) {
-                            torrent->updatePeers(torrentMap);
+                        const auto object = torrentJson.toObject();
+                        const auto torrentId = Torrent::idFromJson(object);
+                        if (torrentId.has_value()) {
+                            Torrent* torrent = torrentById(*torrentId);
+                            if (torrent && torrent->isPeersEnabled()) {
+                                torrent->updatePeers(object);
+                            }
                         }
                     }
                     if (scheduled) {
@@ -812,12 +814,16 @@ namespace libtremotesf {
         );
     }
 
-    using NewTorrent = std::pair<QJsonObject, int>;
+    struct NewTorrent {
+        int id{};
+        QJsonValue json{};
+    };
 
     class TorrentsListUpdater : public ItemListUpdater<std::unique_ptr<Torrent>, NewTorrent, std::vector<NewTorrent>> {
     public:
         inline explicit TorrentsListUpdater(Rpc& rpc) : mRpc(rpc) {}
 
+        const std::vector<std::optional<TorrentData::UpdateKey>>* keys{};
         std::vector<std::pair<int, int>> removedIndexRanges{};
         std::vector<std::pair<int, int>> changedIndexRanges{};
         int addedCount{};
@@ -827,9 +833,8 @@ namespace libtremotesf {
         std::vector<NewTorrent>::iterator
         findNewItemForItem(std::vector<NewTorrent>& newTorrents, const std::unique_ptr<Torrent>& torrent) override {
             const int id = torrent->id();
-            return std::find_if(newTorrents.begin(), newTorrents.end(), [id](const auto& t) {
-                const auto& [json, newTorrentId] = t;
-                return newTorrentId == id;
+            return std::find_if(newTorrents.begin(), newTorrents.end(), [id](const NewTorrent& t) {
+                return t.id == id;
             });
         }
 
@@ -843,14 +848,17 @@ namespace libtremotesf {
         }
 
         bool updateItem(std::unique_ptr<Torrent>& torrent, NewTorrent&& newTorrent) override {
-            const auto& [json, id] = newTorrent;
-
             const bool wasFinished = torrent->isFinished();
             const bool wasPaused = (torrent->status() == TorrentData::Status::Paused);
             const auto oldSizeWhenDone = torrent->sizeWhenDone();
             const bool metadataWasComplete = torrent->isMetadataComplete();
 
-            const bool changed = torrent->update(json);
+            bool changed{};
+            if (keys) {
+                changed = torrent->update(*keys, newTorrent.json.toArray());
+            } else {
+                changed = torrent->update(newTorrent.json.toObject());
+            }
             if (changed) {
                 // Don't emit torrentFinished() if torrent's size became smaller
                 // since there is high chance that it happened because user unselected some files
@@ -859,7 +867,7 @@ namespace libtremotesf {
                     emit mRpc.torrentFinished(torrent.get());
                 }
                 if (!metadataWasComplete && torrent->isMetadataComplete()) {
-                    metadataCompletedIds.push_back(id);
+                    metadataCompletedIds.push_back(newTorrent.id);
                 }
             }
 
@@ -872,13 +880,17 @@ namespace libtremotesf {
         }
 
         std::unique_ptr<Torrent> createItemFromNewItem(NewTorrent&& newTorrent) override {
-            const auto& [torrentJson, id] = newTorrent;
-            auto torrent = std::make_unique<Torrent>(id, torrentJson, &mRpc);
+            std::unique_ptr<Torrent> torrent{};
+            if (keys) {
+                torrent = std::make_unique<Torrent>(newTorrent.id, *keys, newTorrent.json.toArray(), &mRpc);
+            } else {
+                torrent = std::make_unique<Torrent>(newTorrent.id, newTorrent.json.toObject(), &mRpc);
+            }
             if (mRpc.isConnected()) {
                 emit mRpc.torrentAdded(torrent.get());
             }
             if (torrent->isMetadataComplete()) {
-                metadataCompletedIds.push_back(id);
+                metadataCompletedIds.push_back(newTorrent.id);
             }
             return torrent;
         }
@@ -895,107 +907,84 @@ namespace libtremotesf {
     };
 
     void Rpc::getTorrents() {
-        mRequestRouter->postRequest(
-            "torrent-get"_l1,
-            QByteArrayLiteral("{"
-                              "\"arguments\":{"
-                              "\"fields\":["
-                              "\"activityDate\","
-                              "\"addedDate\","
-                              "\"bandwidthPriority\","
-                              "\"comment\","
-                              "\"creator\","
-                              "\"dateCreated\","
-                              "\"doneDate\","
-                              "\"downloadDir\","
-                              "\"downloadedEver\","
-                              "\"downloadLimit\","
-                              "\"downloadLimited\","
-                              "\"error\","
-                              "\"errorString\","
-                              "\"eta\","
-                              "\"hashString\","
-                              "\"haveValid\","
-                              "\"honorsSessionLimits\","
-                              "\"id\","
-                              "\"leftUntilDone\","
-                              "\"magnetLink\","
-                              "\"metadataPercentComplete\","
-                              "\"name\","
-                              "\"peer-limit\","
-                              "\"peersConnected\","
-                              "\"peersGettingFromUs\","
-                              "\"peersSendingToUs\","
-                              "\"percentDone\","
-                              "\"queuePosition\","
-                              "\"rateDownload\","
-                              "\"rateUpload\","
-                              "\"recheckProgress\","
-                              "\"seedIdleLimit\","
-                              "\"seedIdleMode\","
-                              "\"seedRatioLimit\","
-                              "\"seedRatioMode\","
-                              "\"sizeWhenDone\","
-                              "\"status\","
-                              "\"totalSize\","
-                              "\"trackerStats\","
-                              "\"uploadedEver\","
-                              "\"uploadLimit\","
-                              "\"uploadLimited\","
-                              "\"uploadRatio\","
-                              "\"webseeds\","
-                              "\"webseedsSendingToUs\""
-                              "]"
-                              "},"
-                              "\"method\":\"torrent-get\""
-                              "}"),
-            [=](const RequestRouter::Response& response) {
-                if (!response.success) {
-                    return;
-                }
+        const QByteArray* requestData{};
+        const bool tableMode = mServerSettings->hasTableMode();
+        if (tableMode) {
+            static const auto tableModeRequestData = RequestRouter::makeRequestData(
+                "torrent-get"_l1,
+                QVariantMap{{"fields"_l1, Torrent::updateFields()}, {"format"_l1, "table"_l1}}
+            );
+            requestData = &tableModeRequestData;
+        } else {
+            static const auto objectsModeRequestData =
+                RequestRouter::makeRequestData("torrent-get"_l1, QVariantMap{{"fields"_l1, Torrent::updateFields()}});
+            requestData = &objectsModeRequestData;
+        }
 
-                std::vector<NewTorrent> newTorrents;
-                {
-                    const QJsonArray torrentsJsons = response.arguments.value("torrents"_l1).toArray();
+        mRequestRouter->postRequest("torrent-get"_l1, *requestData, [=](const RequestRouter::Response& response) {
+            if (!response.success) {
+                return;
+            }
+
+            TorrentsListUpdater updater(*this);
+            {
+                const QJsonArray torrentsJsons = response.arguments.value("torrents"_l1).toArray();
+                std::vector<NewTorrent> newTorrents{};
+                if (tableMode) {
+                    if (!torrentsJsons.empty()) {
+                        const auto keys = Torrent::mapUpdateKeys(torrentsJsons.first().toArray());
+                        const auto idKeyIndex = Torrent::idKeyIndex(keys);
+                        if (idKeyIndex.has_value()) {
+                            newTorrents.reserve(static_cast<size_t>(torrentsJsons.size() - 1));
+                            for (auto i = torrentsJsons.begin() + 1, end = torrentsJsons.end(); i != end; ++i) {
+                                const auto array = i->toArray();
+                                if (static_cast<size_t>(array.size()) == keys.size()) {
+                                    newTorrents.push_back(NewTorrent{array[*idKeyIndex].toInt(), *i});
+                                }
+                            }
+                            updater.keys = &keys;
+                            updater.update(mTorrents, std::move(newTorrents));
+                        }
+                    }
+                } else {
                     newTorrents.reserve(static_cast<size_t>(torrentsJsons.size()));
-                    for (const auto& i : torrentsJsons) {
-                        QJsonObject torrentJson(i.toObject());
-                        const int id = torrentJson.value(Torrent::idKey).toInt();
-                        newTorrents.emplace_back(std::move(torrentJson), id);
+                    for (const auto& torrentJson : torrentsJsons) {
+                        const auto id = Torrent::idFromJson(torrentJson.toObject());
+                        if (id.has_value()) {
+                            newTorrents.push_back(NewTorrent{*id, torrentJson});
+                        }
                     }
-                }
-
-                TorrentsListUpdater updater(*this);
-                updater.update(mTorrents, std::move(newTorrents));
-
-                maybeFinishUpdatingTorrents();
-                const bool wasConnecting = connectionState() == ConnectionState::Connecting;
-                maybeFinishUpdateOrConnection();
-                if (!wasConnecting) {
-                    emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
-                }
-
-                if (!updater.metadataCompletedIds.isEmpty()) {
-                    checkTorrentsSingleFile(updater.metadataCompletedIds);
-                }
-                QVariantList getFilesIds{};
-                QVariantList getPeersIds{};
-                for (const auto& torrent : mTorrents) {
-                    if (torrent->isFilesEnabled()) {
-                        getFilesIds.push_back(torrent->id());
-                    }
-                    if (torrent->isPeersEnabled()) {
-                        getPeersIds.push_back(torrent->id());
-                    }
-                }
-                if (!getFilesIds.isEmpty()) {
-                    getTorrentsFiles(getFilesIds, true);
-                }
-                if (!getPeersIds.isEmpty()) {
-                    getTorrentsPeers(getPeersIds, true);
+                    updater.update(mTorrents, std::move(newTorrents));
                 }
             }
-        );
+
+            maybeFinishUpdatingTorrents();
+            const bool wasConnecting = connectionState() == ConnectionState::Connecting;
+            maybeFinishUpdateOrConnection();
+            if (!wasConnecting) {
+                emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
+            }
+
+            if (!updater.metadataCompletedIds.isEmpty()) {
+                checkTorrentsSingleFile(updater.metadataCompletedIds);
+            }
+            QVariantList getFilesIds{};
+            QVariantList getPeersIds{};
+            for (const auto& torrent : mTorrents) {
+                if (torrent->isFilesEnabled()) {
+                    getFilesIds.push_back(torrent->id());
+                }
+                if (torrent->isPeersEnabled()) {
+                    getPeersIds.push_back(torrent->id());
+                }
+            }
+            if (!getFilesIds.isEmpty()) {
+                getTorrentsFiles(getFilesIds, true);
+            }
+            if (!getPeersIds.isEmpty()) {
+                getTorrentsPeers(getPeersIds, true);
+            }
+        });
     }
 
     void Rpc::checkTorrentsSingleFile(const QVariantList& torrentIds) {
@@ -1004,13 +993,15 @@ namespace libtremotesf {
             {{"fields"_l1, QVariantList{"id"_l1, "priorities"_l1}}, {"ids"_l1, torrentIds}},
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
-                    const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
-                    for (const auto& i : torrents) {
-                        const QJsonObject torrentMap(i.toObject());
-                        const int torrentId = torrentMap.value(Torrent::idKey).toInt();
-                        Torrent* torrent = torrentById(torrentId);
-                        if (torrent) {
-                            torrent->checkSingleFile(torrentMap);
+                    const auto torrentJsons = response.arguments.value(torrentsKey).toArray();
+                    for (const auto& torrentJson : torrentJsons) {
+                        const auto object = torrentJson.toObject();
+                        const auto torrentId = Torrent::idFromJson(object);
+                        if (torrentId.has_value()) {
+                            Torrent* torrent = torrentById(*torrentId);
+                            if (torrent) {
+                                torrent->checkSingleFile(object);
+                            }
                         }
                     }
                 }

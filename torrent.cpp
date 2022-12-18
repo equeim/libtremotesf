@@ -23,64 +23,169 @@
 namespace libtremotesf {
     using namespace impl;
 
+    enum class TorrentData::UpdateKey {
+        Id,
+        HashString,
+        AddedDate,
+        Name,
+        MagnetLink,
+        QueuePosition,
+        TotalSize,
+        CompletedSize,
+        LeftUntilDone,
+        SizeWhenDone,
+        PercentDone,
+        RecheckProgress,
+        Eta,
+        MetadataPercentComplete,
+        DownloadSpeed,
+        UploadSpeed,
+        DownloadSpeedLimited,
+        DownloadSpeedLimit,
+        UploadSpeedLimited,
+        UploadSpeedLimit,
+        TotalDownloaded,
+        TotalUploaded,
+        Ratio,
+        RatioLimitMode,
+        RatioLimit,
+        Seeders,
+        Leechers,
+        Status,
+        Error,
+        ErrorString,
+        ActivityDate,
+        DoneDate,
+        PeersLimit,
+        HonorSessionLimits,
+        BandwidthPriority,
+        IdleSeedingLimitMode,
+        IdleSeedingLimit,
+        DownloadDirectory,
+        Creator,
+        CreationDate,
+        Comment,
+        WebSeeders,
+        ActiveWebSeeders,
+        TrackerStats,
+        Count
+    };
+
     namespace {
-        constexpr auto hashStringKey = "hashString"_l1;
-        constexpr auto addedDateKey = "addedDate"_l1;
+        constexpr QLatin1String updateKeyString(TorrentData::UpdateKey key) {
+            switch (key) {
+            case TorrentData::UpdateKey::Id:
+                return "id"_l1;
+            case TorrentData::UpdateKey::HashString:
+                return "hashString"_l1;
+            case TorrentData::UpdateKey::AddedDate:
+                return "addedDate"_l1;
+            case TorrentData::UpdateKey::Name:
+                return "name"_l1;
+            case TorrentData::UpdateKey::MagnetLink:
+                return "magnetLink"_l1;
+            case TorrentData::UpdateKey::QueuePosition:
+                return "queuePosition"_l1;
+            case TorrentData::UpdateKey::TotalSize:
+                return "totalSize"_l1;
+            case TorrentData::UpdateKey::CompletedSize:
+                return "haveValid"_l1;
+            case TorrentData::UpdateKey::LeftUntilDone:
+                return "leftUntilDone"_l1;
+            case TorrentData::UpdateKey::SizeWhenDone:
+                return "sizeWhenDone"_l1;
+            case TorrentData::UpdateKey::PercentDone:
+                return "percentDone"_l1;
+            case TorrentData::UpdateKey::RecheckProgress:
+                return "recheckProgress"_l1;
+            case TorrentData::UpdateKey::Eta:
+                return "eta"_l1;
+            case TorrentData::UpdateKey::MetadataPercentComplete:
+                return "metadataPercentComplete"_l1;
+            case TorrentData::UpdateKey::DownloadSpeed:
+                return "rateDownload"_l1;
+            case TorrentData::UpdateKey::UploadSpeed:
+                return "rateUpload"_l1;
+            case TorrentData::UpdateKey::DownloadSpeedLimited:
+                return "downloadLimited"_l1;
+            case TorrentData::UpdateKey::DownloadSpeedLimit:
+                return "downloadLimit"_l1;
+            case TorrentData::UpdateKey::UploadSpeedLimited:
+                return "uploadLimited"_l1;
+            case TorrentData::UpdateKey::UploadSpeedLimit:
+                return "uploadLimit"_l1;
+            case TorrentData::UpdateKey::TotalDownloaded:
+                return "downloadedEver"_l1;
+            case TorrentData::UpdateKey::TotalUploaded:
+                return "uploadedEver"_l1;
+            case TorrentData::UpdateKey::Ratio:
+                return "uploadRatio"_l1;
+            case TorrentData::UpdateKey::RatioLimitMode:
+                return "seedRatioMode"_l1;
+            case TorrentData::UpdateKey::RatioLimit:
+                return "seedRatioLimit"_l1;
+            case TorrentData::UpdateKey::Seeders:
+                return "peersSendingToUs"_l1;
+            case TorrentData::UpdateKey::Leechers:
+                return "peersGettingFromUs"_l1;
+            case TorrentData::UpdateKey::Status:
+                return "status"_l1;
+            case TorrentData::UpdateKey::Error:
+                return "error"_l1;
+            case TorrentData::UpdateKey::ErrorString:
+                return "errorString"_l1;
+            case TorrentData::UpdateKey::ActivityDate:
+                return "activityDate"_l1;
+            case TorrentData::UpdateKey::DoneDate:
+                return "doneDate"_l1;
+            case TorrentData::UpdateKey::PeersLimit:
+                return "peer-limit"_l1;
+            case TorrentData::UpdateKey::HonorSessionLimits:
+                return "honorsSessionLimits"_l1;
+            case TorrentData::UpdateKey::BandwidthPriority:
+                return "bandwidthPriority"_l1;
+            case TorrentData::UpdateKey::IdleSeedingLimitMode:
+                return "seedIdleMode"_l1;
+            case TorrentData::UpdateKey::IdleSeedingLimit:
+                return "seedIdleLimit"_l1;
+            case TorrentData::UpdateKey::DownloadDirectory:
+                return "downloadDir"_l1;
+            case TorrentData::UpdateKey::Creator:
+                return "creator"_l1;
+            case TorrentData::UpdateKey::CreationDate:
+                return "dateCreated"_l1;
+            case TorrentData::UpdateKey::Comment:
+                return "comment"_l1;
+            case TorrentData::UpdateKey::WebSeeders:
+                return "webseeds"_l1;
+            case TorrentData::UpdateKey::ActiveWebSeeders:
+                return "webseedsSendingToUs"_l1;
+            case TorrentData::UpdateKey::TrackerStats:
+                return "trackerStats"_l1;
+            case TorrentData::UpdateKey::Count:
+                return {};
+            }
+            return {};
+        }
 
-        constexpr auto nameKey = "name"_l1;
+        std::optional<TorrentData::UpdateKey> mapUpdateKey(const QString& stringKey) {
+            static const auto mapping = [] {
+                std::map<QLatin1String, TorrentData::UpdateKey, std::less<>> map{};
+                for (int i = 0; i < static_cast<int>(TorrentData::UpdateKey::Count); ++i) {
+                    const auto key = static_cast<TorrentData::UpdateKey>(i);
+                    map.emplace(updateKeyString(key), key);
+                }
+                return map;
+            }();
+            const auto foundKey = mapping.find(stringKey);
+            if (foundKey == mapping.end()) {
+                logWarning("Unknown torrent field '{}'", stringKey);
+                return {};
+            }
+            return static_cast<TorrentData::UpdateKey>(foundKey->second);
+        }
 
-        constexpr auto magnetLinkKey = "magnetLink"_l1;
-
-        constexpr auto errorStringKey = "errorString"_l1;
-        constexpr auto queuePositionKey = "queuePosition"_l1;
-
-        constexpr auto totalSizeKey = "totalSize"_l1;
-        constexpr auto completedSizeKey = "haveValid"_l1;
-        constexpr auto leftUntilDoneKey = "leftUntilDone"_l1;
-        constexpr auto sizeWhenDoneKey = "sizeWhenDone"_l1;
-        constexpr auto percentDoneKey = "percentDone"_l1;
-        constexpr auto recheckProgressKey = "recheckProgress"_l1;
-        constexpr auto etaKey = "eta"_l1;
-
-        constexpr auto metadataCompleteKey = "metadataPercentComplete"_l1;
-
-        constexpr auto downloadSpeedKey = "rateDownload"_l1;
-        constexpr auto uploadSpeedKey = "rateUpload"_l1;
-
-        constexpr auto downloadSpeedLimitedKey = "downloadLimited"_l1;
-        constexpr auto downloadSpeedLimitKey = "downloadLimit"_l1;
-        constexpr auto uploadSpeedLimitedKey = "uploadLimited"_l1;
-        constexpr auto uploadSpeedLimitKey = "uploadLimit"_l1;
-
-        constexpr auto totalDownloadedKey = "downloadedEver"_l1;
-        constexpr auto totalUploadedKey = "uploadedEver"_l1;
-        constexpr auto ratioKey = "uploadRatio"_l1;
-        constexpr auto ratioLimitModeKey = "seedRatioMode"_l1;
-        constexpr auto ratioLimitKey = "seedRatioLimit"_l1;
-
-        constexpr auto seedersKey = "peersSendingToUs"_l1;
-        constexpr auto leechersKey = "peersGettingFromUs"_l1;
-
-        constexpr auto errorKey = "error"_l1;
-        constexpr auto statusKey = "status"_l1;
-
-        constexpr auto activityDateKey = "activityDate"_l1;
-        constexpr auto doneDateKey = "doneDate"_l1;
-
-        constexpr auto peersLimitKey = "peer-limit"_l1;
-        constexpr auto honorSessionLimitsKey = "honorsSessionLimits"_l1;
-        constexpr auto bandwidthPriorityKey = "bandwidthPriority"_l1;
-        constexpr auto idleSeedingLimitModeKey = "seedIdleMode"_l1;
-        constexpr auto idleSeedingLimitKey = "seedIdleLimit"_l1;
-        constexpr auto downloadDirectoryKey = "downloadDir"_l1;
         constexpr auto prioritiesKey = "priorities"_l1;
-        constexpr auto creatorKey = "creator"_l1;
-        constexpr auto creationDateKey = "dateCreated"_l1;
-        constexpr auto commentKey = "comment"_l1;
-
-        constexpr auto webSeedersKey = "webseeds"_l1;
-        constexpr auto activeWebSeedersKey = "webseedsSendingToUs"_l1;
-
         constexpr auto wantedFilesKey = "files-wanted"_l1;
         constexpr auto unwantedFilesKey = "files-unwanted"_l1;
 
@@ -142,131 +247,235 @@ namespace libtremotesf {
 
     int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }
 
-    bool TorrentData::update(const QJsonObject& torrentMap) {
+    bool TorrentData::update(const QJsonObject& object, bool firstTime) {
         bool changed = false;
-
-        setChanged(name, torrentMap.value(nameKey).toString(), changed);
-        setChanged(magnetLink, torrentMap.value(magnetLinkKey).toString(), changed);
-        setChanged(status, statusMapper.fromJsonValue(torrentMap.value(statusKey), statusKey), changed);
-        setChanged(error, errorMapper.fromJsonValue(torrentMap.value(errorKey), errorKey), changed);
-        setChanged(errorString, torrentMap.value(errorStringKey).toString(), changed);
-        setChanged(queuePosition, torrentMap.value(queuePositionKey).toInt(), changed);
-        setChanged(totalSize, static_cast<long long>(torrentMap.value(totalSizeKey).toDouble()), changed);
-        setChanged(completedSize, static_cast<long long>(torrentMap.value(completedSizeKey).toDouble()), changed);
-        setChanged(leftUntilDone, static_cast<long long>(torrentMap.value(leftUntilDoneKey).toDouble()), changed);
-        setChanged(sizeWhenDone, static_cast<long long>(torrentMap.value(sizeWhenDoneKey).toDouble()), changed);
-        setChanged(percentDone, torrentMap.value(percentDoneKey).toDouble(), changed);
-        setChanged(recheckProgress, torrentMap.value(recheckProgressKey).toDouble(), changed);
-        setChanged(eta, torrentMap.value(etaKey).toInt(), changed);
-
-        setChanged(metadataComplete, torrentMap.value(metadataCompleteKey).toInt() == 1, changed);
-
-        setChanged(downloadSpeed, static_cast<long long>(torrentMap.value(downloadSpeedKey).toDouble()), changed);
-        setChanged(uploadSpeed, static_cast<long long>(torrentMap.value(uploadSpeedKey).toDouble()), changed);
-
-        setChanged(downloadSpeedLimited, torrentMap.value(downloadSpeedLimitedKey).toBool(), changed);
-        setChanged(downloadSpeedLimit, torrentMap.value(downloadSpeedLimitKey).toInt(), changed);
-        setChanged(uploadSpeedLimited, torrentMap.value(uploadSpeedLimitedKey).toBool(), changed);
-        setChanged(uploadSpeedLimit, torrentMap.value(uploadSpeedLimitKey).toInt(), changed);
-
-        setChanged(totalDownloaded, static_cast<long long>(torrentMap.value(totalDownloadedKey).toDouble()), changed);
-        setChanged(totalUploaded, static_cast<long long>(torrentMap.value(totalUploadedKey).toDouble()), changed);
-        setChanged(ratio, torrentMap.value(ratioKey).toDouble(), changed);
-
-        setChanged(
-            ratioLimitMode,
-            ratioLimitModeMapper.fromJsonValue(torrentMap.value(ratioLimitModeKey), ratioLimitModeKey),
-            changed
-        );
-        setChanged(ratioLimit, torrentMap.value(ratioLimitKey).toDouble(), changed);
-
-        setChanged(seeders, torrentMap.value(seedersKey).toInt(), changed);
-        setChanged(leechers, torrentMap.value(leechersKey).toInt(), changed);
-
-        setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
-
-        updateDateTime(addedDate, torrentMap.value(addedDateKey), changed);
-        updateDateTime(activityDate, torrentMap.value(activityDateKey), changed);
-        updateDateTime(doneDate, torrentMap.value(doneDateKey), changed);
-
-        setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
-        setChanged(
-            bandwidthPriority,
-            priorityMapper.fromJsonValue(torrentMap.value(bandwidthPriorityKey), bandwidthPriorityKey),
-            changed
-        );
-        setChanged(
-            idleSeedingLimitMode,
-            idleSeedingLimitModeMapper.fromJsonValue(torrentMap.value(bandwidthPriorityKey), bandwidthPriorityKey),
-            changed
-        );
-        setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
-        setChanged(downloadDirectory, normalizePath(torrentMap.value(downloadDirectoryKey).toString()), changed);
-        setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
-
-        updateDateTime(creationDate, torrentMap.value(creationDateKey), changed);
-
-        setChanged(comment, torrentMap.value(commentKey).toString(), changed);
-
-        trackersAnnounceUrlsChanged = false;
-        std::vector<Tracker> newTrackers;
-        const QJsonArray trackerJsons(torrentMap.value("trackerStats"_l1).toArray());
-        newTrackers.reserve(static_cast<size_t>(trackerJsons.size()));
-        for (const auto& i : trackerJsons) {
-            const QJsonObject trackerMap(i.toObject());
-            const int trackerId = trackerMap.value("id"_l1).toInt();
-
-            const auto found(std::find_if(trackers.begin(), trackers.end(), [&](const auto& tracker) {
-                return tracker.id() == trackerId;
-            }));
-
-            if (found == trackers.end()) {
-                newTrackers.emplace_back(trackerId, trackerMap);
-                trackersAnnounceUrlsChanged = true;
-            } else {
-                const auto result = found->update(trackerMap);
-                if (result.changed) {
-                    changed = true;
-                }
-                if (result.announceUrlChanged) {
-                    trackersAnnounceUrlsChanged = true;
-                }
-                newTrackers.push_back(std::move(*found));
+        for (auto i = object.begin(), end = object.end(); i != end; ++i) {
+            const auto key = mapUpdateKey(i.key());
+            if (key.has_value()) {
+                updateProperty(*key, i.value(), changed, firstTime);
             }
         }
-        if (newTrackers.size() != trackers.size()) {
-            trackersAnnounceUrlsChanged = true;
-        }
-        if (trackersAnnounceUrlsChanged) {
-            changed = true;
-        }
-        trackers = std::move(newTrackers);
+        return changed;
+    }
 
-        setChanged(activeWebSeeders, torrentMap.value(activeWebSeedersKey).toInt(), changed);
-        {
+    bool TorrentData::update(
+        const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values, bool firstTime
+    ) {
+        bool changed = false;
+        const auto count = std::min(keys.size(), static_cast<size_t>(values.size()));
+        for (size_t i = 0; i < count; ++i) {
+            const auto key = keys[i];
+            if (key.has_value()) {
+                updateProperty(*key, values[static_cast<QJsonArray::size_type>(i)], changed, firstTime);
+            }
+        }
+        return changed;
+    }
+
+    bool TorrentData::isDownloadingStalled() const { return (seeders == 0 && activeWebSeeders == 0); }
+    bool TorrentData::isSeedingStalled() const { return leechers == 0; }
+
+    void
+    TorrentData::updateProperty(TorrentData::UpdateKey intKey, const QJsonValue& value, bool& changed, bool firstTime) {
+        const auto key = static_cast<UpdateKey>(intKey);
+        switch (static_cast<UpdateKey>(key)) {
+        case TorrentData::UpdateKey::Id:
+            return;
+        case TorrentData::UpdateKey::HashString:
+            if (firstTime) {
+                hashString = value.toString();
+            }
+            return;
+        case TorrentData::UpdateKey::AddedDate:
+            return updateDateTime(addedDate, value, changed);
+        case TorrentData::UpdateKey::Name:
+            return setChanged(name, value.toString(), changed);
+        case TorrentData::UpdateKey::MagnetLink:
+            return setChanged(magnetLink, value.toString(), changed);
+        case TorrentData::UpdateKey::QueuePosition:
+            return setChanged(queuePosition, value.toInt(), changed);
+        case TorrentData::UpdateKey::TotalSize:
+            return setChanged(totalSize, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::CompletedSize:
+            return setChanged(completedSize, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::LeftUntilDone:
+            return setChanged(leftUntilDone, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::SizeWhenDone:
+            return setChanged(sizeWhenDone, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::PercentDone:
+            return setChanged(percentDone, value.toDouble(), changed);
+        case TorrentData::UpdateKey::RecheckProgress:
+            return setChanged(recheckProgress, value.toDouble(), changed);
+        case TorrentData::UpdateKey::Eta:
+            return setChanged(eta, value.toInt(), changed);
+        case TorrentData::UpdateKey::MetadataPercentComplete:
+            return setChanged(metadataComplete, value.toInt() == 1, changed);
+        case TorrentData::UpdateKey::DownloadSpeed:
+            return setChanged(downloadSpeed, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::UploadSpeed:
+            return setChanged(uploadSpeed, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::DownloadSpeedLimited:
+            return setChanged(downloadSpeedLimited, value.toBool(), changed);
+        case TorrentData::UpdateKey::DownloadSpeedLimit:
+            return setChanged(downloadSpeedLimit, value.toInt(), changed);
+        case TorrentData::UpdateKey::UploadSpeedLimited:
+            return setChanged(uploadSpeedLimited, value.toBool(), changed);
+        case TorrentData::UpdateKey::UploadSpeedLimit:
+            return setChanged(uploadSpeedLimit, value.toInt(), changed);
+        case TorrentData::UpdateKey::TotalDownloaded:
+            return setChanged(totalDownloaded, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::TotalUploaded:
+            return setChanged(totalUploaded, static_cast<long long>(value.toDouble()), changed);
+        case TorrentData::UpdateKey::Ratio:
+            return setChanged(ratio, value.toDouble(), changed);
+        case TorrentData::UpdateKey::RatioLimitMode:
+            return setChanged(ratioLimitMode, ratioLimitModeMapper.fromJsonValue(value, updateKeyString(key)), changed);
+        case TorrentData::UpdateKey::RatioLimit:
+            return setChanged(ratioLimit, value.toDouble(), changed);
+        case TorrentData::UpdateKey::Seeders:
+            return setChanged(seeders, value.toInt(), changed);
+        case TorrentData::UpdateKey::Leechers:
+            return setChanged(leechers, value.toInt(), changed);
+        case TorrentData::UpdateKey::Status:
+            return setChanged(status, statusMapper.fromJsonValue(value, updateKeyString(key)), changed);
+            break;
+        case TorrentData::UpdateKey::Error:
+            return setChanged(error, errorMapper.fromJsonValue(value, updateKeyString(key)), changed);
+        case TorrentData::UpdateKey::ErrorString:
+            return setChanged(errorString, value.toString(), changed);
+        case TorrentData::UpdateKey::ActivityDate:
+            return updateDateTime(activityDate, value, changed);
+        case TorrentData::UpdateKey::DoneDate:
+            return updateDateTime(doneDate, value, changed);
+        case TorrentData::UpdateKey::PeersLimit:
+            return setChanged(peersLimit, value.toInt(), changed);
+        case TorrentData::UpdateKey::HonorSessionLimits:
+            return setChanged(honorSessionLimits, value.toBool(), changed);
+        case TorrentData::UpdateKey::BandwidthPriority:
+            return setChanged(bandwidthPriority, priorityMapper.fromJsonValue(value, updateKeyString(key)), changed);
+        case TorrentData::UpdateKey::IdleSeedingLimitMode:
+            return setChanged(
+                idleSeedingLimitMode,
+                idleSeedingLimitModeMapper.fromJsonValue(value, updateKeyString(key)),
+                changed
+            );
+        case TorrentData::UpdateKey::IdleSeedingLimit:
+            return setChanged(idleSeedingLimit, value.toInt(), changed);
+        case TorrentData::UpdateKey::DownloadDirectory:
+            return setChanged(downloadDirectory, normalizePath(value.toString()), changed);
+        case TorrentData::UpdateKey::Creator:
+            return setChanged(creator, value.toString(), changed);
+        case TorrentData::UpdateKey::CreationDate:
+            return updateDateTime(creationDate, value, changed);
+        case TorrentData::UpdateKey::Comment:
+            return setChanged(comment, value.toString(), changed);
+        case TorrentData::UpdateKey::WebSeeders: {
             std::vector<QString> newWebSeeders;
-            const auto webSeedersStrings = torrentMap.value(webSeedersKey).toArray();
+            const auto webSeedersStrings = value.toArray();
             newWebSeeders.reserve(static_cast<size_t>(webSeedersStrings.size()));
             std::transform(
                 webSeedersStrings.begin(),
                 webSeedersStrings.end(),
                 std::back_insert_iterator(newWebSeeders),
-                [](const QJsonValue& i) { return i.toString(); }
+                [](const auto& value) { return value.toString(); }
             );
-            setChanged(webSeeders, std::move(newWebSeeders), changed);
+            return setChanged(webSeeders, std::move(newWebSeeders), changed);
         }
+        case TorrentData::UpdateKey::ActiveWebSeeders:
+            return setChanged(activeWebSeeders, value.toInt(), changed);
+        case TorrentData::UpdateKey::TrackerStats: {
+            trackersAnnounceUrlsChanged = false;
+            std::vector<Tracker> newTrackers;
+            const QJsonArray trackerJsons(value.toArray());
+            newTrackers.reserve(static_cast<size_t>(trackerJsons.size()));
+            for (const auto& i : trackerJsons) {
+                const QJsonObject trackerMap(i.toObject());
+                const int trackerId = trackerMap.value("id"_l1).toInt();
 
-        return changed;
+                const auto found(std::find_if(trackers.begin(), trackers.end(), [&](const auto& tracker) {
+                    return tracker.id() == trackerId;
+                }));
+
+                if (found == trackers.end()) {
+                    newTrackers.emplace_back(trackerId, trackerMap);
+                    trackersAnnounceUrlsChanged = true;
+                } else {
+                    const auto result = found->update(trackerMap);
+                    if (result.changed) {
+                        changed = true;
+                    }
+                    if (result.announceUrlChanged) {
+                        trackersAnnounceUrlsChanged = true;
+                    }
+                    newTrackers.push_back(std::move(*found));
+                }
+            }
+            if (newTrackers.size() != trackers.size()) {
+                trackersAnnounceUrlsChanged = true;
+            }
+            if (trackersAnnounceUrlsChanged) {
+                changed = true;
+            }
+            trackers = std::move(newTrackers);
+            return;
+        }
+        case TorrentData::UpdateKey::Count:
+            throw std::logic_error("UpdateKey::Count should not be mapped");
+        }
+        throw std::logic_error(fmt::format("Can't update key {}", static_cast<int>(intKey)));
     }
 
-    bool TorrentData::isDownloadingStalled() const { return seeders == 0 && activeWebSeeders == 0; }
-
-    bool TorrentData::isSeedingStalled() const { return leechers == 0; }
-
-    Torrent::Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
+    Torrent::Torrent(int id, const QJsonObject& object, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
         mData.id = id;
-        mData.hashString = torrentMap.value(hashStringKey).toString();
-        update(torrentMap);
+        [[maybe_unused]] bool changed = mData.update(object, true);
+    }
+
+    Torrent::Torrent(
+        int id,
+        const std::vector<std::optional<TorrentData::UpdateKey>>& keys,
+        const QJsonArray& values,
+        Rpc* rpc,
+        QObject* parent
+    )
+        : QObject(parent), mRpc(rpc) {
+        mData.id = id;
+        [[maybe_unused]] bool changed = mData.update(keys, values, true);
+    }
+
+    QVariantList Torrent::updateFields() {
+        QVariantList fields{};
+        fields.reserve(static_cast<QVariantList::size_type>(TorrentData::UpdateKey::Count));
+        for (int i = 0; i < static_cast<int>(TorrentData::UpdateKey::Count); ++i) {
+            const auto key = static_cast<TorrentData::UpdateKey>(i);
+            fields.push_back(updateKeyString(key));
+        }
+        return fields;
+    }
+
+    std::optional<int> Torrent::idFromJson(const QJsonObject& object) {
+        const auto value = object.value(updateKeyString(TorrentData::UpdateKey::Id));
+        if (value.isDouble()) {
+            return value.toInt();
+        }
+        return {};
+    }
+
+    std::optional<QJsonArray::size_type>
+    Torrent::idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys) {
+        const auto found = std::find(keys.begin(), keys.end(), TorrentData::UpdateKey::Id);
+        if (found != keys.end()) {
+            return static_cast<QJsonArray::size_type>(found - keys.begin());
+        }
+        return {};
+    }
+
+    std::vector<std::optional<TorrentData::UpdateKey>> Torrent::mapUpdateKeys(const QJsonArray& stringKeys) {
+        std::vector<std::optional<TorrentData::UpdateKey>> keys{};
+        keys.reserve(static_cast<size_t>(stringKeys.size()));
+        std::transform(stringKeys.begin(), stringKeys.end(), std::back_inserter(keys), [](const QJsonValue& stringKey) {
+            return mapUpdateKey(stringKey.toString());
+        });
+        return keys;
     }
 
     int Torrent::id() const { return mData.id; }
@@ -315,28 +524,28 @@ namespace libtremotesf {
 
     void Torrent::setDownloadSpeedLimited(bool limited) {
         mData.downloadSpeedLimited = limited;
-        mRpc->setTorrentProperty(id(), downloadSpeedLimitedKey, limited);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::DownloadSpeedLimited), limited);
     }
 
     int Torrent::downloadSpeedLimit() const { return mData.downloadSpeedLimit; }
 
     void Torrent::setDownloadSpeedLimit(int limit) {
         mData.downloadSpeedLimit = limit;
-        mRpc->setTorrentProperty(id(), downloadSpeedLimitKey, limit);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::DownloadSpeedLimit), limit);
     }
 
     bool Torrent::isUploadSpeedLimited() const { return mData.uploadSpeedLimited; }
 
     void Torrent::setUploadSpeedLimited(bool limited) {
         mData.uploadSpeedLimited = limited;
-        mRpc->setTorrentProperty(id(), uploadSpeedLimitedKey, limited);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::UploadSpeedLimited), limited);
     }
 
     int Torrent::uploadSpeedLimit() const { return mData.uploadSpeedLimit; }
 
     void Torrent::setUploadSpeedLimit(int limit) {
         mData.uploadSpeedLimit = limit;
-        mRpc->setTorrentProperty(id(), uploadSpeedLimitKey, limit);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::UploadSpeedLimit), limit);
     }
 
     long long Torrent::totalDownloaded() const { return mData.totalDownloaded; }
@@ -349,14 +558,18 @@ namespace libtremotesf {
 
     void Torrent::setRatioLimitMode(TorrentData::RatioLimitMode mode) {
         mData.ratioLimitMode = mode;
-        mRpc->setTorrentProperty(id(), ratioLimitModeKey, ratioLimitModeMapper.toJsonValue(mode));
+        mRpc->setTorrentProperty(
+            id(),
+            updateKeyString(TorrentData::UpdateKey::RatioLimitMode),
+            ratioLimitModeMapper.toJsonValue(mode)
+        );
     }
 
     double Torrent::ratioLimit() const { return mData.ratioLimit; }
 
     void Torrent::setRatioLimit(double limit) {
         mData.ratioLimit = limit;
-        mRpc->setTorrentProperty(id(), ratioLimitKey, limit);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::RatioLimit), limit);
     }
 
     int Torrent::seeders() const { return mData.seeders; }
@@ -367,7 +580,7 @@ namespace libtremotesf {
 
     void Torrent::setPeersLimit(int limit) {
         mData.peersLimit = limit;
-        mRpc->setTorrentProperty(id(), peersLimitKey, limit);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::PeersLimit), limit);
     }
 
     const QDateTime& Torrent::addedDate() const { return mData.addedDate; }
@@ -380,28 +593,36 @@ namespace libtremotesf {
 
     void Torrent::setHonorSessionLimits(bool honor) {
         mData.honorSessionLimits = honor;
-        mRpc->setTorrentProperty(id(), honorSessionLimitsKey, honor);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::HonorSessionLimits), honor);
     }
 
     TorrentData::Priority Torrent::bandwidthPriority() const { return mData.bandwidthPriority; }
 
     void Torrent::setBandwidthPriority(TorrentData::Priority priority) {
         mData.bandwidthPriority = priority;
-        mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priorityMapper.toJsonValue(priority));
+        mRpc->setTorrentProperty(
+            id(),
+            updateKeyString(TorrentData::UpdateKey::BandwidthPriority),
+            priorityMapper.toJsonValue(priority)
+        );
     }
 
     TorrentData::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
 
     void Torrent::setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode) {
         mData.idleSeedingLimitMode = mode;
-        mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, idleSeedingLimitModeMapper.toJsonValue(mode));
+        mRpc->setTorrentProperty(
+            id(),
+            updateKeyString(TorrentData::UpdateKey::IdleSeedingLimitMode),
+            idleSeedingLimitModeMapper.toJsonValue(mode)
+        );
     }
 
     int Torrent::idleSeedingLimit() const { return mData.idleSeedingLimit; }
 
     void Torrent::setIdleSeedingLimit(int limit) {
         mData.idleSeedingLimit = limit;
-        mRpc->setTorrentProperty(id(), idleSeedingLimitKey, limit);
+        mRpc->setTorrentProperty(id(), updateKeyString(TorrentData::UpdateKey::IdleSeedingLimit), limit);
     }
 
     const QString& Torrent::downloadDirectory() const { return mData.downloadDirectory; }
@@ -515,10 +736,21 @@ namespace libtremotesf {
         }
     }
 
-    bool Torrent::update(const QJsonObject& torrentMap) {
+    bool Torrent::update(const QJsonObject& object) {
         mFilesUpdated = false;
         mPeersUpdated = false;
-        const bool c = mData.update(torrentMap);
+        const bool c = mData.update(object, false);
+        emit updated();
+        if (c) {
+            emit changed();
+        }
+        return c;
+    }
+
+    bool Torrent::update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values) {
+        mFilesUpdated = false;
+        mPeersUpdated = false;
+        const bool c = mData.update(keys, values, false);
         emit updated();
         if (c) {
             emit changed();
@@ -631,3 +863,5 @@ fmt::format_context::iterator
 fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
     return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
 }
+
+#include "torrent.moc"
