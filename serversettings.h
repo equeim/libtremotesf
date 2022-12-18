@@ -16,7 +16,7 @@ namespace libtremotesf {
     struct ServerSettingsData {
         Q_GADGET
     public:
-        enum AlternativeSpeedLimitsDays {
+        enum class AlternativeSpeedLimitsDays {
             Sunday = 1, // (1 << 0)
             Monday = 2, // (1 << 1)
             Tuesday = 4, // (1 << 2)
@@ -30,7 +30,7 @@ namespace libtremotesf {
         };
         Q_ENUM(AlternativeSpeedLimitsDays)
 
-        enum EncryptionMode { AllowedEncryption, PreferredEncryption, RequiredEncryption };
+        enum class EncryptionMode { Allowed, Preferred, Required };
         Q_ENUM(EncryptionMode)
 
         bool canRenameFiles() const;
@@ -69,12 +69,12 @@ namespace libtremotesf {
         bool alternativeSpeedLimitsScheduled = false;
         QTime alternativeSpeedLimitsBeginTime;
         QTime alternativeSpeedLimitsEndTime;
-        AlternativeSpeedLimitsDays alternativeSpeedLimitsDays = All;
+        AlternativeSpeedLimitsDays alternativeSpeedLimitsDays{};
 
         int peerPort = 0;
         bool randomPortEnabled = false;
         bool portForwardingEnabled = false;
-        EncryptionMode encryptionMode = PreferredEncryption;
+        EncryptionMode encryptionMode{};
         bool utpEnabled = false;
         bool pexEnabled = false;
         bool dhtEnabled = false;

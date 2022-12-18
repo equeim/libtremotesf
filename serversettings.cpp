@@ -45,20 +45,20 @@ namespace libtremotesf {
         constexpr auto alternativeSpeedLimitsDaysKey = "alt-speed-time-day"_l1;
 
         inline ServerSettingsData::AlternativeSpeedLimitsDays daysFromInt(int days) {
-            switch (days) {
-            case ServerSettingsData::Sunday:
-            case ServerSettingsData::Monday:
-            case ServerSettingsData::Tuesday:
-            case ServerSettingsData::Wednesday:
-            case ServerSettingsData::Thursday:
-            case ServerSettingsData::Friday:
-            case ServerSettingsData::Saturday:
-            case ServerSettingsData::Weekdays:
-            case ServerSettingsData::Weekends:
-            case ServerSettingsData::All:
-                return static_cast<ServerSettingsData::AlternativeSpeedLimitsDays>(days);
+            switch (auto d = static_cast<ServerSettingsData::AlternativeSpeedLimitsDays>(days)) {
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Sunday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Monday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Tuesday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Wednesday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Thursday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Friday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Saturday:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Weekdays:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::Weekends:
+            case ServerSettingsData::AlternativeSpeedLimitsDays::All:
+                return d;
             default:
-                return ServerSettingsData::All;
+                return ServerSettingsData::AlternativeSpeedLimitsDays::All;
             }
         }
 
@@ -73,11 +73,11 @@ namespace libtremotesf {
 
         inline QString encryptionModeString(ServerSettingsData::EncryptionMode mode) {
             switch (mode) {
-            case ServerSettingsData::AllowedEncryption:
+            case ServerSettingsData::EncryptionMode::Allowed:
                 return encryptionModeAllowed;
-            case ServerSettingsData::PreferredEncryption:
+            case ServerSettingsData::EncryptionMode::Preferred:
                 return encryptionModePreferred;
-            case ServerSettingsData::RequiredEncryption:
+            case ServerSettingsData::EncryptionMode::Required:
                 return encryptionModeRequired;
             default:
                 return {};
@@ -362,7 +362,10 @@ namespace libtremotesf {
         if (days != mData.alternativeSpeedLimitsDays) {
             mData.alternativeSpeedLimitsDays = days;
             if (mSaveOnSet) {
-                mRpc->setSessionProperty(alternativeSpeedLimitsDaysKey, mData.alternativeSpeedLimitsDays);
+                mRpc->setSessionProperty(
+                    alternativeSpeedLimitsDaysKey,
+                    static_cast<int>(mData.alternativeSpeedLimitsDays)
+                );
             }
         }
     }
@@ -480,7 +483,11 @@ namespace libtremotesf {
             serverSettings.value(incompleteDirectoryEnabledKey).toBool(),
             changed
         );
-        setChanged(mData.incompleteDirectory, normalizePath(serverSettings.value(incompleteDirectoryKey).toString()), changed);
+        setChanged(
+            mData.incompleteDirectory,
+            normalizePath(serverSettings.value(incompleteDirectoryKey).toString()),
+            changed
+        );
 
         setChanged(mData.ratioLimited, serverSettings.value(ratioLimitedKey).toBool(), changed);
         setChanged(mData.ratioLimit, serverSettings.value(ratioLimitKey).toDouble(), changed);
@@ -540,11 +547,11 @@ namespace libtremotesf {
 
         const QString encryption(serverSettings.value(encryptionModeKey).toString());
         if (encryption == encryptionModeAllowed) {
-            setChanged(mData.encryptionMode, ServerSettingsData::AllowedEncryption, changed);
+            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Allowed, changed);
         } else if (encryption == encryptionModePreferred) {
-            setChanged(mData.encryptionMode, ServerSettingsData::PreferredEncryption, changed);
+            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Preferred, changed);
         } else {
-            setChanged(mData.encryptionMode, ServerSettingsData::RequiredEncryption, changed);
+            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Required, changed);
         }
 
         setChanged(mData.utpEnabled, serverSettings.value(utpEnabledKey).toBool(), changed);
@@ -590,7 +597,7 @@ namespace libtremotesf {
              {alternativeSpeedLimitsScheduledKey, mData.alternativeSpeedLimitsScheduled},
              {alternativeSpeedLimitsBeginTimeKey, mData.alternativeSpeedLimitsBeginTime.msecsSinceStartOfDay() / 60000},
              {alternativeSpeedLimitsEndTimeKey, mData.alternativeSpeedLimitsEndTime.msecsSinceStartOfDay() / 60000},
-             {alternativeSpeedLimitsDaysKey, mData.alternativeSpeedLimitsDays},
+             {alternativeSpeedLimitsDaysKey, static_cast<int>(mData.alternativeSpeedLimitsDays)},
 
              {peerPortKey, mData.peerPort},
              {randomPortEnabledKey, mData.randomPortEnabled},

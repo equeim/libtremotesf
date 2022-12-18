@@ -24,7 +24,7 @@ namespace libtremotesf {
     struct TorrentData {
         Q_GADGET
     public:
-        enum Status {
+        enum class Status {
             Paused,
             Downloading,
             Seeding,
@@ -38,13 +38,14 @@ namespace libtremotesf {
         };
         Q_ENUM(Status)
 
-        enum Priority { LowPriority = -1, NormalPriority, HighPriority };
+        enum class Priority { Low = -1, Normal, High };
         Q_ENUM(Priority)
+        static int priorityToInt(Priority value);
 
-        enum RatioLimitMode { GlobalRatioLimit, SingleRatioLimit, UnlimitedRatio };
+        enum class RatioLimitMode { Global, Single, Unlimited };
         Q_ENUM(RatioLimitMode)
 
-        enum IdleSeedingLimitMode { GlobalIdleSeedingLimit, SingleIdleSeedingLimit, UnlimitedIdleSeeding };
+        enum class IdleSeedingLimitMode { Global, Single, Unlimited };
         Q_ENUM(IdleSeedingLimitMode)
 
         bool update(const QJsonObject& torrentMap);
@@ -55,7 +56,7 @@ namespace libtremotesf {
         QString magnetLink;
 
         QString errorString;
-        Status status = Paused;
+        Status status{};
         int queuePosition = 0;
 
         long long totalSize = 0;
@@ -81,7 +82,7 @@ namespace libtremotesf {
         long long totalUploaded = 0;
         double ratio = 0.0;
         double ratioLimit = 0.0;
-        RatioLimitMode ratioLimitMode = GlobalRatioLimit;
+        RatioLimitMode ratioLimitMode{};
 
         int seeders = 0;
         int leechers = 0;
@@ -94,14 +95,14 @@ namespace libtremotesf {
         QDateTime doneDate;
         long long doneDateTime = -1;
 
-        IdleSeedingLimitMode idleSeedingLimitMode = GlobalIdleSeedingLimit;
+        IdleSeedingLimitMode idleSeedingLimitMode{};
         int idleSeedingLimit = 0;
         QString downloadDirectory;
         QString comment;
         QString creator;
         QDateTime creationDate;
         long long creationDateTime = -1;
-        Priority bandwidthPriority = NormalPriority;
+        Priority bandwidthPriority{};
         bool honorSessionLimits = false;
 
         bool singleFile = true;

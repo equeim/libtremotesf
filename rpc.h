@@ -22,6 +22,7 @@
 #include "formatters.h"
 #include "serversettings.h"
 #include "serverstats.h"
+#include "torrent.h"
 
 class QAuthenticator;
 class QFile;
@@ -35,8 +36,6 @@ namespace libtremotesf {
     namespace impl {
         class RequestRouter;
     }
-
-    class Torrent;
 
     struct Server {
         Q_GADGET
@@ -141,7 +140,7 @@ namespace libtremotesf {
             const QVariantList& highPriorityFiles,
             const QVariantList& lowPriorityFiles,
             const QVariantMap& renamedFiles,
-            int bandwidthPriority,
+            TorrentData::Priority bandwidthPriority,
             bool start
         );
 
@@ -152,11 +151,13 @@ namespace libtremotesf {
             const QVariantList& highPriorityFiles,
             const QVariantList& lowPriorityFiles,
             const QVariantMap& renamedFiles,
-            int bandwidthPriority,
+            TorrentData::Priority bandwidthPriority,
             bool start
         );
 
-        void addTorrentLink(const QString& link, const QString& downloadDirectory, int bandwidthPriority, bool start);
+        void addTorrentLink(
+            const QString& link, const QString& downloadDirectory, TorrentData::Priority bandwidthPriority, bool start
+        );
 
         void startTorrents(const QVariantList& ids);
         void startTorrentsNow(const QVariantList& ids);

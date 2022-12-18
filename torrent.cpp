@@ -88,6 +88,8 @@ namespace libtremotesf {
         constexpr auto removeTrackerKey = "trackerRemove"_l1;
     }
 
+    int TorrentData::priorityToInt(Priority value) { return static_cast<int>(value); }
+
     bool TorrentData::update(const QJsonObject& torrentMap) {
         bool changed = false;
 
@@ -121,13 +123,13 @@ namespace libtremotesf {
         setChanged(
             ratioLimitMode,
             [&] {
-                switch (int mode = torrentMap.value(ratioLimitModeKey).toInt()) {
-                case GlobalRatioLimit:
-                case SingleRatioLimit:
-                case UnlimitedRatio:
-                    return static_cast<RatioLimitMode>(mode);
+                switch (auto mode = static_cast<RatioLimitMode>(torrentMap.value(ratioLimitModeKey).toInt())) {
+                case RatioLimitMode::Global:
+                case RatioLimitMode::Single:
+                case RatioLimitMode::Unlimited:
+                    return mode;
                 default:
-                    return GlobalRatioLimit;
+                    return RatioLimitMode::Global;
                 }
             }(),
             changed
@@ -142,36 +144,36 @@ namespace libtremotesf {
         if (torrentMap.value(errorKey).toInt() == 0) {
             switch (torrentMap.value(statusKey).toInt()) {
             case 0:
-                setChanged(status, Paused, changed);
+                setChanged(status, Status::Paused, changed);
                 break;
             case 1:
-                setChanged(status, QueuedForChecking, changed);
+                setChanged(status, Status::QueuedForChecking, changed);
                 break;
             case 2:
-                setChanged(status, Checking, changed);
+                setChanged(status, Status::Checking, changed);
                 break;
             case 3:
-                setChanged(status, QueuedForDownloading, changed);
+                setChanged(status, Status::QueuedForDownloading, changed);
                 break;
             case 4:
                 if (hasActivePeers) {
-                    setChanged(status, Downloading, changed);
+                    setChanged(status, Status::Downloading, changed);
                 } else {
-                    setChanged(status, StalledDownloading, changed);
+                    setChanged(status, Status::StalledDownloading, changed);
                 }
                 break;
             case 5:
-                setChanged(status, QueuedForSeeding, changed);
+                setChanged(status, Status::QueuedForSeeding, changed);
                 break;
             case 6:
                 if (hasActivePeers) {
-                    setChanged(status, Seeding, changed);
+                    setChanged(status, Status::Seeding, changed);
                 } else {
-                    setChanged(status, StalledSeeding, changed);
+                    setChanged(status, Status::StalledSeeding, changed);
                 }
             }
         } else {
-            setChanged(status, Errored, changed);
+            setChanged(status, Status::Errored, changed);
         }
 
         setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
@@ -209,13 +211,13 @@ namespace libtremotesf {
         setChanged(
             bandwidthPriority,
             [&] {
-                switch (int priority = torrentMap.value(bandwidthPriorityKey).toInt()) {
-                case LowPriority:
-                case NormalPriority:
-                case HighPriority:
+                switch (auto priority = static_cast<Priority>(torrentMap.value(bandwidthPriorityKey).toInt())) {
+                case Priority::Low:
+                case Priority::Normal:
+                case Priority::High:
                     return static_cast<Priority>(priority);
                 default:
-                    return NormalPriority;
+                    return Priority::Normal;
                 }
             }(),
             changed
@@ -223,13 +225,14 @@ namespace libtremotesf {
         setChanged(
             idleSeedingLimitMode,
             [&] {
-                switch (int mode = torrentMap.value(idleSeedingLimitModeKey).toInt()) {
-                case GlobalIdleSeedingLimit:
-                case SingleIdleSeedingLimit:
-                case UnlimitedIdleSeeding:
-                    return static_cast<IdleSeedingLimitMode>(mode);
+                switch (auto mode =
+                            static_cast<IdleSeedingLimitMode>(torrentMap.value(idleSeedingLimitModeKey).toInt())) {
+                case IdleSeedingLimitMode::Global:
+                case IdleSeedingLimitMode::Single:
+                case IdleSeedingLimitMode::Unlimited:
+                    return mode;
                 default:
-                    return GlobalIdleSeedingLimit;
+                    return IdleSeedingLimitMode::Global;
                 }
             }(),
             changed
@@ -387,7 +390,7 @@ namespace libtremotesf {
 
     void Torrent::setRatioLimitMode(TorrentData::RatioLimitMode mode) {
         mData.ratioLimitMode = mode;
-        mRpc->setTorrentProperty(id(), ratioLimitModeKey, mode);
+        mRpc->setTorrentProperty(id(), ratioLimitModeKey, static_cast<int>(mode));
     }
 
     double Torrent::ratioLimit() const { return mData.ratioLimit; }
@@ -425,14 +428,14 @@ namespace libtremotesf {
 
     void Torrent::setBandwidthPriority(TorrentData::Priority priority) {
         mData.bandwidthPriority = priority;
-        mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priority);
+        mRpc->setTorrentProperty(id(), bandwidthPriorityKey, static_cast<int>(priority));
     }
 
     TorrentData::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
 
     void Torrent::setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode) {
         mData.idleSeedingLimitMode = mode;
-        mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, mode);
+        mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, static_cast<int>(mode));
     }
 
     int Torrent::idleSeedingLimit() const { return mData.idleSeedingLimit; }
@@ -496,13 +499,13 @@ namespace libtremotesf {
     void Torrent::setFilesPriority(const QVariantList& files, TorrentFile::Priority priority) {
         QLatin1String propertyName;
         switch (priority) {
-        case TorrentFile::LowPriority:
+        case TorrentFile::Priority::Low:
             propertyName = lowPriorityKey;
             break;
-        case TorrentFile::NormalPriority:
+        case TorrentFile::Priority::Normal:
             propertyName = normalPriorityKey;
             break;
-        case TorrentFile::HighPriority:
+        case TorrentFile::Priority::High:
             propertyName = highPriorityKey;
             break;
         }
