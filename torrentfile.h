@@ -12,7 +12,7 @@ class QJsonObject;
 
 namespace libtremotesf {
     struct TorrentFile {
-        enum Priority { LowPriority = -1, NormalPriority, HighPriority };
+        enum class Priority { Low = -1, Normal, High };
 
         explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
         bool update(const QJsonObject& fileStatsMap);
@@ -22,7 +22,7 @@ namespace libtremotesf {
         std::vector<QString> path;
         long long size;
         long long completedSize = 0;
-        Priority priority = NormalPriority;
+        Priority priority{};
         bool wanted = false;
     };
 }

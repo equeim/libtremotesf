@@ -28,13 +28,13 @@ namespace libtremotesf {
         setChanged(
             priority,
             [&] {
-                switch (int p = fileStatsMap.value("priority"_l1).toInt()) {
-                case TorrentFile::LowPriority:
-                case TorrentFile::NormalPriority:
-                case TorrentFile::HighPriority:
-                    return static_cast<TorrentFile::Priority>(p);
+                switch (auto p = static_cast<Priority>(fileStatsMap.value("priority"_l1).toInt())) {
+                case Priority::Low:
+                case Priority::Normal:
+                case Priority::High:
+                    return p;
                 default:
-                    return TorrentFile::NormalPriority;
+                    return Priority::Normal;
                 }
             }(),
             changed

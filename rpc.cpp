@@ -293,7 +293,7 @@ namespace libtremotesf {
         const QVariantList& highPriorityFiles,
         const QVariantList& lowPriorityFiles,
         const QVariantMap& renamedFiles,
-        int bandwidthPriority,
+        TorrentData::Priority bandwidthPriority,
         bool start
     ) {
         if (!isConnected()) {
@@ -327,7 +327,7 @@ namespace libtremotesf {
         const QVariantList& highPriorityFiles,
         const QVariantList& lowPriorityFiles,
         const QVariantMap& renamedFiles,
-        int bandwidthPriority,
+        TorrentData::Priority bandwidthPriority,
         bool start
     ) {
         if (!isConnected()) {
@@ -341,7 +341,7 @@ namespace libtremotesf {
                  {"files-unwanted"_l1, unwantedFiles},
                  {"priority-high"_l1, highPriorityFiles},
                  {"priority-low"_l1, lowPriorityFiles},
-                 {"bandwidthPriority"_l1, bandwidthPriority},
+                 {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
                  {"paused"_l1, !start}}
             );
         });
@@ -377,13 +377,15 @@ namespace libtremotesf {
         watcher->setFuture(future);
     }
 
-    void Rpc::addTorrentLink(const QString& link, const QString& downloadDirectory, int bandwidthPriority, bool start) {
+    void Rpc::addTorrentLink(
+        const QString& link, const QString& downloadDirectory, TorrentData::Priority bandwidthPriority, bool start
+    ) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-add"_l1,
                 {{"filename"_l1, link},
                  {"download-dir"_l1, downloadDirectory},
-                 {"bandwidthPriority"_l1, bandwidthPriority},
+                 {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
                  {"paused"_l1, !start}},
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {

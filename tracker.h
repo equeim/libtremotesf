@@ -12,7 +12,7 @@ class QJsonObject;
 namespace libtremotesf {
     class Tracker {
     public:
-        enum Status { Inactive, Active, Queued, Updating, Error };
+        enum class Status { Inactive, Active, Queued, Updating, Error };
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
@@ -59,7 +59,7 @@ namespace libtremotesf {
 #endif
 
         QString mErrorMessage;
-        Status mStatus = Inactive;
+        Status mStatus{};
 
         int mNextUpdateEta = -1;
         long long mNextUpdateTime = 0;

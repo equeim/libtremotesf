@@ -15,16 +15,16 @@
 
 namespace libtremotesf {
     namespace {
-        Tracker::Status statusFromInt(int status) {
-            switch (status) {
-            case Tracker::Inactive:
-            case Tracker::Active:
-            case Tracker::Queued:
-            case Tracker::Updating:
-            case Tracker::Error:
+        Tracker::Status statusFromInt(int intStatus) {
+            switch (auto status = static_cast<Tracker::Status>(intStatus)) {
+            case Tracker::Status::Inactive:
+            case Tracker::Status::Active:
+            case Tracker::Status::Queued:
+            case Tracker::Status::Updating:
+            case Tracker::Status::Error:
                 return static_cast<Tracker::Status>(status);
             }
-            return Tracker::Inactive;
+            return Tracker::Status::Inactive;
         }
     }
 
@@ -82,29 +82,15 @@ namespace libtremotesf {
              trackerMap.value("lastAnnounceTime"_l1).toInt() != 0);
 
         if (scrapeError || announceError) {
-            setChanged(mStatus, Error, changed);
+            setChanged(mStatus, Status::Error, changed);
             if (scrapeError) {
                 setChanged(mErrorMessage, trackerMap.value("lastScrapeResult"_l1).toString(), changed);
             } else {
                 setChanged(mErrorMessage, trackerMap.value("lastAnnounceResult"_l1).toString(), changed);
             }
         } else {
-            switch (int status = trackerMap.value("announceState"_l1).toInt()) {
-            case Inactive:
-            case Active:
-            case Queued:
-            case Updating:
-            case Error:
-                setChanged(mStatus, statusFromInt(status), changed);
-                break;
-            default:
-                setChanged(mStatus, Error, changed);
-                break;
-            }
-            if (!mErrorMessage.isEmpty()) {
-                changed = true;
-            }
-            mErrorMessage.clear();
+            setChanged(mStatus, statusFromInt(trackerMap.value("announceState"_l1).toInt()), changed);
+            setChanged(mErrorMessage, {}, changed);
         }
 
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
