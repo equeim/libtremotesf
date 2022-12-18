@@ -121,6 +121,23 @@ namespace libtremotesf {
             EnumMapping(TorrentData::IdleSeedingLimitMode::Global, 0),
             EnumMapping(TorrentData::IdleSeedingLimitMode::Single, 1),
             EnumMapping(TorrentData::IdleSeedingLimitMode::Unlimited, 2)});
+
+        void updateDateTime(QDateTime& dateTime, const QJsonValue& value, bool& changed) {
+            QDateTime original = dateTime;
+            const auto newDateTime = static_cast<qint64>(value.toDouble());
+            if (newDateTime > 0) {
+                if (!dateTime.isValid() || newDateTime != dateTime.toSecsSinceEpoch()) {
+                    dateTime.setSecsSinceEpoch(newDateTime);
+                    changed = true;
+                }
+            } else {
+                if (!dateTime.isNull()) {
+                    dateTime.setDate({});
+                    dateTime.setTime({});
+                    changed = true;
+                }
+            }
+        }
     }
 
     int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }
@@ -168,48 +185,9 @@ namespace libtremotesf {
 
         setChanged(peersLimit, torrentMap.value(peersLimitKey).toInt(), changed);
 
-        const auto newAddedDateTime = static_cast<long long>(torrentMap.value(addedDateKey).toDouble()) * 1000;
-        if (newAddedDateTime > 0) {
-            if (newAddedDateTime != addedDateTime) {
-                addedDateTime = newAddedDateTime;
-                addedDate.setMSecsSinceEpoch(newAddedDateTime);
-                changed = true;
-            }
-        } else {
-            if (!addedDate.isNull()) {
-                addedDateTime = -1;
-                addedDate = QDateTime();
-                changed = true;
-            }
-        }
-        const auto newActivityDateTime = static_cast<long long>(torrentMap.value(activityDateKey).toDouble()) * 1000;
-        if (newActivityDateTime > 0) {
-            if (newActivityDateTime != activityDateTime) {
-                activityDateTime = newActivityDateTime;
-                activityDate.setMSecsSinceEpoch(newActivityDateTime);
-                changed = true;
-            }
-        } else {
-            if (!activityDate.isNull()) {
-                activityDateTime = -1;
-                activityDate = QDateTime();
-                changed = true;
-            }
-        }
-        const auto newDoneDateTime = static_cast<long long>(torrentMap.value(doneDateKey).toDouble()) * 1000;
-        if (newDoneDateTime > 0) {
-            if (newDoneDateTime != doneDateTime) {
-                doneDateTime = newDoneDateTime;
-                doneDate.setMSecsSinceEpoch(newDoneDateTime);
-                changed = true;
-            }
-        } else {
-            if (!doneDate.isNull()) {
-                doneDateTime = -1;
-                doneDate = QDateTime();
-                changed = true;
-            }
-        }
+        updateDateTime(addedDate, torrentMap.value(addedDateKey), changed);
+        updateDateTime(activityDate, torrentMap.value(activityDateKey), changed);
+        updateDateTime(doneDate, torrentMap.value(doneDateKey), changed);
 
         setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
         setChanged(
@@ -226,20 +204,7 @@ namespace libtremotesf {
         setChanged(downloadDirectory, normalizePath(torrentMap.value(downloadDirectoryKey).toString()), changed);
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
 
-        const auto newCreationDateTime = static_cast<long long>(torrentMap.value(creationDateKey).toDouble()) * 1000;
-        if (newCreationDateTime > 0) {
-            if (newCreationDateTime != creationDateTime) {
-                creationDateTime = newCreationDateTime;
-                creationDate.setMSecsSinceEpoch(newCreationDateTime);
-                changed = true;
-            }
-        } else {
-            if (!creationDate.isNull()) {
-                creationDateTime = -1;
-                creationDate = QDateTime();
-                changed = true;
-            }
-        }
+        updateDateTime(creationDate, torrentMap.value(creationDateKey), changed);
 
         setChanged(comment, torrentMap.value(commentKey).toString(), changed);
 

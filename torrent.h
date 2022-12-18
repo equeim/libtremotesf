@@ -90,20 +90,16 @@ namespace libtremotesf {
         int leechers = 0;
         int peersLimit = 0;
 
-        QDateTime addedDate;
-        long long addedDateTime = -1;
-        QDateTime activityDate;
-        long long activityDateTime = -1;
-        QDateTime doneDate;
-        long long doneDateTime = -1;
+        QDateTime addedDate{{}, {}, Qt::UTC};
+        QDateTime activityDate{{}, {}, Qt::UTC};
+        QDateTime doneDate{{}, {}, Qt::UTC};
 
         IdleSeedingLimitMode idleSeedingLimitMode{};
         int idleSeedingLimit = 0;
         QString downloadDirectory;
         QString comment;
         QString creator;
-        QDateTime creationDate;
-        long long creationDateTime = -1;
+        QDateTime creationDate{{}, {}, Qt::UTC};
         Priority bandwidthPriority{};
         bool honorSessionLimits = false;
 
