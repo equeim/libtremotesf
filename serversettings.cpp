@@ -6,12 +6,15 @@
 
 #include <QJsonObject>
 
+#include "jsonutils.h"
 #include "literals.h"
 #include "pathutils.h"
 #include "rpc.h"
 #include "stdutils.h"
 
 namespace libtremotesf {
+    using namespace impl;
+
     namespace {
         constexpr auto downloadDirectoryKey = "download-dir"_l1;
         constexpr auto trashTorrentFilesKey = "trash-original-torrent-files"_l1;
@@ -44,45 +47,11 @@ namespace libtremotesf {
         constexpr auto alternativeSpeedLimitsEndTimeKey = "alt-speed-time-end"_l1;
         constexpr auto alternativeSpeedLimitsDaysKey = "alt-speed-time-day"_l1;
 
-        inline ServerSettingsData::AlternativeSpeedLimitsDays daysFromInt(int days) {
-            switch (auto d = static_cast<ServerSettingsData::AlternativeSpeedLimitsDays>(days)) {
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Sunday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Monday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Tuesday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Wednesday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Thursday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Friday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Saturday:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Weekdays:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::Weekends:
-            case ServerSettingsData::AlternativeSpeedLimitsDays::All:
-                return d;
-            default:
-                return ServerSettingsData::AlternativeSpeedLimitsDays::All;
-            }
-        }
-
         constexpr auto peerPortKey = "peer-port"_l1;
         constexpr auto randomPortEnabledKey = "peer-port-random-on-start"_l1;
         constexpr auto portForwardingEnabledKey = "port-forwarding-enabled"_l1;
 
         constexpr auto encryptionModeKey = "encryption"_l1;
-        constexpr auto encryptionModeAllowed = "tolerated"_l1;
-        constexpr auto encryptionModePreferred = "preferred"_l1;
-        constexpr auto encryptionModeRequired = "required"_l1;
-
-        inline QString encryptionModeString(ServerSettingsData::EncryptionMode mode) {
-            switch (mode) {
-            case ServerSettingsData::EncryptionMode::Allowed:
-                return encryptionModeAllowed;
-            case ServerSettingsData::EncryptionMode::Preferred:
-                return encryptionModePreferred;
-            case ServerSettingsData::EncryptionMode::Required:
-                return encryptionModeRequired;
-            default:
-                return {};
-            }
-        }
 
         constexpr auto utpEnabledKey = "utp-enabled"_l1;
         constexpr auto pexEnabledKey = "pex-enabled"_l1;
@@ -90,6 +59,34 @@ namespace libtremotesf {
         constexpr auto lpdEnabledKey = "lpd-enabled"_l1;
         constexpr auto maximumPeersPerTorrentKey = "peer-limit-per-torrent"_l1;
         constexpr auto maximumPeersGloballyKey = "peer-limit-global"_l1;
+
+        constexpr auto alternativeSpeedLimitsDaysMapper = EnumMapper(std::array{
+            // (1 << 0)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Sunday, 1),
+            // (1 << 1)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Monday, 2),
+            // (1 << 2)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Tuesday, 4),
+            // (1 << 3)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Wednesday, 8),
+            // (1 << 4)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Thursday, 16),
+            // (1 << 5)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Friday, 32),
+            // (1 << 6)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Saturday, 64),
+            // (Monday | Tuesday | Wednesday | Thursday | Friday)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Weekdays, 62),
+            // (Sunday | Saturday)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::Weekends, 65),
+            // (Weekdays | Weekends)
+            EnumMapping(ServerSettingsData::AlternativeSpeedLimitsDays::All, 127),
+        });
+
+        constexpr auto encryptionModeMapper = EnumMapper(std::array{
+            EnumMapping(ServerSettingsData::EncryptionMode::Allowed, "tolerated"_l1),
+            EnumMapping(ServerSettingsData::EncryptionMode::Preferred, "preferred"_l1),
+            EnumMapping(ServerSettingsData::EncryptionMode::Required, "required"_l1)});
     }
 
     bool ServerSettingsData::canRenameFiles() const { return (rpcVersion >= 15); }
@@ -364,7 +361,7 @@ namespace libtremotesf {
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(
                     alternativeSpeedLimitsDaysKey,
-                    static_cast<int>(mData.alternativeSpeedLimitsDays)
+                    alternativeSpeedLimitsDaysMapper.toJsonValue(days)
                 );
             }
         }
@@ -402,7 +399,7 @@ namespace libtremotesf {
     void ServerSettings::setEncryptionMode(ServerSettingsData::EncryptionMode mode) {
         mData.encryptionMode = mode;
         if (mSaveOnSet) {
-            mRpc->setSessionProperty(encryptionModeKey, encryptionModeString(mode));
+            mRpc->setSessionProperty(encryptionModeKey, encryptionModeMapper.toJsonValue(mode));
         }
     }
 
@@ -537,23 +534,19 @@ namespace libtremotesf {
         );
         setChanged(
             mData.alternativeSpeedLimitsDays,
-            daysFromInt(serverSettings.value(alternativeSpeedLimitsDaysKey).toInt()),
+            alternativeSpeedLimitsDaysMapper
+                .fromJsonValue(serverSettings.value(alternativeSpeedLimitsDaysKey), alternativeDownloadSpeedLimitKey),
             changed
         );
 
         setChanged(mData.peerPort, serverSettings.value(peerPortKey).toInt(), changed);
         setChanged(mData.randomPortEnabled, serverSettings.value(randomPortEnabledKey).toBool(), changed);
         setChanged(mData.portForwardingEnabled, serverSettings.value(portForwardingEnabledKey).toBool(), changed);
-
-        const QString encryption(serverSettings.value(encryptionModeKey).toString());
-        if (encryption == encryptionModeAllowed) {
-            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Allowed, changed);
-        } else if (encryption == encryptionModePreferred) {
-            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Preferred, changed);
-        } else {
-            setChanged(mData.encryptionMode, ServerSettingsData::EncryptionMode::Required, changed);
-        }
-
+        setChanged(
+            mData.encryptionMode,
+            encryptionModeMapper.fromJsonValue(serverSettings.value(encryptionModeKey), encryptionModeKey),
+            changed
+        );
         setChanged(mData.utpEnabled, serverSettings.value(utpEnabledKey).toBool(), changed);
         setChanged(mData.pexEnabled, serverSettings.value(pexEnabledKey).toBool(), changed);
         setChanged(mData.dhtEnabled, serverSettings.value(dhtEnabledKey).toBool(), changed);
@@ -597,12 +590,13 @@ namespace libtremotesf {
              {alternativeSpeedLimitsScheduledKey, mData.alternativeSpeedLimitsScheduled},
              {alternativeSpeedLimitsBeginTimeKey, mData.alternativeSpeedLimitsBeginTime.msecsSinceStartOfDay() / 60000},
              {alternativeSpeedLimitsEndTimeKey, mData.alternativeSpeedLimitsEndTime.msecsSinceStartOfDay() / 60000},
-             {alternativeSpeedLimitsDaysKey, static_cast<int>(mData.alternativeSpeedLimitsDays)},
+             {alternativeSpeedLimitsDaysKey,
+              alternativeSpeedLimitsDaysMapper.toJsonValue(mData.alternativeSpeedLimitsDays)},
 
              {peerPortKey, mData.peerPort},
              {randomPortEnabledKey, mData.randomPortEnabled},
              {portForwardingEnabledKey, mData.portForwardingEnabled},
-             {encryptionModeKey, encryptionModeString(mData.encryptionMode)},
+             {encryptionModeKey, encryptionModeMapper.toJsonValue(mData.encryptionMode)},
              {utpEnabledKey, mData.utpEnabled},
              {pexEnabledKey, mData.pexEnabled},
              {dhtEnabledKey, mData.dhtEnabled},

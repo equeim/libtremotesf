@@ -4,13 +4,16 @@
 
 #include "torrent.h"
 
-#include <type_traits>
+#include <algorithm>
+#include <array>
+#include <stdexcept>
 
 #include <QCoreApplication>
 #include <QJsonArray>
 #include <QJsonObject>
 #include <QLocale>
 
+#include "jsonutils.h"
 #include "itemlistupdater.h"
 #include "log.h"
 #include "pathutils.h"
@@ -18,6 +21,8 @@
 #include "stdutils.h"
 
 namespace libtremotesf {
+    using namespace impl;
+
     namespace {
         constexpr auto hashStringKey = "hashString"_l1;
         constexpr auto addedDateKey = "addedDate"_l1;
@@ -86,50 +91,47 @@ namespace libtremotesf {
         constexpr auto addTrackerKey = "trackerAdd"_l1;
         constexpr auto replaceTrackerKey = "trackerReplace"_l1;
         constexpr auto removeTrackerKey = "trackerRemove"_l1;
+
+        constexpr auto statusMapper = EnumMapper(std::array{
+            EnumMapping(TorrentData::Status::Paused, 0),
+            EnumMapping(TorrentData::Status::QueuedForChecking, 1),
+            EnumMapping(TorrentData::Status::Checking, 2),
+            EnumMapping(TorrentData::Status::QueuedForDownloading, 3),
+            EnumMapping(TorrentData::Status::Downloading, 4),
+            EnumMapping(TorrentData::Status::QueuedForSeeding, 5),
+            EnumMapping(TorrentData::Status::Seeding, 6)});
+
+        constexpr auto errorMapper = EnumMapper(std::array{
+            EnumMapping(TorrentData::Error::None, 0),
+            EnumMapping(TorrentData::Error::TrackerWarning, 1),
+            EnumMapping(TorrentData::Error::TrackerError, 2),
+            EnumMapping(TorrentData::Error::LocalError, 3)});
+
+        constexpr auto priorityMapper = EnumMapper(std::array{
+            EnumMapping(TorrentData::Priority::Low, -1),
+            EnumMapping(TorrentData::Priority::Normal, 0),
+            EnumMapping(TorrentData::Priority::High, 1)});
+
+        constexpr auto ratioLimitModeMapper = EnumMapper(std::array{
+            EnumMapping(TorrentData::RatioLimitMode::Global, 0),
+            EnumMapping(TorrentData::RatioLimitMode::Single, 1),
+            EnumMapping(TorrentData::RatioLimitMode::Unlimited, 2)});
+
+        constexpr auto idleSeedingLimitModeMapper = EnumMapper(std::array{
+            EnumMapping(TorrentData::IdleSeedingLimitMode::Global, 0),
+            EnumMapping(TorrentData::IdleSeedingLimitMode::Single, 1),
+            EnumMapping(TorrentData::IdleSeedingLimitMode::Unlimited, 2)});
     }
 
-    int TorrentData::priorityToInt(Priority value) { return static_cast<int>(value); }
+    int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }
 
     bool TorrentData::update(const QJsonObject& torrentMap) {
         bool changed = false;
 
         setChanged(name, torrentMap.value(nameKey).toString(), changed);
         setChanged(magnetLink, torrentMap.value(magnetLinkKey).toString(), changed);
-
-        setChanged(
-            status,
-            [&] {
-                switch (auto status = static_cast<Status>(torrentMap.value(statusKey).toInt())) {
-                case Status::Paused:
-                case Status::QueuedForChecking:
-                case Status::Checking:
-                case Status::QueuedForDownloading:
-                case Status::Downloading:
-                case Status::QueuedForSeeding:
-                case Status::Seeding:
-                    return status;
-                default:
-                    return Status::Paused;
-                }
-            }(),
-            changed
-        );
-
-        setChanged(
-            error,
-            [&] {
-                switch (auto error = static_cast<Error>(torrentMap.value(errorKey).toInt())) {
-                case Error::None:
-                case Error::TrackerWarning:
-                case Error::TrackerError:
-                case Error::LocalError:
-                    return error;
-                default:
-                    return Error::None;
-                }
-            }(),
-            changed
-        );
+        setChanged(status, statusMapper.fromJsonValue(torrentMap.value(statusKey), statusKey), changed);
+        setChanged(error, errorMapper.fromJsonValue(torrentMap.value(errorKey), errorKey), changed);
         setChanged(errorString, torrentMap.value(errorStringKey).toString(), changed);
         setChanged(queuePosition, torrentMap.value(queuePositionKey).toInt(), changed);
         setChanged(totalSize, static_cast<long long>(torrentMap.value(totalSizeKey).toDouble()), changed);
@@ -156,16 +158,7 @@ namespace libtremotesf {
 
         setChanged(
             ratioLimitMode,
-            [&] {
-                switch (auto mode = static_cast<RatioLimitMode>(torrentMap.value(ratioLimitModeKey).toInt())) {
-                case RatioLimitMode::Global:
-                case RatioLimitMode::Single:
-                case RatioLimitMode::Unlimited:
-                    return mode;
-                default:
-                    return RatioLimitMode::Global;
-                }
-            }(),
+            ratioLimitModeMapper.fromJsonValue(torrentMap.value(ratioLimitModeKey), ratioLimitModeKey),
             changed
         );
         setChanged(ratioLimit, torrentMap.value(ratioLimitKey).toDouble(), changed);
@@ -207,31 +200,12 @@ namespace libtremotesf {
         setChanged(honorSessionLimits, torrentMap.value(honorSessionLimitsKey).toBool(), changed);
         setChanged(
             bandwidthPriority,
-            [&] {
-                switch (auto priority = static_cast<Priority>(torrentMap.value(bandwidthPriorityKey).toInt())) {
-                case Priority::Low:
-                case Priority::Normal:
-                case Priority::High:
-                    return static_cast<Priority>(priority);
-                default:
-                    return Priority::Normal;
-                }
-            }(),
+            priorityMapper.fromJsonValue(torrentMap.value(bandwidthPriorityKey), bandwidthPriorityKey),
             changed
         );
         setChanged(
             idleSeedingLimitMode,
-            [&] {
-                switch (auto mode =
-                            static_cast<IdleSeedingLimitMode>(torrentMap.value(idleSeedingLimitModeKey).toInt())) {
-                case IdleSeedingLimitMode::Global:
-                case IdleSeedingLimitMode::Single:
-                case IdleSeedingLimitMode::Unlimited:
-                    return mode;
-                default:
-                    return IdleSeedingLimitMode::Global;
-                }
-            }(),
+            idleSeedingLimitModeMapper.fromJsonValue(torrentMap.value(bandwidthPriorityKey), bandwidthPriorityKey),
             changed
         );
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
@@ -399,7 +373,7 @@ namespace libtremotesf {
 
     void Torrent::setRatioLimitMode(TorrentData::RatioLimitMode mode) {
         mData.ratioLimitMode = mode;
-        mRpc->setTorrentProperty(id(), ratioLimitModeKey, static_cast<int>(mode));
+        mRpc->setTorrentProperty(id(), ratioLimitModeKey, ratioLimitModeMapper.toJsonValue(mode));
     }
 
     double Torrent::ratioLimit() const { return mData.ratioLimit; }
@@ -437,14 +411,14 @@ namespace libtremotesf {
 
     void Torrent::setBandwidthPriority(TorrentData::Priority priority) {
         mData.bandwidthPriority = priority;
-        mRpc->setTorrentProperty(id(), bandwidthPriorityKey, static_cast<int>(priority));
+        mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priorityMapper.toJsonValue(priority));
     }
 
     TorrentData::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
 
     void Torrent::setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode) {
         mData.idleSeedingLimitMode = mode;
-        mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, static_cast<int>(mode));
+        mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, idleSeedingLimitModeMapper.toJsonValue(mode));
     }
 
     int Torrent::idleSeedingLimit() const { return mData.idleSeedingLimit; }
