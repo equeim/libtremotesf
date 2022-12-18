@@ -38,7 +38,7 @@ namespace libtremotesf {
         enum class Error { None, TrackerWarning, TrackerError, LocalError };
         Q_ENUM(Error)
 
-        enum class Priority { Low = -1, Normal, High };
+        enum class Priority { Low, Normal, High };
         Q_ENUM(Priority)
         static int priorityToInt(Priority value);
 

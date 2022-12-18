@@ -42,6 +42,7 @@ add_library(
     formatters.cpp
     formatters.h
     itemlistupdater.h
+    jsonutils.h
     literals.h
     log.cpp
     log.h

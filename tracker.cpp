@@ -10,21 +10,18 @@
 #include <QHostAddress>
 #include <QUrl>
 
+#include "jsonutils.h"
 #include "literals.h"
 #include "stdutils.h"
 
 namespace libtremotesf {
+    using namespace impl;
     namespace {
-        Tracker::Status statusFromInt(int intStatus) {
-            switch (auto status = static_cast<Tracker::Status>(intStatus)) {
-            case Tracker::Status::Inactive:
-            case Tracker::Status::WaitingForUpdate:
-            case Tracker::Status::QueuedForUpdate:
-            case Tracker::Status::Updating:
-                return static_cast<Tracker::Status>(status);
-            }
-            return Tracker::Status::Inactive;
-        }
+        constexpr auto statusMapper = EnumMapper(std::array{
+            EnumMapping(Tracker::Status::Inactive, 0),
+            EnumMapping(Tracker::Status::WaitingForUpdate, 1),
+            EnumMapping(Tracker::Status::QueuedForUpdate, 2),
+            EnumMapping(Tracker::Status::Updating, 3)});
     }
 
     Tracker::Tracker(int id, const QJsonObject& trackerMap) : mId(id) { update(trackerMap); }
@@ -87,7 +84,9 @@ namespace libtremotesf {
             setChanged(mErrorMessage, {}, changed);
         }
 
-        setChanged(mStatus, statusFromInt(trackerMap.value("announceState"_l1).toInt()), changed);
+        constexpr auto announceStateKey = "announceState"_l1;
+        setChanged(mStatus, statusMapper.fromJsonValue(trackerMap.value(announceStateKey), announceStateKey), changed);
+
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
 
         const long long nextUpdateTime = static_cast<long long>(trackerMap.value("nextAnnounceTime"_l1).toDouble());
