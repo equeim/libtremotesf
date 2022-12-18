@@ -117,11 +117,6 @@ namespace libtremotesf {
     class Torrent : public QObject {
         Q_OBJECT
     public:
-        using Status = TorrentData::Status;
-        using Priority = TorrentData::Priority;
-        using RatioLimitMode = TorrentData::RatioLimitMode;
-        using IdleSeedingLimitMode = TorrentData::IdleSeedingLimitMode;
-
         static constexpr auto idKey = "id"_l1;
 
         explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
@@ -132,7 +127,7 @@ namespace libtremotesf {
         const QString& hashString() const;
         const QString& name() const;
 
-        Status status() const;
+        TorrentData::Status status() const;
         QString errorString() const;
         int queuePosition() const;
 
@@ -163,8 +158,8 @@ namespace libtremotesf {
         long long totalDownloaded() const;
         long long totalUploaded() const;
         double ratio() const;
-        RatioLimitMode ratioLimitMode() const;
-        void setRatioLimitMode(libtremotesf::Torrent::RatioLimitMode mode);
+        TorrentData::RatioLimitMode ratioLimitMode() const;
+        void setRatioLimitMode(TorrentData::RatioLimitMode mode);
         double ratioLimit() const;
         void setRatioLimit(double limit);
 
@@ -179,10 +174,10 @@ namespace libtremotesf {
 
         bool honorSessionLimits() const;
         void setHonorSessionLimits(bool honor);
-        Priority bandwidthPriority() const;
-        void setBandwidthPriority(libtremotesf::Torrent::Priority priority);
-        IdleSeedingLimitMode idleSeedingLimitMode() const;
-        void setIdleSeedingLimitMode(libtremotesf::Torrent::IdleSeedingLimitMode mode);
+        TorrentData::Priority bandwidthPriority() const;
+        void setBandwidthPriority(TorrentData::Priority priority);
+        TorrentData::IdleSeedingLimitMode idleSeedingLimitMode() const;
+        void setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode);
         int idleSeedingLimit() const;
         void setIdleSeedingLimit(int limit);
         const QString& downloadDirectory() const;
@@ -207,7 +202,7 @@ namespace libtremotesf {
         const std::vector<TorrentFile>& files() const;
 
         void setFilesWanted(const QVariantList& files, bool wanted);
-        void setFilesPriority(const QVariantList& files, libtremotesf::TorrentFile::Priority priority);
+        void setFilesPriority(const QVariantList& files, TorrentFile::Priority priority);
         void renameFile(const QString& path, const QString& newName);
 
         bool isPeersEnabled() const;

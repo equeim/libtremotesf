@@ -844,7 +844,7 @@ namespace libtremotesf {
             const auto& [json, id] = newTorrent;
 
             const bool wasFinished = torrent->isFinished();
-            const bool wasPaused = (torrent->status() == Torrent::Status::Paused);
+            const bool wasPaused = (torrent->status() == TorrentData::Status::Paused);
             const auto oldSizeWhenDone = torrent->sizeWhenDone();
             const bool metadataWasComplete = torrent->isMetadataComplete();
 

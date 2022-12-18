@@ -235,11 +235,7 @@ namespace libtremotesf {
             changed
         );
         setChanged(idleSeedingLimit, torrentMap.value(idleSeedingLimitKey).toInt(), changed);
-        setChanged(
-            downloadDirectory,
-            normalizePath(torrentMap.value(downloadDirectoryKey).toString()),
-            changed
-        );
+        setChanged(downloadDirectory, normalizePath(torrentMap.value(downloadDirectoryKey).toString()), changed);
         setChanged(creator, torrentMap.value(creatorKey).toString(), changed);
 
         const auto newCreationDateTime = static_cast<long long>(torrentMap.value(creationDateKey).toDouble()) * 1000;
@@ -325,7 +321,7 @@ namespace libtremotesf {
 
     const QString& Torrent::name() const { return mData.name; }
 
-    Torrent::Status Torrent::status() const { return mData.status; }
+    TorrentData::Status Torrent::status() const { return mData.status; }
 
     QString Torrent::errorString() const { return mData.errorString; }
 
@@ -387,9 +383,9 @@ namespace libtremotesf {
 
     double Torrent::ratio() const { return mData.ratio; }
 
-    Torrent::RatioLimitMode Torrent::ratioLimitMode() const { return mData.ratioLimitMode; }
+    TorrentData::RatioLimitMode Torrent::ratioLimitMode() const { return mData.ratioLimitMode; }
 
-    void Torrent::setRatioLimitMode(Torrent::RatioLimitMode mode) {
+    void Torrent::setRatioLimitMode(TorrentData::RatioLimitMode mode) {
         mData.ratioLimitMode = mode;
         mRpc->setTorrentProperty(id(), ratioLimitModeKey, mode);
     }
@@ -425,16 +421,16 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(id(), honorSessionLimitsKey, honor);
     }
 
-    Torrent::Priority Torrent::bandwidthPriority() const { return mData.bandwidthPriority; }
+    TorrentData::Priority Torrent::bandwidthPriority() const { return mData.bandwidthPriority; }
 
-    void Torrent::setBandwidthPriority(Priority priority) {
+    void Torrent::setBandwidthPriority(TorrentData::Priority priority) {
         mData.bandwidthPriority = priority;
         mRpc->setTorrentProperty(id(), bandwidthPriorityKey, priority);
     }
 
-    Torrent::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
+    TorrentData::IdleSeedingLimitMode Torrent::idleSeedingLimitMode() const { return mData.idleSeedingLimitMode; }
 
-    void Torrent::setIdleSeedingLimitMode(Torrent::IdleSeedingLimitMode mode) {
+    void Torrent::setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode) {
         mData.idleSeedingLimitMode = mode;
         mRpc->setTorrentProperty(id(), idleSeedingLimitModeKey, mode);
     }
