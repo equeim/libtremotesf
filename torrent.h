@@ -247,6 +247,11 @@ namespace libtremotesf {
     };
 }
 
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Status)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Priority)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::RatioLimitMode)
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::IdleSeedingLimitMode)
+
 // SWIG can't parse it :(
 #ifndef SWIG
 template<>
