@@ -119,7 +119,9 @@ namespace libtremotesf {
     class Torrent : public QObject {
         Q_OBJECT
     public:
+#ifndef SWIG
         static constexpr auto idKey = "id"_l1;
+#endif
 
         explicit Torrent(int id, const QJsonObject& torrentMap, Rpc* rpc, QObject* parent = nullptr);
         // For testing only
@@ -258,12 +260,9 @@ SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Priority)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::RatioLimitMode)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::IdleSeedingLimitMode)
 
-// SWIG can't parse it :(
-#ifndef SWIG
 template<>
 struct fmt::formatter<libtremotesf::Torrent> : libtremotesf::SimpleFormatter {
     format_context::iterator format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST;
 };
-#endif // SWIG
 
 #endif // LIBTREMOTESF_TORRENT_H

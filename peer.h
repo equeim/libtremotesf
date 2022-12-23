@@ -12,7 +12,9 @@ class QJsonObject;
 
 namespace libtremotesf {
     struct Peer {
+#ifndef SWIG
         static constexpr auto addressKey = "address"_l1;
+#endif
 
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
