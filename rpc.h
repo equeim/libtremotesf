@@ -271,9 +271,7 @@ namespace libtremotesf {
     };
 }
 
-#ifndef SWIG
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::RpcConnectionState)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::RpcError)
-#endif
 
 #endif // LIBTREMOTESF_RPC_H
