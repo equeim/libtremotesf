@@ -160,13 +160,12 @@ namespace {
 
         void checkThatJsonIsFormedCorrectly() {
             const auto method = "foo"_l1;
-            const QVariantMap arguments{{"bar", "foobar"}};
+            const QJsonObject arguments{{"bar", "foobar"}};
 
             mServer.handle([&](const httplib::Request& req, httplib::Response& res) {
                 const auto json = QJsonDocument::fromJson(req.body.c_str());
-                const auto expectedJson = QJsonDocument(
-                    QJsonObject{{"method"_l1, method}, {"arguments"_l1, QJsonObject::fromVariantMap(arguments)}}
-                );
+                const auto expectedJson =
+                    QJsonDocument(QJsonObject{{"method"_l1, method}, {"arguments"_l1, arguments}});
                 if (json == expectedJson) {
                     success(res);
                 } else {

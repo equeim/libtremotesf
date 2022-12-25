@@ -5,29 +5,20 @@
 #ifndef LIBTREMOTESF_RPC_H
 #define LIBTREMOTESF_RPC_H
 
-#include <functional>
+#include <map>
 #include <memory>
 #include <optional>
 #include <vector>
-#include <unordered_map>
-#include <unordered_set>
 
 #include <QByteArray>
-#include <QNetworkRequest>
 #include <QObject>
-#include <QSslConfiguration>
-#include <QUrl>
-#include <QVariantList>
 
 #include "formatters.h"
 #include "serversettings.h"
 #include "serverstats.h"
 #include "torrent.h"
 
-class QAuthenticator;
 class QFile;
-class QNetworkAccessManager;
-class QNetworkReply;
 class QTimer;
 
 namespace libtremotesf {
@@ -136,10 +127,10 @@ namespace libtremotesf {
         void addTorrentFile(
             const QString& filePath,
             const QString& downloadDirectory,
-            const QVariantList& unwantedFiles,
-            const QVariantList& highPriorityFiles,
-            const QVariantList& lowPriorityFiles,
-            const QVariantMap& renamedFiles,
+            const std::vector<int>& unwantedFiles,
+            const std::vector<int>& highPriorityFiles,
+            const std::vector<int>& lowPriorityFiles,
+            const std::map<QString, QString>& renamedFiles,
             TorrentData::Priority bandwidthPriority,
             bool start
         );
@@ -147,10 +138,10 @@ namespace libtremotesf {
         void addTorrentFile(
             std::shared_ptr<QFile> file,
             const QString& downloadDirectory,
-            const QVariantList& unwantedFiles,
-            const QVariantList& highPriorityFiles,
-            const QVariantList& lowPriorityFiles,
-            const QVariantMap& renamedFiles,
+            const std::vector<int>& unwantedFiles,
+            const std::vector<int>& highPriorityFiles,
+            const std::vector<int>& lowPriorityFiles,
+            const std::map<QString, QString>& renamedFiles,
             TorrentData::Priority bandwidthPriority,
             bool start
         );
@@ -159,25 +150,25 @@ namespace libtremotesf {
             const QString& link, const QString& downloadDirectory, TorrentData::Priority bandwidthPriority, bool start
         );
 
-        void startTorrents(const QVariantList& ids);
-        void startTorrentsNow(const QVariantList& ids);
-        void pauseTorrents(const QVariantList& ids);
-        void removeTorrents(const QVariantList& ids, bool deleteFiles);
-        void checkTorrents(const QVariantList& ids);
-        void moveTorrentsToTop(const QVariantList& ids);
-        void moveTorrentsUp(const QVariantList& ids);
-        void moveTorrentsDown(const QVariantList& ids);
-        void moveTorrentsToBottom(const QVariantList& ids);
+        void startTorrents(const std::vector<int>& ids);
+        void startTorrentsNow(const std::vector<int>& ids);
+        void pauseTorrents(const std::vector<int>& ids);
+        void removeTorrents(const std::vector<int>& ids, bool deleteFiles);
+        void checkTorrents(const std::vector<int>& ids);
+        void moveTorrentsToTop(const std::vector<int>& ids);
+        void moveTorrentsUp(const std::vector<int>& ids);
+        void moveTorrentsDown(const std::vector<int>& ids);
+        void moveTorrentsToBottom(const std::vector<int>& ids);
 
-        void reannounceTorrents(const QVariantList& ids);
+        void reannounceTorrents(const std::vector<int>& ids);
 
-        void setSessionProperty(const QString& property, const QVariant& value);
-        void setSessionProperties(const QVariantMap& properties);
+        void setSessionProperty(const QString& property, const QJsonValue& value);
+        void setSessionProperties(const QJsonObject& properties);
         void
-        setTorrentProperty(int id, const QString& property, const QVariant& value, bool updateIfSuccessful = false);
-        void setTorrentsLocation(const QVariantList& ids, const QString& location, bool moveFiles);
-        void getTorrentsFiles(const QVariantList& ids, bool scheduled);
-        void getTorrentsPeers(const QVariantList& ids, bool scheduled);
+        setTorrentProperty(int id, const QString& property, const QJsonValue& value, bool updateIfSuccessful = false);
+        void setTorrentsLocation(const std::vector<int>& ids, const QString& location, bool moveFiles);
+        void getTorrentsFiles(const std::vector<int>& ids, bool scheduled);
+        void getTorrentsPeers(const std::vector<int>& ids, bool scheduled);
 
         void renameTorrentFile(int torrentId, const QString& filePath, const QString& newName);
 
@@ -195,7 +186,7 @@ namespace libtremotesf {
 
         void getServerSettings();
         void getTorrents();
-        void checkTorrentsSingleFile(const QVariantList& torrentIds);
+        void checkTorrentsSingleFile(const std::vector<int>& torrentIds);
         void getServerStats();
 
         void maybeFinishUpdatingTorrents();

@@ -10,7 +10,9 @@
 #include <optional>
 #include <stdexcept>
 #include <type_traits>
+#include <vector>
 
+#include <QJsonArray>
 #include <QJsonValue>
 
 #include "log.h"
@@ -73,9 +75,11 @@ namespace libtremotesf::impl {
         std::array<EnumMapping<EnumType, JsonType>, EnumCount> mappings{};
     };
 
-    /*template<typename EnumTypeC, size_t EnumCountC, typename JsonTypeC>
-    EnumMapper(std::array<EnumMapping<EnumTypeC, JsonTypeC>, EnumCountC>&&)
-        -> EnumMapper<EnumTypeC, EnumCountC, JsonTypeC>;*/
+    inline QJsonArray toJsonArray(const std::vector<int>& ids) {
+        QJsonArray array{};
+        std::copy(ids.begin(), ids.end(), std::back_inserter(array));
+        return array;
+    }
 }
 
 #endif // LIBTREMOTESF_JSONUTILS_H

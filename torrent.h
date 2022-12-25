@@ -138,7 +138,7 @@ namespace libtremotesf {
         // For testing only
         explicit Torrent() = default;
 
-        static QVariantList updateFields();
+        static QJsonArray updateFields();
         static std::optional<int> idFromJson(const QJsonObject& object);
         static std::optional<QJsonArray::size_type>
         idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys);
@@ -215,7 +215,7 @@ namespace libtremotesf {
         bool isTrackersAnnounceUrlsChanged() const;
         void addTrackers(const QStringList& announceUrls);
         void setTracker(int trackerId, const QString& announce);
-        void removeTrackers(const QVariantList& ids);
+        void removeTrackers(const std::vector<int>& trackerIds);
 
         const std::vector<QString>& webSeeders() const;
         int activeWebSeeders() const;
@@ -226,8 +226,8 @@ namespace libtremotesf {
         void setFilesEnabled(bool enabled);
         const std::vector<TorrentFile>& files() const;
 
-        void setFilesWanted(const QVariantList& files, bool wanted);
-        void setFilesPriority(const QVariantList& files, TorrentFile::Priority priority);
+        void setFilesWanted(const std::vector<int>& fileIds, bool wanted);
+        void setFilesPriority(const std::vector<int>& fileIds, TorrentFile::Priority priority);
         void renameFile(const QString& path, const QString& newName);
 
         bool isPeersEnabled() const;
