@@ -70,8 +70,7 @@ namespace libtremotesf {
         }
 
         const bool scrapeError =
-            (!trackerMap.value("lastScrapeSucceeded"_l1).toBool() && trackerMap.value("lastScrapeTime"_l1).toInt() != 0
-            );
+            !trackerMap.value("lastScrapeSucceeded"_l1).toBool() && trackerMap.value("lastScrapeTime"_l1).toInt() != 0;
 
         const bool announceError =
             (!trackerMap.value("lastAnnounceSucceeded"_l1).toBool() &&

@@ -101,7 +101,7 @@ namespace libtremotesf::impl {
     }
 
     void RequestRouter::postRequest(
-        QLatin1String method, const QVariantMap& arguments, const std::function<void(Response)>& onResponse
+        QLatin1String method, const QJsonObject& arguments, const std::function<void(Response)>& onResponse
     ) {
         postRequest(method, makeRequestData(method, arguments), onResponse);
     }
@@ -128,10 +128,10 @@ namespace libtremotesf::impl {
         mSessionId.clear();
     }
 
-    QByteArray RequestRouter::makeRequestData(const QString& method, const QVariantMap& arguments) {
+    QByteArray RequestRouter::makeRequestData(const QString& method, const QJsonObject& arguments) {
         return QJsonDocument(QJsonObject{
                                  {QStringLiteral("method"), method},
-                                 {QStringLiteral("arguments"), QJsonObject::fromVariantMap(arguments)},
+                                 {QStringLiteral("arguments"), arguments},
                              })
             .toJson(QJsonDocument::Compact);
     }

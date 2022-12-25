@@ -11,15 +11,14 @@
 #include <unordered_set>
 
 #include <QJsonObject>
+#include <QList>
 #include <QNetworkAccessManager>
 #include <QNetworkProxy>
 #include <QNetworkRequest>
-#include <QString>
-#include <QtContainerFwd>
-
-#include <QList>
 #include <QSslCertificate>
 #include <QSslKey>
+#include <QString>
+#include <QtContainerFwd>
 
 #include "rpc.h"
 
@@ -57,7 +56,7 @@ namespace libtremotesf::impl {
         };
 
         void postRequest(
-            QLatin1String method, const QVariantMap& arguments, const std::function<void(Response)>& onResponse = {}
+            QLatin1String method, const QJsonObject& arguments, const std::function<void(Response)>& onResponse = {}
         );
 
         void
@@ -67,7 +66,7 @@ namespace libtremotesf::impl {
 
         void cancelPendingRequestsAndClearSessionId();
 
-        static QByteArray makeRequestData(const QString& method, const QVariantMap& arguments);
+        static QByteArray makeRequestData(const QString& method, const QJsonObject& arguments);
 
     private:
         struct Request {

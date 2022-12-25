@@ -442,9 +442,8 @@ namespace libtremotesf {
         [[maybe_unused]] bool changed = mData.update(keys, values, true);
     }
 
-    QVariantList Torrent::updateFields() {
-        QVariantList fields{};
-        fields.reserve(static_cast<QVariantList::size_type>(TorrentData::UpdateKey::Count));
+    QJsonArray Torrent::updateFields() {
+        QJsonArray fields{};
         for (int i = 0; i < static_cast<int>(TorrentData::UpdateKey::Count); ++i) {
             const auto key = static_cast<TorrentData::UpdateKey>(i);
             fields.push_back(updateKeyString(key));
@@ -640,15 +639,15 @@ namespace libtremotesf {
     bool Torrent::isTrackersAnnounceUrlsChanged() const { return mData.trackersAnnounceUrlsChanged; }
 
     void Torrent::addTrackers(const QStringList& announceUrls) {
-        mRpc->setTorrentProperty(id(), addTrackerKey, announceUrls, true);
+        mRpc->setTorrentProperty(id(), addTrackerKey, QJsonArray::fromStringList(announceUrls), true);
     }
 
     void Torrent::setTracker(int trackerId, const QString& announce) {
-        mRpc->setTorrentProperty(id(), replaceTrackerKey, QVariantList{trackerId, announce}, true);
+        mRpc->setTorrentProperty(id(), replaceTrackerKey, QJsonArray{trackerId, announce}, true);
     }
 
-    void Torrent::removeTrackers(const QVariantList& ids) {
-        mRpc->setTorrentProperty(id(), removeTrackerKey, ids, true);
+    void Torrent::removeTrackers(const std::vector<int>& ids) {
+        mRpc->setTorrentProperty(id(), removeTrackerKey, toJsonArray(ids), true);
     }
 
     const std::vector<QString>& Torrent::webSeeders() const { return mData.webSeeders; }
@@ -672,11 +671,11 @@ namespace libtremotesf {
 
     const std::vector<TorrentFile>& Torrent::files() const { return mFiles; }
 
-    void Torrent::setFilesWanted(const QVariantList& files, bool wanted) {
-        mRpc->setTorrentProperty(id(), wanted ? wantedFilesKey : unwantedFilesKey, files);
+    void Torrent::setFilesWanted(const std::vector<int>& fileIds, bool wanted) {
+        mRpc->setTorrentProperty(id(), wanted ? wantedFilesKey : unwantedFilesKey, toJsonArray(fileIds));
     }
 
-    void Torrent::setFilesPriority(const QVariantList& files, TorrentFile::Priority priority) {
+    void Torrent::setFilesPriority(const std::vector<int>& fileIds, TorrentFile::Priority priority) {
         QLatin1String propertyName;
         switch (priority) {
         case TorrentFile::Priority::Low:
@@ -689,7 +688,7 @@ namespace libtremotesf {
             propertyName = highPriorityKey;
             break;
         }
-        mRpc->setTorrentProperty(id(), propertyName, files);
+        mRpc->setTorrentProperty(id(), propertyName, toJsonArray(fileIds));
     }
 
     void Torrent::renameFile(const QString& path, const QString& newName) {
@@ -863,5 +862,3 @@ fmt::format_context::iterator
 fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
     return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.id(), torrent.name());
 }
-
-#include "torrent.moc"
