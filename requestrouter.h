@@ -28,6 +28,9 @@ class QSslError;
 class QThreadPool;
 
 namespace libtremotesf::impl {
+    struct RpcRequestMetadata;
+    struct NetworkRequestMetadata;
+
     class RequestRouter : public QObject {
         Q_OBJECT
     public:
@@ -47,6 +50,8 @@ namespace libtremotesf::impl {
             QString password{};
         };
 
+        enum class RequestType { DataUpdate, Independent };
+
         const RequestsConfiguration& configuration() const { return mConfiguration; }
         void setConfiguration(RequestsConfiguration configuration);
 
@@ -56,43 +61,41 @@ namespace libtremotesf::impl {
         };
 
         void postRequest(
-            QLatin1String method, const QJsonObject& arguments, const std::function<void(Response)>& onResponse = {}
+            QLatin1String method,
+            const QJsonObject& arguments,
+            RequestType type,
+            std::function<void(Response)>&& onResponse = {}
         );
 
-        void
-        postRequest(QLatin1String method, const QByteArray& data, const std::function<void(Response)>& onResponse = {});
+        void postRequest(
+            QLatin1String method,
+            const QByteArray& data,
+            RequestType type,
+            std::function<void(Response)>&& onResponse = {}
+        );
 
         const QByteArray& sessionId() const { return mSessionId; };
 
+        bool hasPendingDataUpdateRequests() const;
         void cancelPendingRequestsAndClearSessionId();
 
         static QByteArray makeRequestData(const QString& method, const QJsonObject& arguments);
 
     private:
-        struct Request {
-            QLatin1String method{};
-            QNetworkRequest request{};
-            QByteArray data{};
-            std::function<void(Response)> onResponse;
+        void postRequest(QNetworkRequest request, NetworkRequestMetadata&& metadata);
 
-            void setSessionId(const QByteArray& sessionId);
-        };
-
-        QNetworkReply* postRequest(Request&& request);
-
-        bool retryRequest(Request&& request, QNetworkReply* previousAttempt);
+        bool retryRequest(const QNetworkRequest& request, NetworkRequestMetadata&& metadata);
 
         void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator) const;
-        void onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
-        void onRequestSuccess(QNetworkReply* reply, const Request& request);
-        void onRequestError(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request);
-        static QString makeDetailedErrorMessage(QNetworkReply* reply, const QList<QSslError>& sslErrors);
+        void onRequestFinished(QNetworkReply* reply, QList<QSslError>&& sslErrors);
+        void onRequestSuccess(QNetworkReply* reply, RpcRequestMetadata&& metadata);
+        void onRequestError(QNetworkReply* reply, QList<QSslError>&& sslErrors, NetworkRequestMetadata&& metadata);
+        static QString makeDetailedErrorMessage(QNetworkReply* reply, QList<QSslError>&& sslErrors);
 
         QNetworkAccessManager* mNetwork{};
         QThreadPool* mThreadPool{};
         std::unordered_set<QNetworkReply*> mPendingNetworkRequests{};
         std::unordered_set<QObject*> mPendingParseFutures{};
-        std::unordered_map<QNetworkReply*, int> mRetryingNetworkRequests{};
         QByteArray mSessionId{};
 
         RequestsConfiguration mConfiguration{};

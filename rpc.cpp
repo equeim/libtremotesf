@@ -348,8 +348,11 @@ namespace libtremotesf {
         auto watcher = new QFutureWatcher<QByteArray>(this);
         QObject::connect(watcher, &QFutureWatcher<QByteArray>::finished, this, [=] {
             if (isConnected()) {
-                mRequestRouter
-                    ->postRequest("torrent-add"_l1, watcher->result(), [=](const RequestRouter::Response& response) {
+                mRequestRouter->postRequest(
+                    "torrent-add"_l1,
+                    watcher->result(),
+                    RequestRouter::RequestType::Independent,
+                    [=](const RequestRouter::Response& response) {
                         if (response.success) {
                             if (response.arguments.contains(torrentDuplicateKey)) {
                                 emit torrentAddDuplicate();
@@ -368,7 +371,8 @@ namespace libtremotesf {
                         } else {
                             emit torrentAddError();
                         }
-                    });
+                    }
+                );
                 watcher->deleteLater();
             }
         });
@@ -385,6 +389,7 @@ namespace libtremotesf {
                  {"download-dir"_l1, downloadDirectory},
                  {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
                  {"paused"_l1, !start}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         if (response.arguments.contains(torrentDuplicateKey)) {
@@ -405,6 +410,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-start"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -419,6 +425,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-start-now"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -433,6 +440,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-stop"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -447,6 +455,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-remove"_l1,
                 {{"ids"_l1, toJsonArray(ids)}, {"delete-local-data"_l1, deleteFiles}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -461,6 +470,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-verify"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -475,6 +485,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "queue-move-top"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -489,6 +500,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "queue-move-up"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -503,6 +515,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "queue-move-down"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -517,6 +530,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "queue-move-bottom"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -528,7 +542,11 @@ namespace libtremotesf {
 
     void Rpc::reannounceTorrents(const std::vector<int>& ids) {
         if (isConnected()) {
-            mRequestRouter->postRequest("torrent-reannounce"_l1, {{"ids"_l1, toJsonArray(ids)}});
+            mRequestRouter->postRequest(
+                "torrent-reannounce"_l1,
+                {{"ids"_l1, toJsonArray(ids)}},
+                RequestRouter::RequestType::Independent
+            );
         }
     }
 
@@ -538,7 +556,7 @@ namespace libtremotesf {
 
     void Rpc::setSessionProperties(const QJsonObject& properties) {
         if (isConnected()) {
-            mRequestRouter->postRequest("session-set"_l1, properties);
+            mRequestRouter->postRequest("session-set"_l1, properties, RequestRouter::RequestType::Independent);
         }
     }
 
@@ -547,6 +565,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-set"_l1,
                 {{"ids"_l1, QJsonArray{id}}, {property, value}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success && updateIfSuccessful) {
                         updateData();
@@ -561,6 +580,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-set-location"_l1,
                 {{"ids"_l1, toJsonArray(ids)}, {"location"_l1, location}, {"move"_l1, moveFiles}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
@@ -570,10 +590,11 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::getTorrentsFiles(const std::vector<int>& ids, bool scheduled) {
+    void Rpc::getTorrentsFiles(const std::vector<int>& ids, bool asDataUpdate) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "files"_l1, "fileStats"_l1}}, {"ids"_l1, toJsonArray(ids)}},
+            asDataUpdate ? RequestRouter::RequestType::DataUpdate : RequestRouter::RequestType::Independent,
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
@@ -587,11 +608,7 @@ namespace libtremotesf {
                             }
                         }
                     }
-                    if (scheduled) {
-                        for (const auto& torrent : mTorrents) {
-                            torrent->checkThatFilesUpdated();
-                        }
-                        maybeFinishUpdatingTorrents();
+                    if (asDataUpdate) {
                         maybeFinishUpdateOrConnection();
                     }
                 }
@@ -599,10 +616,11 @@ namespace libtremotesf {
         );
     }
 
-    void Rpc::getTorrentsPeers(const std::vector<int>& ids, bool scheduled) {
+    void Rpc::getTorrentsPeers(const std::vector<int>& ids, bool asDataUpdate) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "peers"_l1}}, {"ids"_l1, toJsonArray(ids)}},
+            asDataUpdate ? RequestRouter::RequestType::DataUpdate : RequestRouter::RequestType::Independent,
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
@@ -616,11 +634,7 @@ namespace libtremotesf {
                             }
                         }
                     }
-                    if (scheduled) {
-                        for (const auto& torrent : mTorrents) {
-                            torrent->checkThatPeersUpdated();
-                        }
-                        maybeFinishUpdatingTorrents();
+                    if (asDataUpdate) {
                         maybeFinishUpdateOrConnection();
                     }
                 }
@@ -633,6 +647,7 @@ namespace libtremotesf {
             mRequestRouter->postRequest(
                 "torrent-rename-path"_l1,
                 {{"ids"_l1, QJsonArray{torrentId}}, {"path"_l1, filePath}, {"name"_l1, newName}},
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         Torrent* torrent = torrentById(torrentId);
@@ -661,6 +676,7 @@ namespace libtremotesf {
                                   "},"
                                   "\"method\":\"session-get\""
                                   "}"),
+                RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         emit gotDownloadDirFreeSpace(
@@ -674,31 +690,28 @@ namespace libtremotesf {
 
     void Rpc::getFreeSpaceForPath(const QString& path) {
         if (isConnected()) {
-            mRequestRouter
-                ->postRequest("free-space"_l1, {{"path"_l1, path}}, [=](const RequestRouter::Response& response) {
+            mRequestRouter->postRequest(
+                "free-space"_l1,
+                {{"path"_l1, path}},
+                RequestRouter::RequestType::Independent,
+                [=](const RequestRouter::Response& response) {
                     emit gotFreeSpaceForPath(
                         path,
                         response.success,
                         response.success ? static_cast<long long>(response.arguments.value("size-bytes"_l1).toDouble())
                                          : 0
                     );
-                });
+                }
+            );
         }
     }
 
-    void Rpc::updateData(bool updateServerSettings) {
+    void Rpc::updateData() {
         if (connectionState() != ConnectionState::Disconnected && !mUpdating) {
-            if (updateServerSettings) {
-                mServerSettingsUpdated = false;
-            }
-            mTorrentsUpdated = false;
-            mServerStatsUpdated = false;
-
+            logDebug("Updating data");
             mUpdateTimer->stop();
-
             mUpdating = true;
-
-            if (updateServerSettings) {
+            if (isConnected()) {
                 getServerSettings();
             }
             getTorrents();
@@ -714,13 +727,17 @@ namespace libtremotesf {
 
     void Rpc::shutdownServer() {
         if (isConnected()) {
-            mRequestRouter
-                ->postRequest("session-close"_l1, QJsonObject{}, [=](const RequestRouter::Response& response) {
+            mRequestRouter->postRequest(
+                "session-close"_l1,
+                QJsonObject{},
+                RequestRouter::RequestType::Independent,
+                [=](const RequestRouter::Response& response) {
                     if (response.success) {
                         logInfo("Successfully sent shutdown request, disconnecting");
                         disconnect();
                     }
-                });
+                }
+            );
         }
     }
 
@@ -767,9 +784,6 @@ namespace libtremotesf {
                 QHostInfo::abortHostLookup(*mPendingHostInfoLookupId);
                 mPendingHostInfoLookupId = std::nullopt;
             }
-            mServerSettingsUpdated = false;
-            mTorrentsUpdated = false;
-            mServerStatsUpdated = false;
             mUpdateTimer->stop();
 
             if (!mTorrents.empty() && oldConnectionState == ConnectionState::Connected) {
@@ -817,17 +831,17 @@ namespace libtremotesf {
         mRequestRouter->postRequest(
             "session-get"_l1,
             QByteArrayLiteral("{\"method\":\"session-get\"}"),
+            RequestRouter::RequestType::DataUpdate,
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
                     mServerSettings->update(response.arguments);
-                    mServerSettingsUpdated = true;
                     if (connectionState() == ConnectionState::Connecting) {
                         if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooNew});
                         } else if (mServerSettings->rpcVersion() < minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooOld});
                         } else {
-                            updateData(false);
+                            updateData();
                             checkIfServerIsLocal();
                         }
                     } else {
@@ -945,76 +959,81 @@ namespace libtremotesf {
             requestData = &objectsModeRequestData;
         }
 
-        mRequestRouter->postRequest("torrent-get"_l1, *requestData, [=](const RequestRouter::Response& response) {
-            if (!response.success) {
-                return;
-            }
+        mRequestRouter->postRequest(
+            "torrent-get"_l1,
+            *requestData,
+            RequestRouter::RequestType::DataUpdate,
+            [=](const RequestRouter::Response& response) {
+                if (!response.success) {
+                    return;
+                }
 
-            TorrentsListUpdater updater(*this);
-            {
-                const QJsonArray torrentsJsons = response.arguments.value("torrents"_l1).toArray();
-                std::vector<NewTorrent> newTorrents{};
-                if (tableMode) {
-                    if (!torrentsJsons.empty()) {
-                        const auto keys = Torrent::mapUpdateKeys(torrentsJsons.first().toArray());
-                        const auto idKeyIndex = Torrent::idKeyIndex(keys);
-                        if (idKeyIndex.has_value()) {
-                            newTorrents.reserve(static_cast<size_t>(torrentsJsons.size() - 1));
-                            for (auto i = torrentsJsons.begin() + 1, end = torrentsJsons.end(); i != end; ++i) {
-                                const auto array = i->toArray();
-                                if (static_cast<size_t>(array.size()) == keys.size()) {
-                                    newTorrents.push_back(NewTorrent{array[*idKeyIndex].toInt(), *i});
+                TorrentsListUpdater updater(*this);
+                {
+                    const QJsonArray torrentsJsons = response.arguments.value("torrents"_l1).toArray();
+                    std::vector<NewTorrent> newTorrents{};
+                    if (tableMode) {
+                        if (!torrentsJsons.empty()) {
+                            const auto keys = Torrent::mapUpdateKeys(torrentsJsons.first().toArray());
+                            const auto idKeyIndex = Torrent::idKeyIndex(keys);
+                            if (idKeyIndex.has_value()) {
+                                newTorrents.reserve(static_cast<size_t>(torrentsJsons.size() - 1));
+                                for (auto i = torrentsJsons.begin() + 1, end = torrentsJsons.end(); i != end; ++i) {
+                                    const auto array = i->toArray();
+                                    if (static_cast<size_t>(array.size()) == keys.size()) {
+                                        newTorrents.push_back(NewTorrent{array[*idKeyIndex].toInt(), *i});
+                                    }
                                 }
+                                updater.keys = &keys;
+                                updater.update(mTorrents, std::move(newTorrents));
                             }
-                            updater.keys = &keys;
-                            updater.update(mTorrents, std::move(newTorrents));
                         }
-                    }
-                } else {
-                    newTorrents.reserve(static_cast<size_t>(torrentsJsons.size()));
-                    for (const auto& torrentJson : torrentsJsons) {
-                        const auto id = Torrent::idFromJson(torrentJson.toObject());
-                        if (id.has_value()) {
-                            newTorrents.push_back(NewTorrent{*id, torrentJson});
+                    } else {
+                        newTorrents.reserve(static_cast<size_t>(torrentsJsons.size()));
+                        for (const auto& torrentJson : torrentsJsons) {
+                            const auto id = Torrent::idFromJson(torrentJson.toObject());
+                            if (id.has_value()) {
+                                newTorrents.push_back(NewTorrent{*id, torrentJson});
+                            }
                         }
+                        updater.update(mTorrents, std::move(newTorrents));
                     }
-                    updater.update(mTorrents, std::move(newTorrents));
                 }
-            }
 
-            maybeFinishUpdatingTorrents();
-            const bool wasConnecting = connectionState() == ConnectionState::Connecting;
-            maybeFinishUpdateOrConnection();
-            if (!wasConnecting) {
-                emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
-            }
+                if (!updater.metadataCompletedIds.empty()) {
+                    checkTorrentsSingleFile(updater.metadataCompletedIds);
+                }
+                std::vector<int> getFilesIds{};
+                std::vector<int> getPeersIds{};
+                for (const auto& torrent : mTorrents) {
+                    if (torrent->isFilesEnabled()) {
+                        getFilesIds.push_back(torrent->id());
+                    }
+                    if (torrent->isPeersEnabled()) {
+                        getPeersIds.push_back(torrent->id());
+                    }
+                }
+                if (!getFilesIds.empty()) {
+                    getTorrentsFiles(getFilesIds, true);
+                }
+                if (!getPeersIds.empty()) {
+                    getTorrentsPeers(getPeersIds, true);
+                }
 
-            if (!updater.metadataCompletedIds.empty()) {
-                checkTorrentsSingleFile(updater.metadataCompletedIds);
-            }
-            std::vector<int> getFilesIds{};
-            std::vector<int> getPeersIds{};
-            for (const auto& torrent : mTorrents) {
-                if (torrent->isFilesEnabled()) {
-                    getFilesIds.push_back(torrent->id());
-                }
-                if (torrent->isPeersEnabled()) {
-                    getPeersIds.push_back(torrent->id());
+                const bool wasConnecting = connectionState() == ConnectionState::Connecting;
+                maybeFinishUpdateOrConnection();
+                if (!wasConnecting) {
+                    emit torrentsUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
                 }
             }
-            if (!getFilesIds.empty()) {
-                getTorrentsFiles(getFilesIds, true);
-            }
-            if (!getPeersIds.empty()) {
-                getTorrentsPeers(getPeersIds, true);
-            }
-        });
+        );
     }
 
     void Rpc::checkTorrentsSingleFile(const std::vector<int>& torrentIds) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "priorities"_l1}}, {"ids"_l1, toJsonArray(torrentIds)}},
+            RequestRouter::RequestType::DataUpdate,
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
                     const auto torrentJsons = response.arguments.value(torrentsKey).toArray();
@@ -1028,6 +1047,7 @@ namespace libtremotesf {
                             }
                         }
                     }
+                    maybeFinishUpdateOrConnection();
                 }
             }
         );
@@ -1037,28 +1057,17 @@ namespace libtremotesf {
         mRequestRouter->postRequest(
             "session-stats"_l1,
             QByteArrayLiteral("{\"method\":\"session-stats\"}"),
+            RequestRouter::RequestType::DataUpdate,
             [=](const RequestRouter::Response& response) {
                 if (response.success) {
                     mServerStats->update(response.arguments);
-                    mServerStatsUpdated = true;
                     maybeFinishUpdateOrConnection();
                 }
             }
         );
     }
 
-    void Rpc::maybeFinishUpdatingTorrents() {
-        if (mUpdating && !mTorrentsUpdated) {
-            for (const std::unique_ptr<Torrent>& torrent : mTorrents) {
-                if (!torrent->isUpdated()) {
-                    return;
-                }
-            }
-            mTorrentsUpdated = true;
-        }
-    }
-
-    bool Rpc::checkIfUpdateCompleted() { return mServerSettingsUpdated && mTorrentsUpdated && mServerStatsUpdated; }
+    bool Rpc::checkIfUpdateCompleted() { return !mRequestRouter->hasPendingDataUpdateRequests(); }
 
     bool Rpc::checkIfConnectionCompleted() { return checkIfUpdateCompleted() && mServerIsLocal.has_value(); }
 
@@ -1067,6 +1076,7 @@ namespace libtremotesf {
         if (!mUpdating && !connecting) return;
         if (mUpdating) {
             if (checkIfUpdateCompleted()) {
+                logDebug("Finished updating data");
                 mUpdating = false;
             } else {
                 return;

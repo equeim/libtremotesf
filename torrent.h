@@ -234,10 +234,6 @@ namespace libtremotesf {
         void setPeersEnabled(bool enabled);
         const std::vector<Peer>& peers() const;
 
-        bool isUpdated() const;
-        void checkThatFilesUpdated();
-        void checkThatPeersUpdated();
-
         [[nodiscard]] bool update(const QJsonObject& object);
         [[nodiscard]] bool
         update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values);
@@ -247,18 +243,15 @@ namespace libtremotesf {
         void checkSingleFile(const QJsonObject& torrentMap);
 
     private:
-        Rpc* mRpc;
+        Rpc* mRpc{};
 
-        TorrentData mData;
+        TorrentData mData{};
 
-        std::vector<TorrentFile> mFiles;
-        bool mFilesEnabled = false;
-        bool mFilesUpdated = false;
+        std::vector<TorrentFile> mFiles{};
+        bool mFilesEnabled{};
 
-        std::vector<Peer> mPeers;
-        bool mPeersEnabled = false;
-        bool mPeersUpdated = false;
-
+        std::vector<Peer> mPeers{};
+        bool mPeersEnabled{};
     signals:
         void updated();
         void changed();

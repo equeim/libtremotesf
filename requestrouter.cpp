@@ -24,9 +24,14 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QNetworkProxy)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
 
+Q_DECLARE_METATYPE(libtremotesf::impl::RpcRequestMetadata)
+Q_DECLARE_METATYPE(libtremotesf::impl::NetworkRequestMetadata)
+
 namespace libtremotesf::impl {
     namespace {
         const auto sessionIdHeader = QByteArrayLiteral("X-Transmission-Session-Id");
+
+        constexpr auto metadataProperty = "libtremotesf::impl::RequestRouter metadata";
 
         QJsonObject getReplyArguments(const QJsonObject& parseResult) {
             return parseResult.value("arguments"_l1).toObject();
@@ -38,6 +43,18 @@ namespace libtremotesf::impl {
 
         using ParseFutureWatcher = QFutureWatcher<std::optional<QJsonObject>>;
     }
+
+    struct RpcRequestMetadata {
+        QLatin1String method{};
+        RequestRouter::RequestType type{};
+        std::function<void(RequestRouter::Response)> onResponse{};
+    };
+
+    struct NetworkRequestMetadata {
+        QByteArray postData{};
+        int retryAttempts{};
+        RpcRequestMetadata rpcMetadata{};
+    };
 
     RequestRouter::RequestRouter(QThreadPool* threadPool, QObject* parent)
         : QObject(parent),
@@ -101,20 +118,37 @@ namespace libtremotesf::impl {
     }
 
     void RequestRouter::postRequest(
-        QLatin1String method, const QJsonObject& arguments, const std::function<void(Response)>& onResponse
+        QLatin1String method, const QJsonObject& arguments, RequestType type, std::function<void(Response)>&& onResponse
     ) {
-        postRequest(method, makeRequestData(method, arguments), onResponse);
+        postRequest(method, makeRequestData(method, arguments), type, std::move(onResponse));
     }
 
     void RequestRouter::postRequest(
-        QLatin1String method, const QByteArray& data, const std::function<void(Response)>& onResponse
+        QLatin1String method, const QByteArray& data, RequestType type, std::function<void(Response)>&& onResponse
     ) {
-        Request request{method, QNetworkRequest(mConfiguration.serverUrl), data, onResponse};
-        request.setSessionId(mSessionId);
-        request.request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"_l1);
-        request.request.setSslConfiguration(mSslConfiguration);
-        request.request.setTransferTimeout(static_cast<int>(mConfiguration.timeout.count()));
-        postRequest(std::move(request));
+        QNetworkRequest request(mConfiguration.serverUrl);
+        request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"_l1);
+        request.setSslConfiguration(mSslConfiguration);
+        request.setTransferTimeout(static_cast<int>(mConfiguration.timeout.count()));
+        NetworkRequestMetadata metadata{};
+        metadata.postData = data;
+        metadata.rpcMetadata = {method, type, std::move(onResponse)};
+        postRequest(std::move(request), std::move(metadata));
+    }
+
+    bool RequestRouter::hasPendingDataUpdateRequests() const {
+        return std::any_of(
+                   mPendingNetworkRequests.begin(),
+                   mPendingNetworkRequests.end(),
+                   [](const auto* reply) {
+                       const auto metadata = reply->property(metadataProperty).template value<NetworkRequestMetadata>();
+                       return metadata.rpcMetadata.type == RequestType::DataUpdate;
+                   }
+               ) ||
+               std::any_of(mPendingParseFutures.begin(), mPendingParseFutures.end(), [](const auto* future) {
+                   const auto metadata = future->property(metadataProperty).template value<RpcRequestMetadata>();
+                   return metadata.type == RequestType::DataUpdate;
+               });
     }
 
     void RequestRouter::cancelPendingRequestsAndClearSessionId() {
@@ -136,8 +170,12 @@ namespace libtremotesf::impl {
             .toJson(QJsonDocument::Compact);
     }
 
-    QNetworkReply* RequestRouter::postRequest(Request&& request) {
-        QNetworkReply* reply = mNetwork->post(request.request, request.data);
+    void RequestRouter::postRequest(QNetworkRequest request, NetworkRequestMetadata&& metadata) {
+        if (!mSessionId.isEmpty()) {
+            request.setRawHeader(sessionIdHeader, mSessionId);
+        }
+        QNetworkReply* reply = mNetwork->post(request, metadata.postData);
+        reply->setProperty(metadataProperty, QVariant::fromValue(metadata));
         mPendingNetworkRequests.insert(reply);
 
         reply->ignoreSslErrors(mExpectedSslErrors);
@@ -152,33 +190,18 @@ namespace libtremotesf::impl {
             }
         });
 
-        QObject::connect(reply, &QNetworkReply::finished, this, [=, request = std::move(request)]() mutable {
-            onRequestFinished(reply, *sslErrors, std::move(request));
+        QObject::connect(reply, &QNetworkReply::finished, this, [=]() mutable {
+            onRequestFinished(reply, std::move(*sslErrors));
         });
-
-        return reply;
     }
 
-    bool RequestRouter::retryRequest(Request&& request, QNetworkReply* previousAttempt) {
-        int retryAttempts{};
-        if (const auto found = mRetryingNetworkRequests.find(previousAttempt);
-            found != mRetryingNetworkRequests.end()) {
-            retryAttempts = found->second;
-            mRetryingNetworkRequests.erase(found);
-        } else {
-            retryAttempts = 0;
-        }
-        ++retryAttempts;
-        if (retryAttempts > mConfiguration.retryAttempts) {
+    bool RequestRouter::retryRequest(const QNetworkRequest& request, NetworkRequestMetadata&& metadata) {
+        metadata.retryAttempts++;
+        if (metadata.retryAttempts > mConfiguration.retryAttempts) {
             return false;
         }
-
-        request.setSessionId(mSessionId);
-
-        logWarning("Retrying '{}' request, retry attempts = {}", request.method, retryAttempts);
-        QNetworkReply* reply = postRequest(std::move(request));
-        mRetryingNetworkRequests.emplace(reply, retryAttempts);
-
+        logWarning("Retrying '{}' request, retry attempts = {}", metadata.rpcMetadata.method, metadata.retryAttempts);
+        postRequest(request, std::move(metadata));
         return true;
     }
 
@@ -193,27 +216,26 @@ namespace libtremotesf::impl {
         }
     }
 
-    void RequestRouter::onRequestFinished(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request) {
+    void RequestRouter::onRequestFinished(QNetworkReply* reply, QList<QSslError>&& sslErrors) {
         if (mPendingNetworkRequests.erase(reply) == 0) {
             // Request was cancelled
             return;
         }
+        auto metadata = reply->property(metadataProperty).value<NetworkRequestMetadata>();
         if (reply->error() == QNetworkReply::NoError) {
-            onRequestSuccess(reply, request);
+            onRequestSuccess(reply, std::move(metadata.rpcMetadata));
         } else {
-            onRequestError(reply, sslErrors, std::move(request));
+            onRequestError(reply, std::move(sslErrors), std::move(metadata));
         }
     }
 
-    void RequestRouter::onRequestSuccess(QNetworkReply* reply, const Request& request) {
+    void RequestRouter::onRequestSuccess(QNetworkReply* reply, RpcRequestMetadata&& metadata) {
         logDebug(
             "HTTP request for method '{}' succeeded, HTTP status code: {} {}",
-            request.method,
+            metadata.method,
             reply->attribute(QNetworkRequest::HttpStatusCodeAttribute).toInt(),
             reply->attribute(QNetworkRequest::HttpReasonPhraseAttribute).toString()
         );
-
-        mRetryingNetworkRequests.erase(reply);
 
         const auto future =
             QtConcurrent::run(mThreadPool, [replyData = reply->readAll()]() -> std::optional<QJsonObject> {
@@ -231,6 +253,7 @@ namespace libtremotesf::impl {
                 return json;
             });
         auto watcher = new ParseFutureWatcher(this);
+        watcher->setProperty(metadataProperty, QVariant::fromValue(metadata));
         QObject::connect(watcher, &ParseFutureWatcher::finished, this, [=] {
             if (!mPendingParseFutures.erase(watcher)) {
                 // Future was cancelled
@@ -240,10 +263,10 @@ namespace libtremotesf::impl {
             if (json.has_value()) {
                 const bool success = isResultSuccessful(*json);
                 if (!success) {
-                    logWarning("method '{}' failed, response: {}", request.method, *json);
+                    logWarning("method '{}' failed, response: {}", metadata.method, *json);
                 }
-                if (request.onResponse) {
-                    request.onResponse({getReplyArguments(*json), success});
+                if (metadata.onResponse) {
+                    metadata.onResponse({getReplyArguments(*json), success});
                 }
             } else {
                 emit requestFailed(RpcError::ParseError, {}, {});
@@ -254,26 +277,27 @@ namespace libtremotesf::impl {
         watcher->setFuture(future);
     }
 
-    void RequestRouter::onRequestError(QNetworkReply* reply, const QList<QSslError>& sslErrors, Request&& request) {
+    void RequestRouter::onRequestError(
+        QNetworkReply* reply, QList<QSslError>&& sslErrors, NetworkRequestMetadata&& metadata
+    ) {
         if (reply->error() == QNetworkReply::ContentConflictError && reply->hasRawHeader(sessionIdHeader)) {
             QByteArray newSessionId = reply->rawHeader(sessionIdHeader);
             // Check against session id of request instead of current session id,
             // to handle case when current session id have already been overwritten by another failed request
-            if (newSessionId != request.request.rawHeader(sessionIdHeader)) {
+            if (newSessionId != reply->request().rawHeader(sessionIdHeader)) {
                 if (!mSessionId.isEmpty()) {
                     logInfo("Session id changed");
                 }
-                logDebug("Session id is {}, retrying '{}' request", newSessionId, request.method);
+                logDebug("Session id is {}, retrying '{}' request", newSessionId, metadata.rpcMetadata.method);
                 mSessionId = std::move(newSessionId);
                 // Retry without incrementing retryAttempts
-                request.setSessionId(mSessionId);
-                postRequest(std::move(request));
+                postRequest(reply->request(), std::move(metadata));
                 return;
             }
         }
 
-        const QString detailedErrorMessage = makeDetailedErrorMessage(reply, sslErrors);
-        logWarning("HTTP request for method '{}' failed:\n{}", request.method, detailedErrorMessage);
+        const QString detailedErrorMessage = makeDetailedErrorMessage(reply, std::move(sslErrors));
+        logWarning("HTTP request for method '{}' failed:\n{}", metadata.rpcMetadata.method, detailedErrorMessage);
         switch (reply->error()) {
         case QNetworkReply::AuthenticationRequiredError:
             logWarning("Authentication error");
@@ -282,19 +306,19 @@ namespace libtremotesf::impl {
         case QNetworkReply::OperationCanceledError:
         case QNetworkReply::TimeoutError:
             logWarning("Timed out");
-            if (!retryRequest(std::move(request), reply)) {
+            if (!retryRequest(reply->request(), std::move(metadata))) {
                 emit requestFailed(RpcError::TimedOut, reply->errorString(), detailedErrorMessage);
             }
             break;
         default: {
-            if (!retryRequest(std::move(request), reply)) {
+            if (!retryRequest(reply->request(), std::move(metadata))) {
                 emit requestFailed(RpcError::ConnectionError, reply->errorString(), detailedErrorMessage);
             }
         }
         }
     }
 
-    QString RequestRouter::makeDetailedErrorMessage(QNetworkReply* reply, const QList<QSslError>& sslErrors) {
+    QString RequestRouter::makeDetailedErrorMessage(QNetworkReply* reply, QList<QSslError>&& sslErrors) {
         auto detailedErrorMessage = QString::fromStdString(fmt::format("{}: {}", reply->error(), reply->errorString()));
         if (reply->url() == reply->request().url()) {
             detailedErrorMessage += QString::fromStdString(fmt::format("\nURL: {}", reply->url().toString()));
@@ -337,11 +361,5 @@ namespace libtremotesf::impl {
             }
         }
         return detailedErrorMessage;
-    }
-
-    void RequestRouter::Request::setSessionId(const QByteArray& sessionId) {
-        if (!sessionId.isEmpty()) {
-            request.setRawHeader(sessionIdHeader, sessionId);
-        }
     }
 }
