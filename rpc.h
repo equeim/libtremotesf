@@ -167,15 +167,15 @@ namespace libtremotesf {
         void
         setTorrentProperty(int id, const QString& property, const QJsonValue& value, bool updateIfSuccessful = false);
         void setTorrentsLocation(const std::vector<int>& ids, const QString& location, bool moveFiles);
-        void getTorrentsFiles(const std::vector<int>& ids, bool scheduled);
-        void getTorrentsPeers(const std::vector<int>& ids, bool scheduled);
+        void getTorrentsFiles(const std::vector<int>& ids, bool asDataUpdate);
+        void getTorrentsPeers(const std::vector<int>& ids, bool asDataUpdate);
 
         void renameTorrentFile(int torrentId, const QString& filePath, const QString& newName);
 
         void getDownloadDirFreeSpace();
         void getFreeSpaceForPath(const QString& path);
 
-        void updateData(bool updateServerSettings = true);
+        void updateData();
 
         void shutdownServer();
 
@@ -189,7 +189,6 @@ namespace libtremotesf {
         void checkTorrentsSingleFile(const std::vector<int>& torrentIds);
         void getServerStats();
 
-        void maybeFinishUpdatingTorrents();
         bool checkIfUpdateCompleted();
         bool checkIfConnectionCompleted();
         void maybeFinishUpdateOrConnection();
@@ -207,9 +206,6 @@ namespace libtremotesf {
         std::optional<bool> mServerIsLocal{};
         std::optional<int> mPendingHostInfoLookupId{};
 
-        bool mServerSettingsUpdated{};
-        bool mTorrentsUpdated{};
-        bool mServerStatsUpdated{};
         QTimer* mUpdateTimer{};
         QTimer* mAutoReconnectTimer{};
 

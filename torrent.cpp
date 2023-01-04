@@ -710,34 +710,7 @@ namespace libtremotesf {
 
     const std::vector<Peer>& Torrent::peers() const { return mPeers; }
 
-    bool Torrent::isUpdated() const {
-        bool updated = true;
-        if (mFilesEnabled && !mFilesUpdated) {
-            updated = false;
-        }
-        if (mPeersEnabled && !mPeersUpdated) {
-            updated = false;
-        }
-        return updated;
-    }
-
-    void Torrent::checkThatFilesUpdated() {
-        if (mFilesEnabled && !mFilesUpdated) {
-            logWarning("Files were not updated for {}", *this);
-            mFilesUpdated = true;
-        }
-    }
-
-    void Torrent::checkThatPeersUpdated() {
-        if (mPeersEnabled && !mPeersUpdated) {
-            logWarning("Peers were not updated for {}", *this);
-            mPeersUpdated = true;
-        }
-    }
-
     bool Torrent::update(const QJsonObject& object) {
-        mFilesUpdated = false;
-        mPeersUpdated = false;
         const bool c = mData.update(object, false);
         emit updated();
         if (c) {
@@ -747,8 +720,6 @@ namespace libtremotesf {
     }
 
     bool Torrent::update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values) {
-        mFilesUpdated = false;
-        mPeersUpdated = false;
         const bool c = mData.update(keys, values, false);
         emit updated();
         if (c) {
@@ -779,8 +750,6 @@ namespace libtremotesf {
                 }
             }
         }
-
-        mFilesUpdated = true;
 
         emit filesUpdated(changed);
         emit mRpc->torrentFilesUpdated(this, changed);
@@ -845,8 +814,6 @@ namespace libtremotesf {
 
         PeersListUpdater updater;
         updater.update(mPeers, std::move(newPeers));
-
-        mPeersUpdated = true;
 
         emit peersUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);
         emit mRpc
