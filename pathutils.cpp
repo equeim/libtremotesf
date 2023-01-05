@@ -12,41 +12,67 @@ namespace libtremotesf {
     // and we need it to work regardless of OS we are running on
 
     namespace {
+        constexpr auto windowsSeparatorChar = '\\';
+        constexpr auto unixSeparatorChar = '/';
+        constexpr auto unixSeparatorString = "/"_l1;
+        constexpr QString::size_type minimumWindowsPathLength = 3; // e.g. C:/
+
         bool isAbsoluteWindowsFilePath(const QString& path) {
             static const QRegularExpression regex(R"(^[A-Za-z]:[\\/].*$)"_l1);
             return regex.match(path).hasMatch();
         }
 
-        QString fromNativeWindowsSeparators(const QString& path) {
-            static const QRegularExpression regex(R"(\\+)"_l1);
-            QString internal = path;
-            internal.replace(regex, "/"_l1);
-            return internal;
+        void convertFromNativeWindowsSeparators(QString& path) {
+            path.replace(windowsSeparatorChar, unixSeparatorChar);
+        }
+
+        void capitalizeWindowsDriveLetter(QString& path) {
+            const auto drive = path[0];
+            if (drive.isLower()) {
+                path[0] = drive.toUpper();
+            }
+        }
+
+        void collapseRepeatingSeparators(QString& path) {
+            static const QRegularExpression regex(R"(/+)"_l1);
+            path.replace(regex, unixSeparatorString);
+        }
+
+        void dropTrailingSeparator(QString& path, bool isAbsoluteWindowsFilePath) {
+            if (path.size() <= 1) return;
+            if (isAbsoluteWindowsFilePath && path.size() <= minimumWindowsPathLength) return;
+            if (path.back() == unixSeparatorChar) {
+                path.chop(1);
+            }
         }
 
         QString toNativeWindowsSeparators(const QString& path) {
-            static const QRegularExpression regex(R"(/+)"_l1);
             QString native = path;
-            native.replace(regex, R"(\)"_l1);
+            native.replace(unixSeparatorChar, windowsSeparatorChar);
             return native;
         }
     }
 
     QString normalizePath(const QString& path) {
-        QString normalized = [&] {
-            if (isAbsoluteWindowsFilePath(path)) {
-                return fromNativeWindowsSeparators(path);
-            }
+        if (path.isEmpty()) {
             return path;
-        }();
-        if (normalized.endsWith('/')) {
-            normalized.chop(1);
         }
+        QString normalized = path.trimmed();
+        if (normalized.isEmpty()) {
+            return normalized;
+        }
+        const bool windows = isAbsoluteWindowsFilePath(normalized);
+        if (windows) {
+            convertFromNativeWindowsSeparators(normalized);
+            capitalizeWindowsDriveLetter(normalized);
+        }
+        collapseRepeatingSeparators(normalized);
+        dropTrailingSeparator(normalized, windows);
         return normalized;
     }
 
     QString toNativeSeparators(const QString& path) {
-        if (isAbsoluteWindowsFilePath(path)) {
+        if (!path.isEmpty() && isAbsoluteWindowsFilePath(path)) {
             return toNativeWindowsSeparators(path);
         }
         return path;
