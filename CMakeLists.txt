@@ -95,6 +95,10 @@ if (BUILD_TESTING AND NOT ANDROID)
     target_compile_definitions(requestrouter_test PRIVATE TEST_DATA_PATH="${CMAKE_CURRENT_SOURCE_DIR}/test-data")
     add_test(NAME requestrouter_test COMMAND requestrouter_test)
     target_link_libraries(requestrouter_test libtremotesf Qt::Test httplib::httplib)
+
+    add_executable(pathutils_test pathutils_test.cpp)
+    add_test(NAME pathutils_test COMMAND pathutils_test)
+    target_link_libraries(pathutils_test libtremotesf Qt::Test)
 endif()
 
 set_common_options_on_targets()
