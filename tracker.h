@@ -31,8 +31,8 @@ namespace libtremotesf {
         const QString& site() const;
 #endif
         struct AnnounceHostInfo {
-            QString host;
-            bool isIpAddress;
+            QString host{};
+            bool isIpAddress{};
         };
         AnnounceHostInfo announceHostInfo() const;
 
@@ -44,8 +44,8 @@ namespace libtremotesf {
         int nextUpdateEta() const;
 
         struct UpdateResult {
-            bool changed;
-            bool announceUrlChanged;
+            bool changed{};
+            bool announceUrlChanged{};
         };
         UpdateResult update(const QJsonObject& trackerMap);
 
@@ -62,20 +62,20 @@ namespace libtremotesf {
         inline bool operator!=(const Tracker& other) const { return !(*this == other); }
 
     private:
-        QString mAnnounce;
+        QString mAnnounce{};
 #if QT_VERSION_MAJOR < 6
-        QString mSite;
+        QString mSite{};
 #endif
 
-        QString mErrorMessage;
         Status mStatus{};
+        QString mErrorMessage{};
 
-        int mNextUpdateEta = -1;
-        long long mNextUpdateTime = 0;
+        int mNextUpdateEta{-1};
+        long long mNextUpdateTime{};
 
-        int mPeers = 0;
+        int mPeers{};
 
-        int mId;
+        int mId{};
     };
 }
 
