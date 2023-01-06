@@ -33,55 +33,76 @@ if (MSVC AND (NOT DEFINED CMAKE_MSVC_RUNTIME_LIBRARY))
 endif()
 
 function(set_common_options_on_targets)
-    if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+    set(
+        gcc_style_warnings
+        -Wall
+        -Wextra
+        -Wpedantic
+        -Werror=non-virtual-dtor
+        -Wcast-align
+        -Woverloaded-virtual
+        -Wconversion
+        -Wsign-conversion
+        -Wdouble-promotion
+        -Wformat=2
+        -Werror=format
+    )
+    if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+        list(APPEND gcc_style_warnings -Wlogical-op-parentheses)
+    else()
+        list(APPEND gcc_style_warnings -Wlogical-op)
+    endif()
+
+    if (MSVC)
         set(
             common_compile_options
             /utf-8
-            /W4
-            /w44062
-            /w44165
-            /w44242
-            /w44254
-            /w44263
-            /w44264
-            /w44265
-            /w44287
-            /w44296
-            /w44355
-            /w44365
-            /w44388
-            /w44577
-            /w44623
-            /we4774
-            /we4777
-            /w44800
-            /w44826
-            /we4905
-            /we4906
-            /w45204
+            /permissive-
+            /volatile:iso
+            /Zc:__cplusplus
+            /Zc:inline
         )
+        if (CMAKE_CXX_COMPILER_ID STREQUAL "MSVC")
+            list(
+                APPEND
+                common_compile_options
+                /Zc:enumTypes
+                /Zc:externConstexpr
+                /Zc:lambda
+                /Zc:preprocessor
+                /Zc:throwingNew
+                /W4
+                /w44062
+                /w44165
+                /w44242
+                /w44254
+                /w44263
+                /w44264
+                /w44265
+                /w44287
+                /w44296
+                /w44355
+                /w44365
+                /w44388
+                /w44577
+                /w44623
+                /we4774
+                /we4777
+                /w44800
+                /w44826
+                /we4905
+                /we4906
+                /w45204
+            )
+        elseif(CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+            list(TRANSFORM gcc_style_warnings PREPEND "/clang:")
+            list(APPEND common_compile_options ${gcc_style_warnings})
+        endif()
     else()
         set(
             common_compile_options
-            -Wall
-            -Wextra
-            -Wpedantic
-            -Werror=non-virtual-dtor
-            -Wcast-align
-            -Woverloaded-virtual
-            -Wconversion
-            -Wsign-conversion
-            -Wdouble-promotion
-            -Wformat=2
-            -Werror=format
+            ${gcc_style_warnings}
         )
-        if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-            if (MSVC)
-                list(TRANSFORM common_compile_options PREPEND "/clang:")
-            endif()
-        else()
-            list(APPEND common_compile_options -Wlogical-op)
-        endif()
     endif()
 
     if (DEFINED TREMOTESF_COMMON_COMPILE_OPTIONS)
