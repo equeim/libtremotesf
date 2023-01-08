@@ -6,25 +6,33 @@
 #define LIBTREMOTESF_TORRENTFILE_H
 
 #include <vector>
+#include <QObject>
+#include <QString>
 
-class QString;
+#include "formatters.h"
+
 class QJsonObject;
 
 namespace libtremotesf {
     struct TorrentFile {
+        Q_GADGET
+    public:
         enum class Priority { Low = -1, Normal, High };
+        Q_ENUM(Priority)
 
         explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
         bool update(const QJsonObject& fileStatsMap);
 
-        int id;
+        int id{};
 
-        std::vector<QString> path;
-        long long size;
-        long long completedSize = 0;
+        std::vector<QString> path{};
+        long long size{};
+        long long completedSize{};
         Priority priority{};
-        bool wanted = false;
+        bool wanted{};
     };
 }
+
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentFile::Priority)
 
 #endif // LIBTREMOTESF_TORRENTFILE_H
