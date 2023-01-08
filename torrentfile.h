@@ -17,7 +17,7 @@ namespace libtremotesf {
     struct TorrentFile {
         Q_GADGET
     public:
-        enum class Priority { Low = -1, Normal, High };
+        enum class Priority { Low, Normal, High };
         Q_ENUM(Priority)
 
         explicit TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap);
