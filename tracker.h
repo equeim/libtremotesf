@@ -5,6 +5,7 @@
 #ifndef LIBTREMOTESF_TRACKER_H
 #define LIBTREMOTESF_TRACKER_H
 
+#include <QDateTime>
 #include <QString>
 
 class QJsonObject;
@@ -40,8 +41,7 @@ namespace libtremotesf {
         QString errorMessage() const;
 
         int peers() const;
-        long long nextUpdateTime() const;
-        int nextUpdateEta() const;
+        const QDateTime& nextUpdateTime() const;
 
         struct UpdateResult {
             bool changed{};
@@ -55,7 +55,7 @@ namespace libtremotesf {
                    mSite == other.mSite &&
 #endif
                    mErrorMessage == other.mErrorMessage && mStatus == other.mStatus &&
-                   mNextUpdateEta == other.mNextUpdateEta && mNextUpdateTime == other.mNextUpdateTime &&
+                   mNextUpdateTime == other.mNextUpdateTime &&
                    mPeers == other.mPeers;
         }
 
@@ -70,8 +70,7 @@ namespace libtremotesf {
         Status mStatus{};
         QString mErrorMessage{};
 
-        int mNextUpdateEta{-1};
-        long long mNextUpdateTime{};
+        QDateTime mNextUpdateTime{{}, {}, Qt::UTC};
 
         int mPeers{};
 

@@ -226,23 +226,6 @@ namespace libtremotesf {
             EnumMapping(TorrentData::IdleSeedingLimitMode::Global, 0),
             EnumMapping(TorrentData::IdleSeedingLimitMode::Single, 1),
             EnumMapping(TorrentData::IdleSeedingLimitMode::Unlimited, 2)});
-
-        void updateDateTime(QDateTime& dateTime, const QJsonValue& value, bool& changed) {
-            QDateTime original = dateTime;
-            const auto newDateTime = static_cast<qint64>(value.toDouble());
-            if (newDateTime > 0) {
-                if (!dateTime.isValid() || newDateTime != dateTime.toSecsSinceEpoch()) {
-                    dateTime.setSecsSinceEpoch(newDateTime);
-                    changed = true;
-                }
-            } else {
-                if (!dateTime.isNull()) {
-                    dateTime.setDate({});
-                    dateTime.setTime({});
-                    changed = true;
-                }
-            }
-        }
     }
 
     int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }

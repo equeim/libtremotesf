@@ -80,6 +80,22 @@ namespace libtremotesf::impl {
         std::copy(ids.begin(), ids.end(), std::back_inserter(array));
         return array;
     }
+
+    inline void updateDateTime(QDateTime& dateTime, const QJsonValue& value, bool& changed) {
+        const auto newDateTime = static_cast<qint64>(value.toDouble());
+        if (newDateTime > 0) {
+            if (!dateTime.isValid() || newDateTime != dateTime.toSecsSinceEpoch()) {
+                dateTime.setSecsSinceEpoch(newDateTime);
+                changed = true;
+            }
+        } else {
+            if (!dateTime.isNull()) {
+                dateTime.setDate({});
+                dateTime.setTime({});
+                changed = true;
+            }
+        }
+    }
 }
 
 #endif // LIBTREMOTESF_JSONUTILS_H

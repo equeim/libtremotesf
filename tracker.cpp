@@ -46,9 +46,7 @@ namespace libtremotesf {
 
     int Tracker::peers() const { return mPeers; }
 
-    long long Tracker::nextUpdateTime() const { return mNextUpdateTime; }
-
-    int Tracker::nextUpdateEta() const { return mNextUpdateEta; }
+    const QDateTime& Tracker::nextUpdateTime() const { return mNextUpdateTime; }
 
     Tracker::UpdateResult Tracker::update(const QJsonObject& trackerMap) {
         bool changed = false;
@@ -82,18 +80,7 @@ namespace libtremotesf {
         setChanged(mStatus, statusMapper.fromJsonValue(trackerMap.value(announceStateKey), announceStateKey), changed);
 
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
-
-        const long long nextUpdateTime = static_cast<long long>(trackerMap.value("nextAnnounceTime"_l1).toDouble());
-        if (nextUpdateTime != mNextUpdateTime) {
-            mNextUpdateTime = nextUpdateTime;
-            changed = true;
-        }
-        const long long nextUpdateEta = nextUpdateTime - QDateTime::currentMSecsSinceEpoch() / 1000;
-        if (nextUpdateEta < 0 || nextUpdateEta > std::numeric_limits<int>::max()) {
-            mNextUpdateEta = -1;
-        } else {
-            mNextUpdateEta = static_cast<int>(nextUpdateEta);
-        }
+        updateDateTime(mNextUpdateTime, trackerMap.value("nextAnnounceTime"_l1), changed);
 
         return {changed, announceUrlChanged};
     }
