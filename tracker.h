@@ -6,12 +6,16 @@
 #define LIBTREMOTESF_TRACKER_H
 
 #include <QDateTime>
+#include <QObject>
 #include <QString>
+
+#include "formatters.h"
 
 class QJsonObject;
 
 namespace libtremotesf {
     class Tracker {
+        Q_GADGET
     public:
         enum class Status {
             // Tracker is inactive, possibly due to error
@@ -23,6 +27,7 @@ namespace libtremotesf {
             // We are announcing/scraping
             Updating,
         };
+        Q_ENUM(Status)
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
@@ -55,8 +60,7 @@ namespace libtremotesf {
                    mSite == other.mSite &&
 #endif
                    mErrorMessage == other.mErrorMessage && mStatus == other.mStatus &&
-                   mNextUpdateTime == other.mNextUpdateTime &&
-                   mPeers == other.mPeers;
+                   mNextUpdateTime == other.mNextUpdateTime && mPeers == other.mPeers;
         }
 
         inline bool operator!=(const Tracker& other) const { return !(*this == other); }
@@ -77,5 +81,7 @@ namespace libtremotesf {
         int mId{};
     };
 }
+
+SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::Tracker::Status)
 
 #endif // LIBTREMOTESF_TRACKER_H
