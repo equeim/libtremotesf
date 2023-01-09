@@ -712,24 +712,33 @@ namespace libtremotesf {
     }
 
     void Torrent::updateFiles(const QJsonObject& torrentMap) {
-        std::vector<int> changed;
+        std::vector<int> changed{};
 
-        const QJsonArray fileStats(torrentMap.value("fileStats"_l1).toArray());
+        const QJsonArray fileStats = torrentMap.value("fileStats"_l1).toArray();
         if (!fileStats.isEmpty()) {
             if (mFiles.empty()) {
-                const QJsonArray fileJsons(torrentMap.value("files"_l1).toArray());
-                mFiles.reserve(static_cast<size_t>(fileStats.size()));
-                changed.reserve(static_cast<size_t>(fileStats.size()));
-                for (QJsonArray::size_type i = 0, max = fileStats.size(); i < max; ++i) {
-                    mFiles.emplace_back(i, fileJsons[i].toObject(), fileStats[i].toObject());
-                    changed.push_back(static_cast<int>(i));
-                }
-            } else {
-                for (QJsonArray::size_type i = 0, max = fileStats.size(); i < max; ++i) {
-                    TorrentFile& file = mFiles[static_cast<size_t>(i)];
-                    if (file.update(fileStats[i].toObject())) {
+                const QJsonArray fileJsons = torrentMap.value("files"_l1).toArray();
+                if (fileJsons.size() == fileStats.size()) {
+                    const auto count = fileJsons.size();
+                    mFiles.reserve(static_cast<size_t>(count));
+                    changed.reserve(static_cast<size_t>(count));
+                    for (QJsonArray::size_type i = 0; i < count; ++i) {
+                        mFiles.emplace_back(i, fileJsons[i].toObject(), fileStats[i].toObject());
                         changed.push_back(static_cast<int>(i));
                     }
+                } else {
+                    logWarning("fileStats and files arrays have different sizes for torrent {}", *this);
+                }
+            } else {
+                if (static_cast<size_t>(fileStats.size()) == mFiles.size()) {
+                    for (QJsonArray::size_type i = 0, max = fileStats.size(); i < max; ++i) {
+                        TorrentFile& file = mFiles[static_cast<size_t>(i)];
+                        if (file.update(fileStats[i].toObject())) {
+                            changed.push_back(static_cast<int>(i));
+                        }
+                    }
+                } else {
+                    logWarning("fileStats array has different size than in previous update for torrent {}", *this);
                 }
             }
         }
