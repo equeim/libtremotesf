@@ -61,6 +61,21 @@ namespace libtremotesf {
 
         bool autoReconnectEnabled;
         int autoReconnectInterval;
+
+        bool operator==(const Server& rhs) const {
+            return name == rhs.name && address == rhs.address && port == rhs.port && apiPath == rhs.apiPath &&
+                   proxyType == rhs.proxyType && proxyHostname == rhs.proxyHostname && proxyPort == rhs.proxyPort &&
+                   proxyUser == rhs.proxyUser && proxyPassword == rhs.proxyPassword && https == rhs.https &&
+                   selfSignedCertificateEnabled == rhs.selfSignedCertificateEnabled &&
+                   selfSignedCertificate == rhs.selfSignedCertificate &&
+                   clientCertificateEnabled == rhs.clientCertificateEnabled &&
+                   clientCertificate == rhs.clientCertificate && authentication == rhs.authentication &&
+                   username == rhs.username && password == rhs.password && updateInterval == rhs.updateInterval &&
+                   timeout == rhs.timeout && autoReconnectEnabled == rhs.autoReconnectEnabled &&
+                   autoReconnectInterval == rhs.autoReconnectInterval;
+        }
+
+        bool operator!=(const Server& rhs) const { return !(rhs == *this); }
     };
 
     enum class RpcConnectionState { Disconnected, Connecting, Connected };
