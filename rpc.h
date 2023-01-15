@@ -28,44 +28,42 @@ namespace libtremotesf {
         class RequestRouter;
     }
 
-    struct Server {
+    struct ConnectionConfiguration {
         Q_GADGET
     public:
         enum class ProxyType { Default, Http, Socks5 };
         Q_ENUM(ProxyType)
 
-        QString name;
+        QString address{};
+        int port{};
+        QString apiPath{};
 
-        QString address;
-        int port;
-        QString apiPath;
+        ProxyType proxyType{ProxyType::Default};
+        QString proxyHostname{};
+        int proxyPort{};
+        QString proxyUser{};
+        QString proxyPassword{};
 
-        ProxyType proxyType;
-        QString proxyHostname;
-        int proxyPort;
-        QString proxyUser;
-        QString proxyPassword;
+        bool https{};
+        bool selfSignedCertificateEnabled{};
+        QByteArray selfSignedCertificate{};
+        bool clientCertificateEnabled{};
+        QByteArray clientCertificate{};
 
-        bool https;
-        bool selfSignedCertificateEnabled;
-        QByteArray selfSignedCertificate;
-        bool clientCertificateEnabled;
-        QByteArray clientCertificate;
+        bool authentication{};
+        QString username{};
+        QString password{};
 
-        bool authentication;
-        QString username;
-        QString password;
+        int updateInterval{};
+        int timeout{};
 
-        int updateInterval;
-        int timeout;
+        bool autoReconnectEnabled{};
+        int autoReconnectInterval{};
 
-        bool autoReconnectEnabled;
-        int autoReconnectInterval;
-
-        bool operator==(const Server& rhs) const {
-            return name == rhs.name && address == rhs.address && port == rhs.port && apiPath == rhs.apiPath &&
-                   proxyType == rhs.proxyType && proxyHostname == rhs.proxyHostname && proxyPort == rhs.proxyPort &&
-                   proxyUser == rhs.proxyUser && proxyPassword == rhs.proxyPassword && https == rhs.https &&
+        bool operator==(const ConnectionConfiguration& rhs) const {
+            return address == rhs.address && port == rhs.port && apiPath == rhs.apiPath && proxyType == rhs.proxyType &&
+                   proxyHostname == rhs.proxyHostname && proxyPort == rhs.proxyPort && proxyUser == rhs.proxyUser &&
+                   proxyPassword == rhs.proxyPassword && https == rhs.https &&
                    selfSignedCertificateEnabled == rhs.selfSignedCertificateEnabled &&
                    selfSignedCertificate == rhs.selfSignedCertificate &&
                    clientCertificateEnabled == rhs.clientCertificateEnabled &&
@@ -75,7 +73,7 @@ namespace libtremotesf {
                    autoReconnectInterval == rhs.autoReconnectInterval;
         }
 
-        bool operator!=(const Server& rhs) const { return !(rhs == *this); }
+        bool operator!=(const ConnectionConfiguration& rhs) const { return !(rhs == *this); }
     };
 
     enum class RpcConnectionState { Disconnected, Connecting, Connected };
@@ -133,7 +131,7 @@ namespace libtremotesf {
         bool isUpdateDisabled() const;
         void setUpdateDisabled(bool disabled);
 
-        void setServer(const libtremotesf::Server& server);
+        void setConnectionConfiguration(const ConnectionConfiguration& configuration);
         void resetServer();
 
         void connect();
