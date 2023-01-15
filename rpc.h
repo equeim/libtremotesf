@@ -132,7 +132,7 @@ namespace libtremotesf {
         void setUpdateDisabled(bool disabled);
 
         void setConnectionConfiguration(const ConnectionConfiguration& configuration);
-        void resetServer();
+        void resetConnectionConfiguration();
 
         void connect();
         void disconnect();
