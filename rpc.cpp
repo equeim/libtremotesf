@@ -181,88 +181,89 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::setServer(const Server& server) {
+    void Rpc::setConnectionConfiguration(const ConnectionConfiguration& configuration) {
         disconnect();
 
-        RequestRouter::RequestsConfiguration configuration{};
-        if (server.https) {
-            configuration.serverUrl.setScheme("https"_l1);
+        RequestRouter::RequestsConfiguration requestsConfig{};
+        if (configuration.https) {
+            requestsConfig.serverUrl.setScheme("https"_l1);
         } else {
-            configuration.serverUrl.setScheme("http"_l1);
+            requestsConfig.serverUrl.setScheme("http"_l1);
         }
-        configuration.serverUrl.setHost(server.address);
-        if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
+        requestsConfig.serverUrl.setHost(configuration.address);
+        if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
             logWarning("Error setting URL hostname: {}", error);
         }
-        configuration.serverUrl.setPort(server.port);
-        if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
+        requestsConfig.serverUrl.setPort(configuration.port);
+        if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
             logWarning("Error setting URL port: {}", error);
         }
-        if (auto i = server.apiPath.indexOf('?'); i != -1) {
-            configuration.serverUrl.setPath(server.apiPath.mid(0, i));
-            if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
+        if (auto i = configuration.apiPath.indexOf('?'); i != -1) {
+            requestsConfig.serverUrl.setPath(configuration.apiPath.mid(0, i));
+            if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
                 logWarning("Error setting URL path: {}", error);
             }
-            if ((i + 1) < server.apiPath.size()) {
-                configuration.serverUrl.setQuery(server.apiPath.mid(i + 1));
-                if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
+            if ((i + 1) < configuration.apiPath.size()) {
+                requestsConfig.serverUrl.setQuery(configuration.apiPath.mid(i + 1));
+                if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
                     logWarning("Error setting URL query: {}", error);
                 }
             }
         } else {
             //std::to_string(/*server.port*/);
-            configuration.serverUrl.setPath(server.apiPath);
-            if (auto error = configuration.serverUrl.errorString(); !error.isEmpty()) {
+            requestsConfig.serverUrl.setPath(configuration.apiPath);
+            if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
                 logWarning("Error setting URL path: {}", error);
             }
         }
-        if (!configuration.serverUrl.isValid()) {
-            logWarning("URL {} is invalid", configuration.serverUrl);
+        if (!requestsConfig.serverUrl.isValid()) {
+            logWarning("URL {} is invalid", requestsConfig.serverUrl);
         }
 
-        switch (server.proxyType) {
-        case Server::ProxyType::Default:
+        switch (configuration.proxyType) {
+        case ConnectionConfiguration::ProxyType::Default:
             break;
-        case Server::ProxyType::Http:
-            configuration.proxy = QNetworkProxy(
+        case ConnectionConfiguration::ProxyType::Http:
+            requestsConfig.proxy = QNetworkProxy(
                 QNetworkProxy::HttpProxy,
-                server.proxyHostname,
-                static_cast<quint16>(server.proxyPort),
-                server.proxyUser,
-                server.proxyPassword
+                configuration.proxyHostname,
+                static_cast<quint16>(configuration.proxyPort),
+                configuration.proxyUser,
+                configuration.proxyPassword
             );
             break;
-        case Server::ProxyType::Socks5:
-            configuration.proxy = QNetworkProxy(
+        case ConnectionConfiguration::ProxyType::Socks5:
+            requestsConfig.proxy = QNetworkProxy(
                 QNetworkProxy::Socks5Proxy,
-                server.proxyHostname,
-                static_cast<quint16>(server.proxyPort),
-                server.proxyUser,
-                server.proxyPassword
+                configuration.proxyHostname,
+                static_cast<quint16>(configuration.proxyPort),
+                configuration.proxyUser,
+                configuration.proxyPassword
             );
             break;
         }
 
-        if (server.https && server.selfSignedCertificateEnabled) {
-            configuration.serverCertificateChain = QSslCertificate::fromData(server.selfSignedCertificate, QSsl::Pem);
+        if (configuration.https && configuration.selfSignedCertificateEnabled) {
+            requestsConfig.serverCertificateChain =
+                QSslCertificate::fromData(configuration.selfSignedCertificate, QSsl::Pem);
         }
 
-        if (server.clientCertificateEnabled) {
-            configuration.clientCertificate = QSslCertificate(server.clientCertificate, QSsl::Pem);
-            configuration.clientPrivateKey = QSslKey(server.clientCertificate, QSsl::Rsa);
+        if (configuration.clientCertificateEnabled) {
+            requestsConfig.clientCertificate = QSslCertificate(configuration.clientCertificate, QSsl::Pem);
+            requestsConfig.clientPrivateKey = QSslKey(configuration.clientCertificate, QSsl::Rsa);
         }
 
-        configuration.authentication = server.authentication;
-        configuration.username = server.username;
-        configuration.password = server.password;
-        configuration.timeout = std::chrono::seconds(server.timeout); // server.timeout is in seconds
+        requestsConfig.authentication = configuration.authentication;
+        requestsConfig.username = configuration.username;
+        requestsConfig.password = configuration.password;
+        requestsConfig.timeout = std::chrono::seconds(configuration.timeout); // server.timeout is in seconds
 
-        mRequestRouter->setConfiguration(std::move(configuration));
+        mRequestRouter->setConfiguration(std::move(requestsConfig));
 
-        mUpdateTimer->setInterval(server.updateInterval * 1000); // msecs
+        mUpdateTimer->setInterval(configuration.updateInterval * 1000); // msecs
 
-        mAutoReconnectEnabled = server.autoReconnectEnabled;
-        mAutoReconnectTimer->setInterval(server.autoReconnectInterval * 1000); // msecs
+        mAutoReconnectEnabled = configuration.autoReconnectEnabled;
+        mAutoReconnectTimer->setInterval(configuration.autoReconnectInterval * 1000); // msecs
         mAutoReconnectTimer->stop();
     }
 
