@@ -267,7 +267,7 @@ namespace libtremotesf {
         mAutoReconnectTimer->stop();
     }
 
-    void Rpc::resetServer() {
+    void Rpc::resetConnectionConfiguration() {
         disconnect();
         mRequestRouter->setConfiguration({});
         mAutoReconnectEnabled = false;
