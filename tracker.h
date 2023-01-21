@@ -48,11 +48,7 @@ namespace libtremotesf {
         int peers() const;
         const QDateTime& nextUpdateTime() const;
 
-        struct UpdateResult {
-            bool changed{};
-            bool announceUrlChanged{};
-        };
-        UpdateResult update(const QJsonObject& trackerMap);
+        bool update(const QJsonObject& trackerMap);
 
         inline bool operator==(const Tracker& other) const {
             return mId == other.mId && mAnnounce == other.mAnnounce &&

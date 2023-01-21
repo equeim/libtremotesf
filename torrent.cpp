@@ -367,37 +367,24 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::ActiveWebSeeders:
             return setChanged(activeWebSeeders, value.toInt(), changed);
         case TorrentData::UpdateKey::TrackerStats: {
-            trackersAnnounceUrlsChanged = false;
-            std::vector<Tracker> newTrackers;
-            const QJsonArray trackerJsons(value.toArray());
+            std::vector<Tracker> newTrackers{};
+            const QJsonArray trackerJsons = value.toArray();
             newTrackers.reserve(static_cast<size_t>(trackerJsons.size()));
             for (const auto& i : trackerJsons) {
-                const QJsonObject trackerMap(i.toObject());
+                const QJsonObject trackerMap = i.toObject();
                 const int trackerId = trackerMap.value("id"_l1).toInt();
-
-                const auto found(std::find_if(trackers.begin(), trackers.end(), [&](const auto& tracker) {
+                const auto found = std::find_if(trackers.begin(), trackers.end(), [&](const auto& tracker) {
                     return tracker.id() == trackerId;
-                }));
-
+                });
                 if (found == trackers.end()) {
                     newTrackers.emplace_back(trackerId, trackerMap);
-                    trackersAnnounceUrlsChanged = true;
+                    changed = true;
                 } else {
-                    const auto result = found->update(trackerMap);
-                    if (result.changed) {
+                    if (found->update(trackerMap)) {
                         changed = true;
-                    }
-                    if (result.announceUrlChanged) {
-                        trackersAnnounceUrlsChanged = true;
                     }
                     newTrackers.push_back(std::move(*found));
                 }
-            }
-            if (newTrackers.size() != trackers.size()) {
-                trackersAnnounceUrlsChanged = true;
-            }
-            if (trackersAnnounceUrlsChanged) {
-                changed = true;
             }
             trackers = std::move(newTrackers);
             return;
@@ -618,8 +605,6 @@ namespace libtremotesf {
     const QString& Torrent::comment() const { return mData.comment; }
 
     const std::vector<Tracker>& Torrent::trackers() const { return mData.trackers; }
-
-    bool Torrent::isTrackersAnnounceUrlsChanged() const { return mData.trackersAnnounceUrlsChanged; }
 
     void Torrent::addTrackers(const QStringList& announceUrls) {
         mRpc->setTorrentProperty(id(), addTrackerKey, QJsonArray::fromStringList(announceUrls), true);
