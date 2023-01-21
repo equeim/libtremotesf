@@ -110,8 +110,6 @@ namespace libtremotesf {
 
         bool singleFile = true;
 
-        bool trackersAnnounceUrlsChanged = false;
-
         std::vector<Tracker> trackers;
 
         std::vector<QString> webSeeders;
@@ -212,7 +210,6 @@ namespace libtremotesf {
         const QString& comment() const;
 
         const std::vector<Tracker>& trackers() const;
-        bool isTrackersAnnounceUrlsChanged() const;
         void addTrackers(const QStringList& announceUrls);
         void setTracker(int trackerId, const QString& announce);
         void removeTrackers(const std::vector<int>& trackerIds);

@@ -48,14 +48,12 @@ namespace libtremotesf {
 
     const QDateTime& Tracker::nextUpdateTime() const { return mNextUpdateTime; }
 
-    Tracker::UpdateResult Tracker::update(const QJsonObject& trackerMap) {
+    bool Tracker::update(const QJsonObject& trackerMap) {
         bool changed = false;
-        bool announceUrlChanged = false;
 
         QString announce(trackerMap.value("announce"_l1).toString());
         if (announce != mAnnounce) {
             changed = true;
-            announceUrlChanged = true;
             mAnnounce = std::move(announce);
 #if QT_VERSION_MAJOR < 6
             const QUrl url(mAnnounce);
@@ -82,6 +80,6 @@ namespace libtremotesf {
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
         updateDateTime(mNextUpdateTime, trackerMap.value("nextAnnounceTime"_l1), changed);
 
-        return {changed, announceUrlChanged};
+        return changed;
     }
 }
