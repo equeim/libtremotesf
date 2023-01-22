@@ -838,9 +838,9 @@ namespace libtremotesf {
                 if (response.success) {
                     mServerSettings->update(response.arguments);
                     if (connectionState() == ConnectionState::Connecting) {
-                        if (mServerSettings->minimumRpcVersion() > minimumRpcVersion) {
+                        if (mServerSettings->data().minimumRpcVersion > minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooNew});
-                        } else if (mServerSettings->rpcVersion() < minimumRpcVersion) {
+                        } else if (mServerSettings->data().rpcVersion < minimumRpcVersion) {
                             setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooOld});
                         } else {
                             updateData();
@@ -949,7 +949,7 @@ namespace libtremotesf {
 
     void Rpc::getTorrents() {
         const QByteArray* requestData{};
-        const bool tableMode = mServerSettings->hasTableMode();
+        const bool tableMode = mServerSettings->data().hasTableMode();
         if (tableMode) {
             static const auto tableModeRequestData = RequestRouter::makeRequestData(
                 "torrent-get"_l1,
@@ -1132,7 +1132,7 @@ namespace libtremotesf {
 
     bool Rpc::isSessionIdFileExists() const {
         if constexpr (targetOs != TargetOs::UnixAndroid) {
-            if (mServerSettings->hasSessionIdFile() && !mRequestRouter->sessionId().isEmpty()) {
+            if (mServerSettings->data().hasSessionIdFile() && !mRequestRouter->sessionId().isEmpty()) {
                 const auto file =
                     QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mRequestRouter->sessionId());
                 if (!file.isEmpty()) {
