@@ -31,10 +31,10 @@ namespace libtremotesf {
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
-        int id() const;
-        const QString& announce() const;
+        int id() const { return mId; };
+        const QString& announce() const { return mAnnounce; };
 #if QT_VERSION_MAJOR < 6
-        const QString& site() const;
+        const QString& site() const { return mSite; };
 #endif
         struct AnnounceHostInfo {
             QString host{};
@@ -42,11 +42,13 @@ namespace libtremotesf {
         };
         AnnounceHostInfo announceHostInfo() const;
 
-        Status status() const;
-        QString errorMessage() const;
+        Status status() const { return mStatus; };
+        QString errorMessage() const { return mErrorMessage; };
 
-        int peers() const;
-        const QDateTime& nextUpdateTime() const;
+        int peers() const { return mPeers; };
+        int seeders() const { return mSeeders; }
+        int leechers() const { return mLeechers; }
+        const QDateTime& nextUpdateTime() const { return mNextUpdateTime; };
 
         bool update(const QJsonObject& trackerMap);
 
@@ -73,6 +75,8 @@ namespace libtremotesf {
         QDateTime mNextUpdateTime{{}, {}, Qt::UTC};
 
         int mPeers{};
+        int mSeeders{};
+        int mLeechers{};
 
         int mId{};
     };

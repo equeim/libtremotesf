@@ -26,27 +26,11 @@ namespace libtremotesf {
 
     Tracker::Tracker(int id, const QJsonObject& trackerMap) : mId(id) { update(trackerMap); }
 
-    int Tracker::id() const { return mId; }
-
-    const QString& Tracker::announce() const { return mAnnounce; }
-
-#if QT_VERSION_MAJOR < 6
-    const QString& Tracker::site() const { return mSite; }
-#endif
-
     Tracker::AnnounceHostInfo Tracker::announceHostInfo() const {
         auto host = QUrl(mAnnounce).host();
         bool isIpAddress = !QHostAddress(host).isNull();
         return {std::move(host), isIpAddress};
     }
-
-    Tracker::Status Tracker::status() const { return mStatus; }
-
-    QString Tracker::errorMessage() const { return mErrorMessage; }
-
-    int Tracker::peers() const { return mPeers; }
-
-    const QDateTime& Tracker::nextUpdateTime() const { return mNextUpdateTime; }
 
     bool Tracker::update(const QJsonObject& trackerMap) {
         bool changed = false;
@@ -78,6 +62,26 @@ namespace libtremotesf {
         setChanged(mStatus, statusMapper.fromJsonValue(trackerMap.value(announceStateKey), announceStateKey), changed);
 
         setChanged(mPeers, trackerMap.value("lastAnnouncePeerCount"_l1).toInt(), changed);
+        setChanged(
+            mSeeders,
+            [&] {
+                if (auto seeders = trackerMap.value("seederCount"_l1).toInt(); seeders >= 0) {
+                    return seeders;
+                }
+                return 0;
+            }(),
+            changed
+        );
+        setChanged(
+            mLeechers,
+            [&] {
+                if (auto leechers = trackerMap.value("leecherCount"_l1).toInt(); leechers >= 0) {
+                    return leechers;
+                }
+                return 0;
+            }(),
+            changed
+        );
         updateDateTime(mNextUpdateTime, trackerMap.value("nextAnnounceTime"_l1), changed);
 
         return changed;

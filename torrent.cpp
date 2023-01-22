@@ -49,8 +49,10 @@ namespace libtremotesf {
         Ratio,
         RatioLimitMode,
         RatioLimit,
-        Seeders,
-        Leechers,
+        ActiveSeedersCount,
+        WebSeeders,
+        ActiveWebSeedersCount,
+        ActiveLeechersCount,
         Status,
         Error,
         ErrorString,
@@ -65,8 +67,6 @@ namespace libtremotesf {
         Creator,
         CreationDate,
         Comment,
-        WebSeeders,
-        ActiveWebSeeders,
         TrackerStats,
         Count
     };
@@ -124,9 +124,13 @@ namespace libtremotesf {
                 return "seedRatioMode"_l1;
             case TorrentData::UpdateKey::RatioLimit:
                 return "seedRatioLimit"_l1;
-            case TorrentData::UpdateKey::Seeders:
+            case TorrentData::UpdateKey::ActiveSeedersCount:
                 return "peersSendingToUs"_l1;
-            case TorrentData::UpdateKey::Leechers:
+            case TorrentData::UpdateKey::WebSeeders:
+                return "webseeds"_l1;
+            case TorrentData::UpdateKey::ActiveWebSeedersCount:
+                return "webseedsSendingToUs"_l1;
+            case TorrentData::UpdateKey::ActiveLeechersCount:
                 return "peersGettingFromUs"_l1;
             case TorrentData::UpdateKey::Status:
                 return "status"_l1;
@@ -156,10 +160,6 @@ namespace libtremotesf {
                 return "dateCreated"_l1;
             case TorrentData::UpdateKey::Comment:
                 return "comment"_l1;
-            case TorrentData::UpdateKey::WebSeeders:
-                return "webseeds"_l1;
-            case TorrentData::UpdateKey::ActiveWebSeeders:
-                return "webseedsSendingToUs"_l1;
             case TorrentData::UpdateKey::TrackerStats:
                 return "trackerStats"_l1;
             case TorrentData::UpdateKey::Count:
@@ -312,10 +312,24 @@ namespace libtremotesf {
             return setChanged(ratioLimitMode, ratioLimitModeMapper.fromJsonValue(value, updateKeyString(key)), changed);
         case TorrentData::UpdateKey::RatioLimit:
             return setChanged(ratioLimit, value.toDouble(), changed);
-        case TorrentData::UpdateKey::Seeders:
-            return setChanged(seeders, value.toInt(), changed);
-        case TorrentData::UpdateKey::Leechers:
-            return setChanged(leechers, value.toInt(), changed);
+        case TorrentData::UpdateKey::ActiveSeedersCount:
+            return setChanged(activeSeedersCount, value.toInt(), changed);
+        case TorrentData::UpdateKey::WebSeeders: {
+            std::vector<QString> newWebSeeders{};
+            const auto webSeedersStrings = value.toArray();
+            newWebSeeders.reserve(static_cast<size_t>(webSeedersStrings.size()));
+            std::transform(
+                webSeedersStrings.begin(),
+                webSeedersStrings.end(),
+                std::back_insert_iterator(newWebSeeders),
+                [](const auto& value) { return value.toString(); }
+            );
+            return setChanged(webSeeders, std::move(newWebSeeders), changed);
+        }
+        case TorrentData::UpdateKey::ActiveWebSeedersCount:
+            return setChanged(activeWebSeedersCount, value.toInt(), changed);
+        case TorrentData::UpdateKey::ActiveLeechersCount:
+            return setChanged(activeLeechersCount, value.toInt(), changed);
         case TorrentData::UpdateKey::Status:
             return setChanged(status, statusMapper.fromJsonValue(value, updateKeyString(key)), changed);
             break;
@@ -349,24 +363,12 @@ namespace libtremotesf {
             return updateDateTime(creationDate, value, changed);
         case TorrentData::UpdateKey::Comment:
             return setChanged(comment, value.toString(), changed);
-        case TorrentData::UpdateKey::WebSeeders: {
-            std::vector<QString> newWebSeeders;
-            const auto webSeedersStrings = value.toArray();
-            newWebSeeders.reserve(static_cast<size_t>(webSeedersStrings.size()));
-            std::transform(
-                webSeedersStrings.begin(),
-                webSeedersStrings.end(),
-                std::back_insert_iterator(newWebSeeders),
-                [](const auto& value) { return value.toString(); }
-            );
-            return setChanged(webSeeders, std::move(newWebSeeders), changed);
-        }
-        case TorrentData::UpdateKey::ActiveWebSeeders:
-            return setChanged(activeWebSeeders, value.toInt(), changed);
         case TorrentData::UpdateKey::TrackerStats: {
             std::vector<Tracker> newTrackers{};
             const QJsonArray trackerJsons = value.toArray();
             newTrackers.reserve(static_cast<size_t>(trackerJsons.size()));
+            int newTotalSeeders{};
+            int newTotalLeechers{};
             for (const auto& i : trackerJsons) {
                 const QJsonObject trackerMap = i.toObject();
                 const int trackerId = trackerMap.value("id"_l1).toInt();
@@ -382,8 +384,12 @@ namespace libtremotesf {
                     }
                     newTrackers.push_back(std::move(*found));
                 }
+                newTotalSeeders += newTrackers.back().seeders();
+                newTotalLeechers += newTrackers.back().leechers();
             }
             trackers = std::move(newTrackers);
+            setChanged(totalSeedersFromTrackersCount, newTotalSeeders, changed);
+            setChanged(newTotalLeechers, newTotalLeechers, changed);
             return;
         }
         case TorrentData::UpdateKey::Count:
