@@ -808,21 +808,22 @@ namespace libtremotesf {
 
     void
     Rpc::emitSignalsOnConnectionStateChanged(Rpc::ConnectionState oldConnectionState, size_t removedTorrentsCount) {
-        emit connectionStateChanged();
-
         switch (mStatus.connectionState) {
         case ConnectionState::Disconnected: {
             if (oldConnectionState == ConnectionState::Connected) {
+                emit connectionStateChanged();
                 emit connectedChanged();
                 emit torrentsUpdated({{0, static_cast<int>(removedTorrentsCount)}}, {}, 0);
             }
             break;
         }
         case ConnectionState::Connecting:
+            emit connectionStateChanged();
             break;
         case ConnectionState::Connected: {
-            emit connectedChanged();
             emit torrentsUpdated({}, {}, torrentsCount());
+            emit connectionStateChanged();
+            emit connectedChanged();
             break;
         }
         }
