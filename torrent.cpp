@@ -315,16 +315,14 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::ActiveSeedersCount:
             return setChanged(activeSeedersCount, value.toInt(), changed);
         case TorrentData::UpdateKey::WebSeeders: {
-            std::vector<QString> newWebSeeders{};
-            const auto webSeedersStrings = value.toArray();
-            newWebSeeders.reserve(static_cast<size_t>(webSeedersStrings.size()));
-            std::transform(
-                webSeedersStrings.begin(),
-                webSeedersStrings.end(),
-                std::back_insert_iterator(newWebSeeders),
-                [](const auto& value) { return value.toString(); }
+            return setChanged(
+                webSeeders,
+                createTransforming<std::vector<QString>>(
+                    value.toArray(),
+                    [](auto&& value) { return value.toString(); }
+                ),
+                changed
             );
-            return setChanged(webSeeders, std::move(newWebSeeders), changed);
         }
         case TorrentData::UpdateKey::ActiveWebSeedersCount:
             return setChanged(activeWebSeedersCount, value.toInt(), changed);
@@ -438,12 +436,10 @@ namespace libtremotesf {
     }
 
     std::vector<std::optional<TorrentData::UpdateKey>> Torrent::mapUpdateKeys(const QJsonArray& stringKeys) {
-        std::vector<std::optional<TorrentData::UpdateKey>> keys{};
-        keys.reserve(static_cast<size_t>(stringKeys.size()));
-        std::transform(stringKeys.begin(), stringKeys.end(), std::back_inserter(keys), [](const QJsonValue& stringKey) {
-            return mapUpdateKey(stringKey.toString());
-        });
-        return keys;
+        return createTransforming<std::vector<std::optional<TorrentData::UpdateKey>>>(
+            stringKeys,
+            [](const auto& value) { return mapUpdateKey(value.toString()); }
+        );
     }
 
     void Torrent::setDownloadSpeedLimited(bool limited) {
