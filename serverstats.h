@@ -14,38 +14,38 @@ namespace libtremotesf {
 
     class SessionStats {
     public:
-        long long downloaded() const;
-        long long uploaded() const;
-        int duration() const;
-        int sessionCount() const;
+        [[nodiscard]] qint64 downloaded() const { return mDownloaded; };
+        [[nodiscard]] qint64 uploaded() const { return mUploaded; };
+        [[nodiscard]] int duration() const { return mDuration; };
+        [[nodiscard]] int sessionCount() const { return mSessionCount; };
 
         void update(const QJsonObject& stats);
 
     private:
-        long long mDownloaded;
-        long long mUploaded;
-        int mDuration;
-        int mSessionCount;
+        qint64 mDownloaded{};
+        qint64 mUploaded{};
+        int mDuration{};
+        int mSessionCount{};
     };
 
     class ServerStats : public QObject {
         Q_OBJECT
     public:
-        explicit ServerStats(QObject* parent = nullptr);
+        using QObject::QObject;
 
-        long long downloadSpeed() const;
-        long long uploadSpeed() const;
+        [[nodiscard]] qint64 downloadSpeed() const { return mDownloadSpeed; };
+        [[nodiscard]] qint64 uploadSpeed() const { return mUploadSpeed; };
 
-        SessionStats currentSession() const;
-        SessionStats total() const;
+        [[nodiscard]] SessionStats currentSession() const { return mCurrentSession; };
+        [[nodiscard]] SessionStats total() const { return mTotal; };
 
         void update(const QJsonObject& serverStats);
 
     private:
-        long long mDownloadSpeed;
-        long long mUploadSpeed;
-        SessionStats mCurrentSession;
-        SessionStats mTotal;
+        qint64 mDownloadSpeed{};
+        qint64 mUploadSpeed{};
+        SessionStats mCurrentSession{};
+        SessionStats mTotal{};
     signals:
         void updated();
     };

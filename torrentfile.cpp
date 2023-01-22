@@ -21,7 +21,7 @@ namespace libtremotesf {
     }
 
     TorrentFile::TorrentFile(int id, const QJsonObject& fileMap, const QJsonObject& fileStatsMap)
-        : id(id), size(static_cast<long long>(fileMap.value("length"_l1).toDouble())) {
+        : id(id), size(toInt64(fileMap.value("length"_l1))) {
         auto p = fileMap.value("name"_l1).toString().split(QLatin1Char('/'), Qt::SkipEmptyParts);
         path.reserve(static_cast<size_t>(p.size()));
         for (QString& part : p) {
@@ -33,7 +33,7 @@ namespace libtremotesf {
     bool TorrentFile::update(const QJsonObject& fileStatsMap) {
         bool changed = false;
 
-        setChanged(completedSize, static_cast<long long>(fileStatsMap.value("bytesCompleted"_l1).toDouble()), changed);
+        setChanged(completedSize, toInt64(fileStatsMap.value("bytesCompleted"_l1)), changed);
         constexpr auto priorityKey = "priority"_l1;
         setChanged(priority, priorityMapper.fromJsonValue(fileStatsMap.value(priorityKey), priorityKey), changed);
         setChanged(wanted, fileStatsMap.value("wanted"_l1).toBool(), changed);

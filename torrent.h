@@ -66,10 +66,10 @@ namespace libtremotesf {
 
         int queuePosition{};
 
-        long long totalSize{};
-        long long completedSize{};
-        long long leftUntilDone{};
-        long long sizeWhenDone{};
+        qint64 totalSize{};
+        qint64 completedSize{};
+        qint64 leftUntilDone{};
+        qint64 sizeWhenDone{};
 
         double percentDone{};
         double recheckProgress{};
@@ -77,16 +77,16 @@ namespace libtremotesf {
 
         bool metadataComplete{};
 
-        long long downloadSpeed{};
-        long long uploadSpeed{};
+        qint64 downloadSpeed{};
+        qint64 uploadSpeed{};
 
         bool downloadSpeedLimited{};
         int downloadSpeedLimit{}; // kB/s
         bool uploadSpeedLimited{};
         int uploadSpeedLimit{}; // kB/s
 
-        long long totalDownloaded{};
-        long long totalUploaded{};
+        qint64 totalDownloaded{};
+        qint64 totalUploaded{};
         double ratio{};
         double ratioLimit{};
         RatioLimitMode ratioLimitMode{};

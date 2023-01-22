@@ -264,8 +264,8 @@ namespace libtremotesf {
         void torrentAddDuplicate();
         void torrentAddError();
 
-        void gotDownloadDirFreeSpace(long long bytes);
-        void gotFreeSpaceForPath(const QString& path, bool success, long long bytes);
+        void gotDownloadDirFreeSpace(qint64 bytes);
+        void gotFreeSpaceForPath(const QString& path, bool success, qint64 bytes);
 
         void updateDisabledChanged();
     };

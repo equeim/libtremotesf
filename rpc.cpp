@@ -31,6 +31,8 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QHostAddress)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QUrl)
 
 namespace libtremotesf {
+    using namespace impl;
+
     namespace {
         // Transmission 2.40+
         constexpr int minimumRpcVersion = 14;
@@ -680,9 +682,7 @@ namespace libtremotesf {
                 RequestRouter::RequestType::Independent,
                 [=](const RequestRouter::Response& response) {
                     if (response.success) {
-                        emit gotDownloadDirFreeSpace(
-                            static_cast<long long>(response.arguments.value("download-dir-free-space"_l1).toDouble())
-                        );
+                        emit gotDownloadDirFreeSpace(toInt64(response.arguments.value("download-dir-free-space"_l1)));
                     }
                 }
             );
@@ -699,8 +699,7 @@ namespace libtremotesf {
                     emit gotFreeSpaceForPath(
                         path,
                         response.success,
-                        response.success ? static_cast<long long>(response.arguments.value("size-bytes"_l1).toDouble())
-                                         : 0
+                        response.success ? toInt64(response.arguments.value("size-bytes"_l1)) : 0
                     );
                 }
             );

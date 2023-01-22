@@ -23,8 +23,8 @@ namespace libtremotesf {
 
         QString address{};
         QString client{};
-        long long downloadSpeed{};
-        long long uploadSpeed{};
+        qint64 downloadSpeed{};
+        qint64 uploadSpeed{};
         double progress{};
         QString flags{};
     };
