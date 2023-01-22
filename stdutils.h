@@ -6,19 +6,60 @@
 #define LIBTREMOTESF_STDUTILS_H
 
 #include <iterator>
+#include <optional>
 #include <type_traits>
 
 #include <QtGlobal>
 
 namespace libtremotesf {
-    template<typename C, typename V>
-    inline int index_of_i(const C& container, const V& value) {
-        return static_cast<int>(std::find(std::begin(container), std::end(container), value) - std::begin(container));
-    }
-
     namespace impl {
         template<typename T>
-        constexpr bool isCheapToCopy = std::is_trivially_copyable_v<T> && sizeof(T) <= (sizeof(void*) * 2);
+        constexpr bool isCheapToCopy =
+            std::is_trivially_copyable_v<std::decay_t<T>> && sizeof(std::decay_t<T>) <= (sizeof(void*) * 2);
+
+        template<typename T>
+        using valueOrConstRef = std::conditional_t<
+            isCheapToCopy<T>,
+            std::decay_t<T>,
+            std::add_lvalue_reference_t<std::add_const_t<std::decay_t<T>>>>;
+
+        template<typename Container, bool IsArray = std::is_array_v<std::remove_reference_t<Container>>>
+        struct ContainerTypes {
+            // Array
+            using size_type = size_t;
+            using value_type = std::remove_all_extents_t<Container>;
+        };
+
+        template<typename Container>
+        struct ContainerTypes<Container, false> {
+            // Not array
+            using size_type = typename Container::size_type;
+            using value_type = typename Container::value_type;
+        };
+    }
+
+    template<
+        typename Container,
+        typename Size = typename impl::ContainerTypes<Container>::size_type,
+        typename Value = impl::valueOrConstRef<typename impl::ContainerTypes<Container>::value_type>>
+    inline constexpr std::optional<Size> indexOf(const Container& container, Value value) {
+        const auto begin = std::begin(container);
+        const auto end = std::end(container);
+        const auto found = std::find(begin, end, value);
+        if (found == end) {
+            return std::nullopt;
+        };
+        return static_cast<Size>(std::distance(begin, found));
+    }
+
+    template<
+        typename Index,
+        typename Container,
+        typename Value = impl::valueOrConstRef<typename impl::ContainerTypes<Container>::value_type>>
+    inline constexpr std::optional<Index> indexOfCasted(const Container& container, Value value) {
+        const auto index = indexOf<Container>(container, value);
+        if (!index.has_value()) return std::nullopt;
+        return static_cast<Index>(*index);
     }
 
     template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
@@ -47,7 +88,8 @@ namespace libtremotesf {
 }
 
 namespace tremotesf {
-    using libtremotesf::index_of_i;
+    using libtremotesf::indexOf;
+    using libtremotesf::indexOfCasted;
     using libtremotesf::setChanged;
 }
 

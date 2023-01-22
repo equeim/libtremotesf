@@ -431,11 +431,7 @@ namespace libtremotesf {
 
     std::optional<QJsonArray::size_type>
     Torrent::idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys) {
-        const auto found = std::find(keys.begin(), keys.end(), TorrentData::UpdateKey::Id);
-        if (found != keys.end()) {
-            return static_cast<QJsonArray::size_type>(found - keys.begin());
-        }
-        return {};
+        return indexOfCasted<QJsonArray::size_type>(keys, TorrentData::UpdateKey::Id);
     }
 
     std::vector<std::optional<TorrentData::UpdateKey>> Torrent::mapUpdateKeys(const QJsonArray& stringKeys) {
