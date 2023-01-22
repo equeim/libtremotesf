@@ -62,6 +62,27 @@ namespace libtremotesf {
         return static_cast<Index>(*index);
     }
 
+    template<typename NewContainer, typename FromContainer, typename Transform>
+    inline NewContainer createTransforming(const FromContainer& from, Transform&& transform) {
+        NewContainer container{};
+        container.reserve(static_cast<typename NewContainer::size_type>(from.size()));
+        std::transform(from.begin(), from.end(), std::back_inserter(container), transform);
+        return container;
+    }
+
+    template<typename NewContainer, typename FromContainer, typename Transform>
+    inline NewContainer createTransforming(FromContainer&& from, Transform&& transform) {
+        NewContainer container{};
+        container.reserve(static_cast<typename NewContainer::size_type>(from.size()));
+        std::transform(
+            std::move_iterator(from.begin()),
+            std::move_iterator(from.end()),
+            std::back_inserter(container),
+            transform
+        );
+        return container;
+    }
+
     template<typename T, typename std::enable_if_t<std::is_floating_point_v<T>, int> = 0>
     inline void setChanged(T& value, T newValue, bool& changed) {
         if (!qFuzzyCompare(newValue, value)) {
@@ -88,6 +109,7 @@ namespace libtremotesf {
 }
 
 namespace tremotesf {
+    using libtremotesf::createTransforming;
     using libtremotesf::indexOf;
     using libtremotesf::indexOfCasted;
     using libtremotesf::setChanged;
