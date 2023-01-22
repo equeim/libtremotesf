@@ -55,65 +55,65 @@ namespace libtremotesf {
         [[nodiscard]] bool
         update(const std::vector<std::optional<UpdateKey>>& keys, const QJsonArray& values, bool firstTime);
 
-        int id = 0;
-        QString hashString;
-        QString name;
-        QString magnetLink;
+        int id{};
+        QString hashString{};
+        QString name{};
+        QString magnetLink{};
 
         Status status{};
         Error error{};
         QString errorString{};
 
-        int queuePosition = 0;
+        int queuePosition{};
 
-        long long totalSize = 0;
-        long long completedSize = 0;
-        long long leftUntilDone = 0;
-        long long sizeWhenDone = 0;
+        long long totalSize{};
+        long long completedSize{};
+        long long leftUntilDone{};
+        long long sizeWhenDone{};
 
-        double percentDone = 0.0;
-        double recheckProgress = 0.0;
-        int eta = 0;
+        double percentDone{};
+        double recheckProgress{};
+        int eta{};
 
-        bool metadataComplete = false;
+        bool metadataComplete{};
 
-        long long downloadSpeed = 0;
-        long long uploadSpeed = 0;
+        long long downloadSpeed{};
+        long long uploadSpeed{};
 
-        bool downloadSpeedLimited = false;
-        int downloadSpeedLimit = 0; // kB/s
-        bool uploadSpeedLimited = false;
-        int uploadSpeedLimit = 0; // kB/s
+        bool downloadSpeedLimited{};
+        int downloadSpeedLimit{}; // kB/s
+        bool uploadSpeedLimited{};
+        int uploadSpeedLimit{}; // kB/s
 
-        long long totalDownloaded = 0;
-        long long totalUploaded = 0;
-        double ratio = 0.0;
-        double ratioLimit = 0.0;
+        long long totalDownloaded{};
+        long long totalUploaded{};
+        double ratio{};
+        double ratioLimit{};
         RatioLimitMode ratioLimitMode{};
 
-        int seeders = 0;
-        int leechers = 0;
-        int peersLimit = 0;
+        int seeders{};
+        int leechers{};
+        int peersLimit{};
 
         QDateTime addedDate{{}, {}, Qt::UTC};
         QDateTime activityDate{{}, {}, Qt::UTC};
         QDateTime doneDate{{}, {}, Qt::UTC};
 
         IdleSeedingLimitMode idleSeedingLimitMode{};
-        int idleSeedingLimit = 0;
-        QString downloadDirectory;
-        QString comment;
-        QString creator;
+        int idleSeedingLimit{};
+        QString downloadDirectory{};
+        QString comment{};
+        QString creator{};
         QDateTime creationDate{{}, {}, Qt::UTC};
         Priority bandwidthPriority{};
-        bool honorSessionLimits = false;
+        bool honorSessionLimits;
 
         bool singleFile = true;
 
-        std::vector<Tracker> trackers;
+        std::vector<Tracker> trackers{};
 
-        std::vector<QString> webSeeders;
-        int activeWebSeeders = 0;
+        std::vector<QString> webSeeders{};
+        int activeWebSeeders{};
 
         [[nodiscard]] bool hasError() const { return error != Error::None; }
         [[nodiscard]] bool isFinished() const { return leftUntilDone == 0; }
