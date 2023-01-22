@@ -275,13 +275,13 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::QueuePosition:
             return setChanged(queuePosition, value.toInt(), changed);
         case TorrentData::UpdateKey::TotalSize:
-            return setChanged(totalSize, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(totalSize, toInt64(value), changed);
         case TorrentData::UpdateKey::CompletedSize:
-            return setChanged(completedSize, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(completedSize, toInt64(value), changed);
         case TorrentData::UpdateKey::LeftUntilDone:
-            return setChanged(leftUntilDone, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(leftUntilDone, toInt64(value), changed);
         case TorrentData::UpdateKey::SizeWhenDone:
-            return setChanged(sizeWhenDone, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(sizeWhenDone, toInt64(value), changed);
         case TorrentData::UpdateKey::PercentDone:
             return setChanged(percentDone, value.toDouble(), changed);
         case TorrentData::UpdateKey::RecheckProgress:
@@ -291,9 +291,9 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::MetadataPercentComplete:
             return setChanged(metadataComplete, value.toInt() == 1, changed);
         case TorrentData::UpdateKey::DownloadSpeed:
-            return setChanged(downloadSpeed, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(downloadSpeed, toInt64(value), changed);
         case TorrentData::UpdateKey::UploadSpeed:
-            return setChanged(uploadSpeed, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(uploadSpeed, toInt64(value), changed);
         case TorrentData::UpdateKey::DownloadSpeedLimited:
             return setChanged(downloadSpeedLimited, value.toBool(), changed);
         case TorrentData::UpdateKey::DownloadSpeedLimit:
@@ -303,9 +303,9 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::UploadSpeedLimit:
             return setChanged(uploadSpeedLimit, value.toInt(), changed);
         case TorrentData::UpdateKey::TotalDownloaded:
-            return setChanged(totalDownloaded, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(totalDownloaded, toInt64(value), changed);
         case TorrentData::UpdateKey::TotalUploaded:
-            return setChanged(totalUploaded, static_cast<long long>(value.toDouble()), changed);
+            return setChanged(totalUploaded, toInt64(value), changed);
         case TorrentData::UpdateKey::Ratio:
             return setChanged(ratio, value.toDouble(), changed);
         case TorrentData::UpdateKey::RatioLimitMode:

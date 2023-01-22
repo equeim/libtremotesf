@@ -26,8 +26,8 @@ namespace libtremotesf {
         int id{};
 
         std::vector<QString> path{};
-        long long size{};
-        long long completedSize{};
+        qint64 size{};
+        qint64 completedSize{};
         Priority priority{};
         bool wanted{};
     };
