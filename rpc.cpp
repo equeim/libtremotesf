@@ -131,7 +131,7 @@ namespace libtremotesf {
 
     Torrent* Rpc::torrentByHash(const QString& hash) const {
         for (const std::unique_ptr<Torrent>& torrent : mTorrents) {
-            if (torrent->hashString() == hash) {
+            if (torrent->data().hashString == hash) {
                 return torrent.get();
             }
         }
@@ -141,7 +141,7 @@ namespace libtremotesf {
     Torrent* Rpc::torrentById(int id) const {
         const auto end(mTorrents.end());
         const auto found(std::find_if(mTorrents.begin(), mTorrents.end(), [id](const auto& torrent) {
-            return torrent->id() == id;
+            return torrent->data().id == id;
         }));
         return (found == end) ? nullptr : found->get();
     }
@@ -872,7 +872,7 @@ namespace libtremotesf {
     protected:
         std::vector<NewTorrent>::iterator
         findNewItemForItem(std::vector<NewTorrent>& newTorrents, const std::unique_ptr<Torrent>& torrent) override {
-            const int id = torrent->id();
+            const int id = torrent->data().id;
             return std::find_if(newTorrents.begin(), newTorrents.end(), [id](const NewTorrent& t) {
                 return t.id == id;
             });
@@ -888,10 +888,10 @@ namespace libtremotesf {
         }
 
         bool updateItem(std::unique_ptr<Torrent>& torrent, NewTorrent&& newTorrent) override {
-            const bool wasFinished = torrent->isFinished();
-            const bool wasPaused = (torrent->status() == TorrentData::Status::Paused);
-            const auto oldSizeWhenDone = torrent->sizeWhenDone();
-            const bool metadataWasComplete = torrent->isMetadataComplete();
+            const bool wasFinished = torrent->data().isFinished();
+            const bool wasPaused = (torrent->data().status == TorrentData::Status::Paused);
+            const auto oldSizeWhenDone = torrent->data().sizeWhenDone;
+            const bool metadataWasComplete = torrent->data().metadataComplete;
 
             bool changed{};
             if (keys) {
@@ -903,10 +903,11 @@ namespace libtremotesf {
                 // Don't emit torrentFinished() if torrent's size became smaller
                 // since there is high chance that it happened because user unselected some files
                 // and torrent immediately became finished. We don't want notification in that case
-                if (!wasFinished && torrent->isFinished() && !wasPaused && torrent->sizeWhenDone() >= oldSizeWhenDone) {
+                if (!wasFinished && torrent->data().isFinished() && !wasPaused &&
+                    torrent->data().sizeWhenDone >= oldSizeWhenDone) {
                     emit mRpc.torrentFinished(torrent.get());
                 }
-                if (!metadataWasComplete && torrent->isMetadataComplete()) {
+                if (!metadataWasComplete && torrent->data().metadataComplete) {
                     metadataCompletedIds.push_back(newTorrent.id);
                 }
             }
@@ -929,7 +930,7 @@ namespace libtremotesf {
             if (mRpc.isConnected()) {
                 emit mRpc.torrentAdded(torrent.get());
             }
-            if (torrent->isMetadataComplete()) {
+            if (torrent->data().metadataComplete) {
                 metadataCompletedIds.push_back(newTorrent.id);
             }
             return torrent;
@@ -1009,10 +1010,10 @@ namespace libtremotesf {
                 std::vector<int> getPeersIds{};
                 for (const auto& torrent : mTorrents) {
                     if (torrent->isFilesEnabled()) {
-                        getFilesIds.push_back(torrent->id());
+                        getFilesIds.push_back(torrent->data().id);
                     }
                     if (torrent->isPeersEnabled()) {
-                        getPeersIds.push_back(torrent->id());
+                        getPeersIds.push_back(torrent->data().id);
                     }
                 }
                 if (!getFilesIds.empty()) {
