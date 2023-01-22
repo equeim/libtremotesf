@@ -115,8 +115,10 @@ namespace libtremotesf {
         std::vector<QString> webSeeders;
         int activeWebSeeders = 0;
 
-        [[nodiscard]] bool isDownloadingStalled() const;
-        [[nodiscard]] bool isSeedingStalled() const;
+        [[nodiscard]] bool hasError() const { return error != Error::None; }
+        [[nodiscard]] bool isFinished() const { return leftUntilDone == 0; }
+        [[nodiscard]] bool isDownloadingStalled() const { return (seeders == 0 && activeWebSeeders == 0); }
+        [[nodiscard]] bool isSeedingStalled() const { return leechers == 0; }
 
     private:
         void updateProperty(TorrentData::UpdateKey key, const QJsonValue& value, bool& changed, bool firstTime);
@@ -136,100 +138,42 @@ namespace libtremotesf {
         // For testing only
         explicit Torrent() = default;
 
-        static QJsonArray updateFields();
-        static std::optional<int> idFromJson(const QJsonObject& object);
-        static std::optional<QJsonArray::size_type>
+        [[nodiscard]] static QJsonArray updateFields();
+        [[nodiscard]] static std::optional<int> idFromJson(const QJsonObject& object);
+        [[nodiscard]] static std::optional<QJsonArray::size_type>
         idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys);
-        static std::vector<std::optional<TorrentData::UpdateKey>> mapUpdateKeys(const QJsonArray& stringKeys);
+        [[nodiscard]] static std::vector<std::optional<TorrentData::UpdateKey>>
+        mapUpdateKeys(const QJsonArray& stringKeys);
 
-        int id() const;
-        const QString& hashString() const;
-        const QString& name() const;
-
-        TorrentData::Status status() const;
-        [[nodiscard]] bool isDownloadingStalled() const;
-        [[nodiscard]] bool isSeedingStalled() const;
-        TorrentData::Error error() const;
-        bool hasError() const;
-        const QString& errorString() const;
-        int queuePosition() const;
-
-        long long totalSize() const;
-        long long completedSize() const;
-        long long leftUntilDone() const;
-        long long sizeWhenDone() const;
-        double percentDone() const;
-        bool isFinished() const;
-        double recheckProgress() const;
-        int eta() const;
-
-        bool isMetadataComplete() const;
-
-        long long downloadSpeed() const;
-        long long uploadSpeed() const;
-
-        bool isDownloadSpeedLimited() const;
         void setDownloadSpeedLimited(bool limited);
-        int downloadSpeedLimit() const;
         void setDownloadSpeedLimit(int limit);
-
-        bool isUploadSpeedLimited() const;
         void setUploadSpeedLimited(bool limited);
-        int uploadSpeedLimit() const;
         void setUploadSpeedLimit(int limit);
-
-        long long totalDownloaded() const;
-        long long totalUploaded() const;
-        double ratio() const;
-        TorrentData::RatioLimitMode ratioLimitMode() const;
         void setRatioLimitMode(TorrentData::RatioLimitMode mode);
-        double ratioLimit() const;
         void setRatioLimit(double limit);
-
-        int seeders() const;
-        int leechers() const;
-        int peersLimit() const;
         void setPeersLimit(int limit);
-
-        const QDateTime& addedDate() const;
-        const QDateTime& activityDate() const;
-        const QDateTime& doneDate() const;
-
-        bool honorSessionLimits() const;
         void setHonorSessionLimits(bool honor);
-        TorrentData::Priority bandwidthPriority() const;
         void setBandwidthPriority(TorrentData::Priority priority);
-        TorrentData::IdleSeedingLimitMode idleSeedingLimitMode() const;
         void setIdleSeedingLimitMode(TorrentData::IdleSeedingLimitMode mode);
-        int idleSeedingLimit() const;
         void setIdleSeedingLimit(int limit);
-        const QString& downloadDirectory() const;
-        bool isSingleFile() const;
-        const QString& creator() const;
-        const QDateTime& creationDate() const;
-        const QString& comment() const;
 
-        const std::vector<Tracker>& trackers() const;
         void addTrackers(const QStringList& announceUrls);
         void setTracker(int trackerId, const QString& announce);
         void removeTrackers(const std::vector<int>& trackerIds);
 
-        const std::vector<QString>& webSeeders() const;
-        int activeWebSeeders() const;
+        [[nodiscard]] const TorrentData& data() const { return mData; };
 
-        const TorrentData& data() const;
-
-        bool isFilesEnabled() const;
+        [[nodiscard]] bool isFilesEnabled() const { return mFilesEnabled; };
         void setFilesEnabled(bool enabled);
-        const std::vector<TorrentFile>& files() const;
+        [[nodiscard]] const std::vector<TorrentFile>& files() const { return mFiles; };
 
         void setFilesWanted(const std::vector<int>& fileIds, bool wanted);
         void setFilesPriority(const std::vector<int>& fileIds, TorrentFile::Priority priority);
         void renameFile(const QString& path, const QString& newName);
 
-        bool isPeersEnabled() const;
+        [[nodiscard]] bool isPeersEnabled() const { return mPeersEnabled; };
         void setPeersEnabled(bool enabled);
-        const std::vector<Peer>& peers() const;
+        [[nodiscard]] const std::vector<Peer>& peers() const { return mPeers; };
 
         [[nodiscard]] bool update(const QJsonObject& object);
         [[nodiscard]] bool
