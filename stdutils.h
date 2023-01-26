@@ -63,23 +63,24 @@ namespace libtremotesf {
     }
 
     template<typename NewContainer, typename FromContainer, typename Transform>
-    inline NewContainer createTransforming(const FromContainer& from, Transform&& transform) {
-        NewContainer container{};
-        container.reserve(static_cast<typename NewContainer::size_type>(from.size()));
-        std::transform(from.begin(), from.end(), std::back_inserter(container), transform);
-        return container;
-    }
-
-    template<typename NewContainer, typename FromContainer, typename Transform>
     inline NewContainer createTransforming(FromContainer&& from, Transform&& transform) {
         NewContainer container{};
-        container.reserve(static_cast<typename NewContainer::size_type>(from.size()));
-        std::transform(
-            std::move_iterator(from.begin()),
-            std::move_iterator(from.end()),
-            std::back_inserter(container),
-            transform
-        );
+        container.reserve(static_cast<typename impl::ContainerTypes<NewContainer>::size_type>(std::size(from)));
+        if constexpr (std::is_rvalue_reference_v<decltype(from)> && !std::is_const_v<std::remove_reference_t<decltype(from)>>) {
+            std::transform(
+                std::move_iterator(std::begin(from)),
+                std::move_iterator(std::end(from)),
+                std::back_inserter(container),
+                std::forward<Transform>(transform)
+            );
+        } else {
+            std::transform(
+                std::cbegin(from),
+                std::cend(from),
+                std::back_inserter(container),
+                std::forward<Transform>(transform)
+            );
+        }
         return container;
     }
 
