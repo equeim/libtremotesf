@@ -80,13 +80,19 @@ jobs:
         echo '"C:\msys64\usr\bin\tar.exe" %*' > '${{ runner.temp }}\tar\tar.bat'
         echo '${{ runner.temp }}\tar' >> '${{ github.path }}'
 
+    - name: Set VCPKG_ROOT environment variable
+      run: |
+        echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> '${{ github.env }}'
+
     - name: Set up vcpkg
-      uses: equeim/action-setup-vcpkg@v3
+      uses: equeim/action-setup-vcpkg@v4
       with:
-        vcpkg-root: C:\vcpkg
         run-install: true
+        install-root: C:\vcpkg_installed
         triplet: x64-windows-static
+        host-triplet: x64-windows-static
         install-features: qt5 qt6
+        binary-cache-path: C:\vcpkg_binary_cache
         save-cache: ${{ github.event_name != 'pull_request' }}
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
@@ -94,25 +100,25 @@ jobs:
     - name: Build libtremotesf with Qt 6 and MSVC
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
         output-directories-suffix: -qt6
 
     - name: Build libtremotesf with Qt 6 and clang-cl
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=ON -D CMAKE_CXX_COMPILER=clang-cl
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON -D CMAKE_CXX_COMPILER=clang-cl
         output-directories-suffix: -qt6-clang-cl
 
     - name: Build libtremotesf with Qt 5 and MSVC
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=OFF
         output-directories-suffix: -qt5
 
     - name: Build libtremotesf with Qt 5 and clang-cl
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D TREMOTESF_QT6=OFF -D CMAKE_CXX_COMPILER=clang-cl
+        cmake-arguments: --preset windows -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=OFF -D CMAKE_CXX_COMPILER=clang-cl
         output-directories-suffix: -qt5-clang-cl
 
     - name: Archive vcpkg logs
