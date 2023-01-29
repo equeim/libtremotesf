@@ -92,11 +92,11 @@ namespace libtremotesf {
         RatioLimitMode ratioLimitMode{};
 
         int totalSeedersFromTrackersCount{};
-        int activeSeedersCount{};
+        int peersSendingToUsCount{};
         std::vector<QString> webSeeders{};
-        int activeWebSeedersCount{};
+        int webSeedersSendingToUsCount{};
         int totalLeechersFromTrackersCount{};
-        int activeLeechersCount{};
+        int peersGettingFromUsCount{};
 
         int peersLimit{};
 
@@ -120,9 +120,9 @@ namespace libtremotesf {
         [[nodiscard]] bool hasError() const { return error != Error::None; }
         [[nodiscard]] bool isFinished() const { return leftUntilDone == 0; }
         [[nodiscard]] bool isDownloadingStalled() const {
-            return (activeSeedersCount == 0 && activeWebSeedersCount == 0);
+            return (peersSendingToUsCount == 0 && webSeedersSendingToUsCount == 0);
         }
-        [[nodiscard]] bool isSeedingStalled() const { return activeLeechersCount == 0; }
+        [[nodiscard]] bool isSeedingStalled() const { return peersGettingFromUsCount == 0; }
 
     private:
         void updateProperty(TorrentData::UpdateKey key, const QJsonValue& value, bool& changed, bool firstTime);
