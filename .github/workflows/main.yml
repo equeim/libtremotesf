@@ -134,7 +134,7 @@ jobs:
         path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
 
   reuse-lint:
-    runs-on: ubuntu-22.04
+    runs-on: ubuntu-latest
     steps:
     - name: Check out
       uses: actions/checkout@v3
