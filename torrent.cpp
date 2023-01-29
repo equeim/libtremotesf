@@ -49,10 +49,10 @@ namespace libtremotesf {
         Ratio,
         RatioLimitMode,
         RatioLimit,
-        ActiveSeedersCount,
+        PeersSendingToUsCount,
+        PeersGettingFromUsCount,
         WebSeeders,
-        ActiveWebSeedersCount,
-        ActiveLeechersCount,
+        WebSeedersSendingToUsCount,
         Status,
         Error,
         ErrorString,
@@ -124,14 +124,14 @@ namespace libtremotesf {
                 return "seedRatioMode"_l1;
             case TorrentData::UpdateKey::RatioLimit:
                 return "seedRatioLimit"_l1;
-            case TorrentData::UpdateKey::ActiveSeedersCount:
+            case TorrentData::UpdateKey::PeersSendingToUsCount:
                 return "peersSendingToUs"_l1;
+            case TorrentData::UpdateKey::PeersGettingFromUsCount:
+                return "peersGettingFromUs"_l1;
             case TorrentData::UpdateKey::WebSeeders:
                 return "webseeds"_l1;
-            case TorrentData::UpdateKey::ActiveWebSeedersCount:
+            case TorrentData::UpdateKey::WebSeedersSendingToUsCount:
                 return "webseedsSendingToUs"_l1;
-            case TorrentData::UpdateKey::ActiveLeechersCount:
-                return "peersGettingFromUs"_l1;
             case TorrentData::UpdateKey::Status:
                 return "status"_l1;
             case TorrentData::UpdateKey::Error:
@@ -312,8 +312,10 @@ namespace libtremotesf {
             return setChanged(ratioLimitMode, ratioLimitModeMapper.fromJsonValue(value, updateKeyString(key)), changed);
         case TorrentData::UpdateKey::RatioLimit:
             return setChanged(ratioLimit, value.toDouble(), changed);
-        case TorrentData::UpdateKey::ActiveSeedersCount:
-            return setChanged(activeSeedersCount, value.toInt(), changed);
+        case TorrentData::UpdateKey::PeersSendingToUsCount:
+            return setChanged(peersSendingToUsCount, value.toInt(), changed);
+        case TorrentData::UpdateKey::PeersGettingFromUsCount:
+            return setChanged(peersGettingFromUsCount, value.toInt(), changed);
         case TorrentData::UpdateKey::WebSeeders: {
             return setChanged(
                 webSeeders,
@@ -324,10 +326,8 @@ namespace libtremotesf {
                 changed
             );
         }
-        case TorrentData::UpdateKey::ActiveWebSeedersCount:
-            return setChanged(activeWebSeedersCount, value.toInt(), changed);
-        case TorrentData::UpdateKey::ActiveLeechersCount:
-            return setChanged(activeLeechersCount, value.toInt(), changed);
+        case TorrentData::UpdateKey::WebSeedersSendingToUsCount:
+            return setChanged(webSeedersSendingToUsCount, value.toInt(), changed);
         case TorrentData::UpdateKey::Status:
             return setChanged(status, statusMapper.fromJsonValue(value, updateKeyString(key)), changed);
             break;
