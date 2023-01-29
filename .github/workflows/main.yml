@@ -33,21 +33,24 @@ jobs:
           qt-version: 6
           compiler: clang
 
+    env:
+      RPM_PACKAGES: git cmake cmake(Qt${{matrix.qt-version}}Core) cmake(Qt${{matrix.qt-version}}Concurrent) cmake(Qt${{matrix.qt-version}}Network) cmake(Qt${{matrix.qt-version}}Test) cmake(fmt) pkgconfig(openssl) ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} ${{ startsWith(matrix.container-image, 'opensuse') && 'ninja' || 'ninja-build' }}
+
     runs-on: ubuntu-latest
     container: ${{ matrix.container-image }}
 
     steps:
     - name: Install packages on Fedora/Mageia
       if: startsWith(matrix.container-image, 'fedora') || startsWith(matrix.container-image, 'mageia')
-      run: dnf -y --setopt=install_weak_deps=False install git cmake ninja-build 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} 'pkgconfig(openssl)'
+      run: dnf -y --setopt=install_weak_deps=False install ${{env.RPM_PACKAGES}}
 
     - name: Install packages on openSUSE
       if: startsWith(matrix.container-image, 'opensuse')
-      run: zypper --non-interactive in --no-recommends git cmake ninja 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} 'pkgconfig(openssl)'
+      run: zypper --non-interactive in --no-recommends ${{env.RPM_PACKAGES}}
 
     - name: Install packages on Debian/Ubuntu
       if: startsWith(matrix.container-image, 'debian') || startsWith(matrix.container-image, 'ubuntu')
-      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build libfmt-dev ${{ matrix.qt-version == '6' && 'qt6-base-dev' || 'qtbase5-dev' }} ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }} libssl-dev
+      run: apt-get update && DEBIAN_FRONTEND=noninteractive apt-get --no-install-recommends --assume-yes install ca-certificates git cmake ninja-build libfmt-dev libssl-dev ${{ matrix.qt-version == '6' && 'qt6-base-dev' || 'qtbase5-dev' }} ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }}
 
     - name: Checkout
       uses: actions/checkout@v3
