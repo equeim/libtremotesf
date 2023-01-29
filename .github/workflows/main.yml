@@ -64,7 +64,7 @@ jobs:
     - name: Build libtremotesf
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && (startsWith(matrix.container-image, 'opensuse/leap') && 'g++-11' || 'g++') || 'clang++' }}
+        cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
 
   build-windows:
     runs-on: windows-latest
