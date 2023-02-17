@@ -8,6 +8,7 @@
   "features": {
     "qt5": {
       "description": "Build with Qt 5",
+      "supports": "!android",
       "dependencies": [
         {
           "name": "qt5-base",
@@ -17,6 +18,7 @@
     },
     "qt6": {
       "description": "Build with Qt 6",
+      "supports": "!android",
       "dependencies": [
         {
           "name": "qtbase",
@@ -27,6 +29,18 @@
             "openssl",
             "testlib"
           ]
+        }
+      ]
+    },
+    "qt6-tremotesf-android": {
+      "description": "Build with Qt 6 for tremotesf-android",
+      "supports": "android",
+      "dependencies": [
+        "qtbase-tremotesf-android",
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "host": true
         }
       ]
     }
@@ -40,6 +54,11 @@
     },
     {
       "name": "qtbase",
+      "version": "6.4.2",
+      "port-version": 0
+    },
+    {
+      "name": "qtbase-tremotesf-android",
       "version": "6.4.2",
       "port-version": 0
     },
