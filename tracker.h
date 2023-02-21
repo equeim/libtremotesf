@@ -33,14 +33,7 @@ namespace libtremotesf {
 
         int id() const { return mId; };
         const QString& announce() const { return mAnnounce; };
-#if QT_VERSION_MAJOR < 6
         const QString& site() const { return mSite; };
-#endif
-        struct AnnounceHostInfo {
-            QString host{};
-            bool isIpAddress{};
-        };
-        AnnounceHostInfo announceHostInfo() const;
 
         Status status() const { return mStatus; };
         QString errorMessage() const { return mErrorMessage; };
@@ -54,9 +47,7 @@ namespace libtremotesf {
 
         inline bool operator==(const Tracker& other) const {
             return mId == other.mId && mAnnounce == other.mAnnounce &&
-#if QT_VERSION_MAJOR < 6
                    mSite == other.mSite &&
-#endif
                    mErrorMessage == other.mErrorMessage && mStatus == other.mStatus &&
                    mNextUpdateTime == other.mNextUpdateTime && mPeers == other.mPeers;
         }
@@ -65,9 +56,7 @@ namespace libtremotesf {
 
     private:
         QString mAnnounce{};
-#if QT_VERSION_MAJOR < 6
         QString mSite{};
-#endif
 
         Status mStatus{};
         QString mErrorMessage{};

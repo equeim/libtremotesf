@@ -2,13 +2,30 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg/master/scripts/vcpkg.schema.json",
   "name": "libtremotesf",
   "version": "0",
+  "supports": "windows,android",
   "dependencies": [
-    "fmt"
+    "fmt",
+    {
+      "name": "libpsl",
+      "default-features": false,
+      "features": ["icu"],
+      "platform": "windows"
+    },
+    {
+      "name": "libpsl",
+      "default-features": false,
+      "features": ["libidn2"],
+      "platform": "android"
+    },
+    {
+      "name": "pkgconf",
+      "platform": "windows"
+    }
   ],
   "features": {
     "qt5": {
       "description": "Build with Qt 5",
-      "supports": "!android",
+      "supports": "windows",
       "dependencies": [
         {
           "name": "qt5-base",
@@ -18,8 +35,12 @@
     },
     "qt6": {
       "description": "Build with Qt 6",
-      "supports": "!android",
       "dependencies": [
+        {
+          "name": "qtbase",
+          "default-features": false,
+          "host": true
+        },
         {
           "name": "qtbase",
           "default-features": false,
@@ -28,19 +49,12 @@
             "network",
             "openssl",
             "testlib"
-          ]
-        }
-      ]
-    },
-    "qt6-tremotesf-android": {
-      "description": "Build with Qt 6 for tremotesf-android",
-      "supports": "android",
-      "dependencies": [
-        "qtbase-tremotesf-android",
+          ],
+          "platform": "!android"
+        },
         {
-          "name": "qtbase",
-          "default-features": false,
-          "host": true
+          "name": "qtbase-tremotesf-android",
+          "platform": "android"
         }
       ]
     }
@@ -65,6 +79,11 @@
     {
       "name": "fmt",
       "version": "9.1.0",
+      "port-version": 1
+    },
+    {
+      "name": "libpsl",
+      "version": "0.21.2",
       "port-version": 1
     }
   ]

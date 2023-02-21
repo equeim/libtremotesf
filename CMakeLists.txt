@@ -28,9 +28,9 @@ set(CMAKE_AUTOMOC ON)
 include(cmake/CommonOptions.cmake)
 
 find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Concurrent Network)
-if (NOT TARGET fmt::fmt)
-    find_package(fmt 7.0 REQUIRED)
-endif()
+find_package(fmt 7.0 REQUIRED)
+find_package(PkgConfig REQUIRED)
+pkg_check_modules(libpsl REQUIRED IMPORTED_TARGET libpsl)
 
 add_library(
     libtremotesf
@@ -68,7 +68,7 @@ add_library(
     tracker.h
 )
 
-target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt)
+target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt PkgConfig::libpsl)
 target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
 
 qt_import_plugins(libtremotesf EXCLUDE_BY_TYPE bearer)
