@@ -9,6 +9,7 @@
 #include <QJsonObject>
 #include <QHostAddress>
 #include <QUrl>
+#include <libpsl.h>
 
 #include "jsonutils.h"
 #include "literals.h"
@@ -26,12 +27,6 @@ namespace libtremotesf {
 
     Tracker::Tracker(int id, const QJsonObject& trackerMap) : mId(id) { update(trackerMap); }
 
-    Tracker::AnnounceHostInfo Tracker::announceHostInfo() const {
-        auto host = QUrl(mAnnounce).host();
-        bool isIpAddress = !QHostAddress(host).isNull();
-        return {std::move(host), isIpAddress};
-    }
-
     bool Tracker::update(const QJsonObject& trackerMap) {
         bool changed = false;
 
@@ -39,14 +34,20 @@ namespace libtremotesf {
         if (announce != mAnnounce) {
             changed = true;
             mAnnounce = std::move(announce);
-#if QT_VERSION_MAJOR < 6
-            const QUrl url(mAnnounce);
-            mSite = url.host();
-            const int topLevelDomainSize = url.topLevelDomain().size();
-            if (topLevelDomainSize > 0) {
-                mSite.remove(0, mSite.lastIndexOf(QLatin1Char('.'), -1 - topLevelDomainSize) + 1);
+
+            const auto host = QUrl(mAnnounce).host().toLower().normalized(QString::NormalizationForm_KC);
+            const bool isIpAddress = !QHostAddress(host).isNull();
+            if (!isIpAddress) {
+                const auto domain = host.toUtf8();
+                const char* registrableDomain = psl_registrable_domain(psl_builtin(), domain);
+                if (registrableDomain) {
+                    mSite = QString::fromUtf8(registrableDomain);
+                } else {
+                    mSite = host;
+                }
+            } else {
+                mSite = host;
             }
-#endif
         }
 
         const bool announceError =
