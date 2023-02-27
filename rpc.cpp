@@ -809,8 +809,8 @@ namespace libtremotesf {
     Rpc::emitSignalsOnConnectionStateChanged(Rpc::ConnectionState oldConnectionState, size_t removedTorrentsCount) {
         switch (mStatus.connectionState) {
         case ConnectionState::Disconnected: {
+            emit connectionStateChanged();
             if (oldConnectionState == ConnectionState::Connected) {
-                emit connectionStateChanged();
                 emit connectedChanged();
                 emit torrentsUpdated({{0, static_cast<int>(removedTorrentsCount)}}, {}, 0);
             }
