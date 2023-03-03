@@ -228,7 +228,7 @@ namespace libtremotesf {
             EnumMapping(TorrentData::IdleSeedingLimitMode::Unlimited, 2)});
     }
 
-    int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }
+    int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonConstant(value); }
 
     bool TorrentData::update(const QJsonObject& object, bool firstTime) {
         bool changed = false;
@@ -321,7 +321,7 @@ namespace libtremotesf {
                 webSeeders,
                 createTransforming<std::vector<QString>>(
                     value.toArray(),
-                    [](auto&& value) { return value.toString(); }
+                    [](const auto& value) { return value.toString(); }
                 ),
                 changed
             );
@@ -467,7 +467,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::RatioLimitMode),
-            ratioLimitModeMapper.toJsonValue(mode)
+            ratioLimitModeMapper.toJsonConstant(mode)
         );
     }
 
@@ -491,7 +491,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::BandwidthPriority),
-            priorityMapper.toJsonValue(priority)
+            priorityMapper.toJsonConstant(priority)
         );
     }
 
@@ -500,7 +500,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::IdleSeedingLimitMode),
-            idleSeedingLimitModeMapper.toJsonValue(mode)
+            idleSeedingLimitModeMapper.toJsonConstant(mode)
         );
     }
 
@@ -624,7 +624,7 @@ namespace libtremotesf {
     namespace {
         using NewPeer = std::pair<QJsonObject, QString>;
 
-        class PeersListUpdater : public ItemListUpdater<Peer, NewPeer, std::vector<NewPeer>> {
+        class PeersListUpdater : public ItemListUpdater<Peer, std::vector<NewPeer>> {
         public:
             std::vector<std::pair<int, int>> removedIndexRanges;
             std::vector<std::pair<int, int>> changedIndexRanges;
@@ -691,7 +691,9 @@ namespace libtremotesf {
     }
 }
 
-fmt::format_context::iterator
-fmt::formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
-    return format_to(ctx.out(), "Torrent(id={}, name={})", torrent.data().id, torrent.data().name);
+namespace fmt {
+    format_context::iterator
+    formatter<libtremotesf::Torrent>::format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST {
+        return fmt::format_to(ctx.out(), "Torrent(id={}, name={})", torrent.data().id, torrent.data().name);
+    }
 }

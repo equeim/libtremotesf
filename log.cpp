@@ -19,7 +19,7 @@ namespace libtremotesf::impl {
         qt_message_output(type, context, string);
     }
 
-    template<typename E, bool PrintCausedBy>
+    template<IsException E, bool PrintCausedBy>
     void QMessageLoggerDelegate::logExceptionRecursivelyImpl(const E& e) const {
         if constexpr (PrintCausedBy) {
             log(" |- Caused by: {}", e);

@@ -126,6 +126,8 @@ function(set_common_options_on_targets)
         list(APPEND common_compile_definitions WIN32_LEAN_AND_MEAN)
         # C++/WinRT macros
         list(APPEND common_compile_definitions WINRT_LEAN_AND_MEAN WINRT_NO_MODULE_LOCK _SILENCE_CLANG_COROUTINE_MESSAGE)
+        # Workaround for Mircosoft's fuckup with coroutines
+        list(APPEND common_compile_definitions _ALLOW_COROUTINE_ABI_MISMATCH)
     endif()
 
     if (TREMOTESF_UNIX_FREEDESKTOP)
@@ -136,7 +138,7 @@ function(set_common_options_on_targets)
         list(APPEND common_compile_definitions ${TREMOTESF_COMMON_COMPILE_DEFINITIONS})
     endif()
 
-    set(common_public_compile_features cxx_std_17)
+    set(common_public_compile_features cxx_std_20)
     if (DEFINED TREMOTESF_COMMON_PUBLIC_COMPILE_FEATURES)
         list(APPEND common_public_compile_features ${TREMOTESF_COMMON_PUBLIC_COMPILE_FEATURES})
     endif()

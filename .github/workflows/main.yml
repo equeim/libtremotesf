@@ -22,17 +22,13 @@ jobs:
         compiler: [gcc, clang]
         exclude:
         - container-image: 'mageia:8'
-          qt-version: 6
-          compiler: gcc
+          compiler: clang
+        - container-image: 'debian:11'
+          compiler: clang
         - container-image: 'mageia:8'
           qt-version: 6
-          compiler: clang
         - container-image: 'debian:11'
           qt-version: 6
-          compiler: gcc
-        - container-image: 'debian:11'
-          qt-version: 6
-          compiler: clang
 
     env:
       RPM_PACKAGES: git cmake 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' 'pkgconfig(libpsl)' 'pkgconfig(openssl)' pkgconf ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} ${{ startsWith(matrix.container-image, 'opensuse') && 'ninja' || 'ninja-build' }} ${{ startsWith(matrix.container-image, 'fedora') && '''cmake(httplib)''' || '' }}

@@ -13,11 +13,9 @@ namespace libtremotesf {
         std::string demangleTypeName(const char* typeName);
     }
 
-    inline std::string typeName(const std::type_info& typeInfo) { return impl::demangleTypeName(typeInfo.name()); }
-
     template<typename T>
     std::string typeName(T&& t) {
-        return typeName(typeid(t));
+        return impl::demangleTypeName(typeid(t).name());
     }
 }
 

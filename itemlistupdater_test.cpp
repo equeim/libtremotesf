@@ -25,12 +25,14 @@ struct Item {
     inline bool operator<(const Item& other) const { return id < other.id; }
 };
 
-template<>
-struct fmt::formatter<Item> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const Item& item, format_context& ctx) FORMAT_CONST {
-        return format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
-    }
-};
+namespace fmt {
+    template<>
+    struct formatter<Item> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const Item& item, format_context& ctx) FORMAT_CONST {
+            return fmt::format_to(ctx.out(), "Item(id={}, data={})", item.id, item.data);
+        }
+    };
+}
 
 class AbortTest : public std::exception {};
 

@@ -6,26 +6,16 @@
 #define LIBTREMOTESF_ITEMLISTUPDATER_H
 
 #include <algorithm>
+#include <concepts>
 #include <functional>
 #include <optional>
+#include <ranges>
 #include <stdexcept>
-#include <type_traits>
 #include <vector>
 
 #include <QtGlobal>
 
 namespace libtremotesf {
-    namespace impl {
-        template<typename T, typename U, typename = void>
-        inline constexpr bool is_equality_comparable_v = false;
-
-        template<typename T, typename U>
-        inline constexpr bool is_equality_comparable_v<
-            T,
-            U,
-            std::enable_if_t<std::is_same_v<decltype(std::declval<T>() == std::declval<U>()), bool>>> = true;
-    }
-
     class ItemBatchProcessor {
     public:
         inline explicit ItemBatchProcessor(std::function<void(size_t, size_t)>&& action) : mAction(std::move(action)) {}
@@ -68,14 +58,16 @@ namespace libtremotesf {
         std::function<void(size_t, size_t)> mAction;
     };
 
-    template<typename Item, typename NewItem = Item, typename NewItemContainer = std::vector<NewItem>>
+    template<typename Item, std::ranges::forward_range NewItemsRange = std::vector<Item>>
     class ItemListUpdater {
+        using NewItem = std::ranges::range_value_t<NewItemsRange>;
+
     public:
         ItemListUpdater() = default;
         virtual ~ItemListUpdater() = default;
         Q_DISABLE_COPY_MOVE(ItemListUpdater)
 
-        virtual void update(std::vector<Item>& items, NewItemContainer&& newItems) {
+        virtual void update(std::vector<Item>& items, NewItemsRange&& newItems) {
             if (!items.empty()) {
                 auto removedBatchProcessor = ItemBatchProcessor([&](size_t first, size_t last) {
                     onAboutToRemoveItems(first, last);
@@ -134,12 +126,14 @@ namespace libtremotesf {
          * @return iterator to the NewItem with the same identity as Item, or end iterator
          * Default implementation simply checks for equality of items or throws logic_error if they are not comparable
          */
-        inline virtual typename NewItemContainer::iterator
-        findNewItemForItem(NewItemContainer& container, const Item& item) {
-            if constexpr (impl::is_equality_comparable_v<NewItem, Item>) {
-                return std::find_if(container.begin(), container.end(), [&item](const NewItem& newItem) {
-                    return newItem == item;
-                });
+        inline virtual std::ranges::iterator_t<NewItemsRange>
+        findNewItemForItem(NewItemsRange& newItems, const Item& item) {
+            if constexpr (std::equality_comparable_with<NewItem, Item>) {
+                return std::find_if(
+                    std::ranges::begin(newItems),
+                    std::ranges::end(newItems),
+                    [&item](const NewItem& newItem) { return newItem == item; }
+                );
             } else {
                 throw std::logic_error("findNewItemForItem() must be implemented");
             }
@@ -168,7 +162,7 @@ namespace libtremotesf {
          * or throws logic_error if types are not convertible
          */
         inline virtual Item createItemFromNewItem(NewItem&& newItem) {
-            if constexpr (std::is_convertible_v<NewItem, Item>) {
+            if constexpr (std::convertible_to<NewItem, Item>) {
                 return std::move(newItem);
             } else {
                 throw std::logic_error("createItemFromNewItem() must be implemented");
