@@ -71,6 +71,7 @@ function(set_common_options_on_targets)
                 /Zc:lambda
                 /Zc:preprocessor
                 /Zc:throwingNew
+                /diagnostics:caret
                 /W4
                 /w44062
                 /w44165
