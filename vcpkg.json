@@ -5,6 +5,7 @@
   "supports": "windows,android",
   "dependencies": [
     "fmt",
+    "cpp-httplib",
     {
       "name": "libpsl",
       "default-features": false,
