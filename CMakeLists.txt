@@ -88,9 +88,14 @@ if (BUILD_TESTING AND NOT ANDROID)
     add_test(NAME demangle_test COMMAND demangle_test)
     target_link_libraries(demangle_test libtremotesf Qt::Test)
 
-    find_package(httplib 0.11.0)
+    # httplib requires same minor version for compatibility so setting minimum version as 0.11 won't work
+    # We can work both with 0.11 and 0.12 so perform separate find_package calls for them
+    find_package(httplib 0.12)
     if (NOT httplib_FOUND)
-        pkg_check_modules(httplib IMPORTED_TARGET cpp-httplib>=0.11.0)
+        find_package(httplib 0.11)
+    endif()
+    if (NOT httplib_FOUND)
+        pkg_check_modules(httplib IMPORTED_TARGET cpp-httplib>=0.11 cpp-httplib<=0.12)
     endif()
     if (NOT httplib_FOUND)
         message(WARNING "Using bundled cpp-httplib")
