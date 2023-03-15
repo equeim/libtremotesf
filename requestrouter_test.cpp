@@ -3,6 +3,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
 #include <atomic>
+#include <future>
 #include <optional>
 #include <variant>
 
@@ -53,7 +54,7 @@ namespace {
             mServer.Post(testApiPath.data(), [=](const httplib::Request& req, httplib::Response& res) {
                 httplib::Server::Handler handler{};
                 {
-                    std::unique_lock lock(mMutex);
+                    std::unique_lock lock(mHandlerMutex);
                     handler = mHandler;
                 }
                 if (handler) {
@@ -63,54 +64,45 @@ namespace {
                 }
             });
 
-            mListenThread = std::thread([=] {
+            mListenFuture = std::async([=] {
                 logInfo("Starting listening on address {} and port {}", host, port);
                 const bool ok = mServer.listen_after_bind();
                 logInfo("Stopped listening, ok = {}", ok);
-                {
-                    std::lock_guard guard(mMutex);
-                    mListenThreadFinished = true;
-                }
-                mListenThreadFinishedCv.notify_one();
             });
         }
 
         ~TestHttpServer() {
-            logInfo("Stopping server");
-            mServer.stop();
-            {
-                std::unique_lock lock(mMutex);
-                const bool finished =
-                    mListenThreadFinishedCv.wait_for(lock, 100ms, [&] { return mListenThreadFinished; });
-                if (!finished) {
-                    logInfo("Stopping server again");
-                    mServer.stop();
-                    mListenThreadFinishedCv.wait(lock, [&] { return mListenThreadFinished; });
-                }
+            // Wait until we've started listing or already finished because of error
+            while (true) {
+                if (mServer.is_running()) break;
+                if (mListenFuture.wait_for(10ms) == std::future_status::ready) break;
             }
-            mListenThread.join();
+            if (mServer.is_running()) {
+                logInfo("Stopping server");
+                mServer.stop();
+            } else {
+                logWarning("Server has already stopped");
+            }
+            mListenFuture.wait();
         }
 
         const QString host{QHostAddress(QHostAddress::LocalHost).toString()};
         int port{};
 
         void handle(httplib::Server::Handler&& handler) {
-            std::unique_lock lock(mMutex);
+            std::unique_lock lock(mHandlerMutex);
             mHandler = std::move(handler);
         }
         void clearHandler() {
-            std::unique_lock lock(mMutex);
+            std::unique_lock lock(mHandlerMutex);
             mHandler = {};
         }
 
     private:
         Server mServer{};
-        std::thread mListenThread{};
-
-        std::mutex mMutex{};
-        bool mListenThreadFinished{};
-        std::condition_variable mListenThreadFinishedCv{};
+        std::future<void> mListenFuture{};
         httplib::Server::Handler mHandler{};
+        std::mutex mHandlerMutex{};
     };
 
     void success(httplib::Response& res) { res.set_content(successResponse, contentType); }
