@@ -9,6 +9,7 @@
 
 #include <QHostAddress>
 #include <QJsonDocument>
+#include <QSysInfo>
 #include <QTest>
 #include <QThreadPool>
 #include <QTcpServer>
@@ -232,6 +233,10 @@ namespace {
         }
 
         void checkSelfSignedCertificateError() {
+            if (QSysInfo::kernelType() == "freebsd"_l1) {
+                QSKIP("TLS tests are disabled on FreeBSD due to QSslCertificate::operator==() issues");
+            }
+
             TestHttpServer<httplib::SSLServer> server(
                 TEST_DATA_PATH "/root-certificate.pem",
                 TEST_DATA_PATH "/root-certificate-key.pem"
@@ -249,6 +254,10 @@ namespace {
         }
 
         void checkSelfSignedCertificateSuccess() {
+            if (QSysInfo::kernelType() == "freebsd"_l1) {
+                QSKIP("TLS tests are disabled on FreeBSD due to QSslCertificate::operator==() issues");
+            }
+
             TestHttpServer<httplib::SSLServer> server(
                 TEST_DATA_PATH "/root-certificate.pem",
                 TEST_DATA_PATH "/root-certificate-key.pem"
@@ -268,6 +277,10 @@ namespace {
         }
 
         void checkSelfSignedCertificateChainSuccess() {
+            if (QSysInfo::kernelType() == "freebsd"_l1) {
+                QSKIP("TLS tests are disabled on FreeBSD due to QSslCertificate::operator==() issues");
+            }
+
             TestHttpServer<httplib::SSLServer> server(
                 TEST_DATA_PATH "/chain.pem",
                 TEST_DATA_PATH "/signed-certificate-key.pem"
@@ -286,6 +299,10 @@ namespace {
         }
 
         void checkClientCertificateError() {
+            if (QSysInfo::kernelType() == "freebsd"_l1) {
+                QSKIP("TLS tests are disabled on FreeBSD due to QSslCertificate::operator==() issues");
+            }
+
             TestHttpServer<httplib::SSLServer> server(
                 TEST_DATA_PATH "/root-certificate.pem",
                 TEST_DATA_PATH "/root-certificate-key.pem",
@@ -306,6 +323,10 @@ namespace {
         }
 
         void checkClientCertificateSuccess() {
+            if (QSysInfo::kernelType() == "freebsd"_l1) {
+                QSKIP("TLS tests are disabled on FreeBSD due to QSslCertificate::operator==() issues");
+            }
+
             TestHttpServer<httplib::SSLServer> server(
                 TEST_DATA_PATH "/root-certificate.pem",
                 TEST_DATA_PATH "/root-certificate-key.pem",

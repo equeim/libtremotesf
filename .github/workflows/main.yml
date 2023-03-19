@@ -15,6 +15,7 @@ on:
 jobs:
   build-linux:
     strategy:
+      fail-fast: false
       matrix:
         container-image: ['fedora:36', 'fedora:37', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'ubuntu:22.04', 'ubuntu:22.10']
         qt-version: [5, 6]
@@ -65,6 +66,46 @@ jobs:
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
+
+  build-freebsd:
+    strategy:
+      fail-fast: false
+      matrix:
+        qt-version: [5, 6]
+
+    runs-on: macos-latest
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: 'true'
+
+    - name: Build on FreeBSD
+      uses: vmactions/freebsd-vm@22aefae156db38ea5ab7563f89808dc82db8e325
+      with:
+        release: '13.1'
+        copyback: 'false'
+        usesh: 'true'
+        prepare: |
+          set -e -o pipefail
+          pkg install -y cmake ninja pkgconf libpsl libfmt cpp-httplib openssl ${{ matrix.qt-version == '6' && 'qt6-base' || 'qt5-buildtools qt5-qmake qt5-core qt5-network qt5-concurrent qt5-testlib' }}
+        run: |
+          set -e -o pipefail
+          echo '::group::Configuring CMake'
+          cmake -S . --preset default-multi -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+          echo '::endgroup'
+          echo '::group::Building Debug'
+          cmake --build --preset debug -v
+          echo '::endgroup'
+          echo '::group::Testing Debug'
+          ctest --output-on-failure -C Debug --test-dir out/build/default-multi
+          echo '::endgroup'
+          echo '::group::Building Release'
+          cmake --build --preset release -v
+          echo '::endgroup'
+          echo '::group::Testing Release'
+          ctest --output-on-failure -C Release --test-dir out/build/default-multi
+          echo '::endgroup'
 
   build-windows:
     runs-on: windows-latest

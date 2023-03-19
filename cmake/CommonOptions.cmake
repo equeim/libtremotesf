@@ -48,7 +48,7 @@ function(set_common_options_on_targets)
         -Werror=format
     )
     if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
-        list(APPEND gcc_style_warnings -Wlogical-op-parentheses)
+        list(APPEND gcc_style_warnings -Wlogical-op-parentheses -Wno-gnu-zero-variadic-macro-arguments)
     else()
         list(APPEND gcc_style_warnings -Wlogical-op)
     endif()
