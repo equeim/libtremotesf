@@ -184,7 +184,6 @@ namespace libtremotesf::impl {
         QObject::connect(reply, &QNetworkReply::sslErrors, this, [=](const QList<QSslError>& errors) {
             for (const QSslError& error : errors) {
                 if (!mExpectedSslErrors.contains(error)) {
-                    logWarning("SSL error {} on {}", error, error.certificate().toText());
                     sslErrors->push_back(error);
                 }
             }
