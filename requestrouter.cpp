@@ -12,9 +12,11 @@
 #include <QJsonDocument>
 #include <QObject>
 #include <QNetworkReply>
+#include <QSslSocket>
 #include <QtConcurrentRun>
 
 #include <fmt/chrono.h>
+#include <fmt/ranges.h>
 
 #include "log.h"
 
@@ -26,6 +28,65 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
 
 Q_DECLARE_METATYPE(libtremotesf::impl::RpcRequestMetadata)
 Q_DECLARE_METATYPE(libtremotesf::impl::NetworkRequestMetadata)
+
+namespace fmt {
+    template<>
+    struct formatter<QSsl::SslProtocol> : libtremotesf::SimpleFormatter {
+        fmt::format_context::iterator format(QSsl::SslProtocol protocol, fmt::format_context& ctx) FORMAT_CONST {
+            const auto str = [&]() -> std::optional<std::string_view> {
+                switch (protocol) {
+                case QSsl::TlsV1_0:
+                    return "TlsV1_0";
+                case QSsl::TlsV1_1:
+                    return "TlsV1_1";
+                case QSsl::TlsV1_2:
+                    return "TlsV1_2";
+                case QSsl::AnyProtocol:
+                    return "AnyProtocol";
+                case QSsl::SecureProtocols:
+                    return "SecureProtocols";
+                case QSsl::TlsV1_0OrLater:
+                    return "TlsV1_0OrLater";
+                case QSsl::TlsV1_1OrLater:
+                    return "TlsV1_1OrLater";
+                case QSsl::TlsV1_2OrLater:
+                    return "TlsV1_2OrLater";
+                case QSsl::DtlsV1_0:
+                    return "DtlsV1_0";
+                case QSsl::DtlsV1_0OrLater:
+                    return "DtlsV1_0OrLater";
+                case QSsl::DtlsV1_2:
+                    return "DtlsV1_2";
+                case QSsl::DtlsV1_2OrLater:
+                    return "DtlsV1_2OrLater";
+                case QSsl::TlsV1_3:
+                    return "TlsV1_3";
+                case QSsl::TlsV1_3OrLater:
+                    return "TlsV1_3OrLater";
+                case QSsl::UnknownProtocol:
+                    return "UnknownProtocol";
+#if QT_VERSION_MAJOR < 6
+                case QSsl::SslV3:
+                    return "SslV3";
+                case QSsl::SslV2:
+                    return "SslV2";
+                case QSsl::TlsV1SslV3:
+                    return "TlsV1SslV3";
+#endif
+                }
+                return std::nullopt;
+            }();
+            if (str) {
+                return fmt::format_to(ctx.out(), libtremotesf::impl::singleArgumentFormatString, *str);
+            }
+            return fmt::format_to(
+                ctx.out(),
+                libtremotesf::impl::singleArgumentFormatString,
+                static_cast<std::underlying_type_t<QSsl::SslProtocol>>(protocol)
+            );
+        }
+    };
+}
 
 namespace libtremotesf::impl {
     namespace {
@@ -105,6 +166,12 @@ namespace libtremotesf::impl {
             logDebug(" - Timeout: {}", mConfiguration.timeout);
             logDebug(" - HTTP Basic access authentication: {}", mConfiguration.authentication);
             if (https) {
+#if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
+                logDebug(" - Available TLS backends: {}", QSslSocket::availableBackends());
+                logDebug(" - Active TLS backend: {}", QSslSocket::activeBackend());
+                logDebug(" - Supported TLS protocols: {}", QSslSocket::supportedProtocols());
+#endif
+                logDebug(" - TLS library version: {}", QSslSocket::sslLibraryVersionString());
                 logDebug(
                     " - Manually validating server's certificate chain: {}",
                     !mConfiguration.serverCertificateChain.isEmpty()
