@@ -190,12 +190,18 @@ namespace {
         void checkTcpConnectionRefusedIsHandled() {
             {
                 RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                // It is likely that there is nothing listening on this port, so we will get ConnectionRefusedError
                 config.serverUrl.setPort(9);
                 mRouter.setConfiguration(std::move(config));
             }
             const auto error = waitForError("foo"_l1, QByteArray{}, RequestRouter::RequestType::Independent);
             QCOMPARE(error.has_value(), true);
-            QCOMPARE(error.value(), RpcError::ConnectionError);
+            if (error.value() == libtremotesf::RpcError::TimedOut) {
+                // This is not what we test here but it can happen on some systems
+                QWARN("Connection to port 9 timed out instead of being refused");
+            } else {
+                QCOMPARE(error.value(), RpcError::ConnectionError);
+            }
         }
 
         void checkTcpConnectionClosedErrorIsHandled() {
