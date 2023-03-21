@@ -88,7 +88,7 @@ jobs:
         usesh: 'true'
         prepare: |
           set -e -o pipefail
-          pkg install -y cmake ninja pkgconf libpsl libfmt cpp-httplib openssl ${{ matrix.qt-version == '6' && 'qt6-base' || 'qt5-buildtools qt5-qmake qt5-core qt5-network qt5-concurrent qt5-testlib' }}
+          pkg install -y cmake ninja pkgconf libpsl libfmt cpp-httplib ${{ matrix.qt-version == '6' && 'qt6-base' || 'qt5-buildtools qt5-qmake qt5-core qt5-network qt5-concurrent qt5-testlib' }}
         run: |
           set -e -o pipefail
           echo '::group::Configuring CMake'
