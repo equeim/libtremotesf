@@ -9,14 +9,7 @@
     {
       "name": "libpsl",
       "default-features": false,
-      "features": ["icu"],
-      "platform": "windows"
-    },
-    {
-      "name": "libpsl",
-      "default-features": false,
-      "features": ["libidn2"],
-      "platform": "android"
+      "features": ["libidn2"]
     },
     {
       "name": "pkgconf",
@@ -63,29 +56,14 @@
   "default-features": [],
   "overrides": [
     {
-      "name": "qt5-base",
-      "version": "5.15.8",
-      "port-version": 4
-    },
-    {
       "name": "qtbase",
-      "version": "6.4.2",
+      "version": "6.4.3",
       "port-version": 0
     },
     {
       "name": "qtbase-tremotesf-android",
-      "version": "6.4.2",
+      "version": "6.4.3",
       "port-version": 0
-    },
-    {
-      "name": "fmt",
-      "version": "9.1.0",
-      "port-version": 1
-    },
-    {
-      "name": "libpsl",
-      "version": "0.21.2",
-      "port-version": 1
     }
   ]
 }
