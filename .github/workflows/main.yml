@@ -80,6 +80,9 @@ jobs:
       with:
         submodules: 'true'
 
+    - name: Add GCC problem matcher
+      uses: ammaraskar/gcc-problem-matcher@master
+
     - name: Build on FreeBSD
       uses: vmactions/freebsd-vm@22aefae156db38ea5ab7563f89808dc82db8e325
       with:
