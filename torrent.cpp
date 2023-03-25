@@ -387,7 +387,7 @@ namespace libtremotesf {
             }
             trackers = std::move(newTrackers);
             setChanged(totalSeedersFromTrackersCount, newTotalSeeders, changed);
-            setChanged(newTotalLeechers, newTotalLeechers, changed);
+            setChanged(totalLeechersFromTrackersCount, newTotalLeechers, changed);
             return;
         }
         case TorrentData::UpdateKey::Count:
