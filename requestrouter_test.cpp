@@ -38,10 +38,8 @@ namespace {
     const auto invalidJsonResponse = "{\"result\":\"success}"s;
     const auto sessionIdHeader = "X-Transmission-Session-Id"s;
 
-    template<typename Server = httplib::Server>
+    template<std::derived_from<httplib::Server> Server = httplib::Server>
     class TestHttpServer {
-        static_assert(std::is_base_of_v<httplib::Server, Server>);
-
     public:
         Q_DISABLE_COPY_MOVE(TestHttpServer)
 
