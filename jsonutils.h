@@ -9,9 +9,9 @@
 #include <concepts>
 #include <cstddef>
 #include <optional>
+#include <span>
 #include <stdexcept>
 #include <type_traits>
-#include <vector>
 
 #include <QJsonArray>
 #include <QJsonValue>
@@ -83,7 +83,7 @@ namespace libtremotesf::impl {
         std::array<EnumMapping<EnumConstantT, JsonConstantT>, EnumCount> mappings{};
     };
 
-    inline QJsonArray toJsonArray(const std::vector<int>& ids) {
+    inline QJsonArray toJsonArray(std::span<const int> ids) {
         QJsonArray array{};
         std::copy(ids.begin(), ids.end(), std::back_inserter(array));
         return array;

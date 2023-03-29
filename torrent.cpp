@@ -242,7 +242,7 @@ namespace libtremotesf {
     }
 
     bool TorrentData::update(
-        const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values, bool firstTime
+        std::span<const std::optional<TorrentData::UpdateKey>> keys, const QJsonArray& values, bool firstTime
     ) {
         bool changed = false;
         const auto count = std::min(keys.size(), static_cast<size_t>(values.size()));
@@ -403,7 +403,7 @@ namespace libtremotesf {
 
     Torrent::Torrent(
         int id,
-        const std::vector<std::optional<TorrentData::UpdateKey>>& keys,
+        std::span<const std::optional<TorrentData::UpdateKey>> keys,
         const QJsonArray& values,
         Rpc* rpc,
         QObject* parent
@@ -430,8 +430,8 @@ namespace libtremotesf {
         return {};
     }
 
-    std::optional<QJsonArray::size_type>
-    Torrent::idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys) {
+    std::optional<QJsonArray::size_type> Torrent::idKeyIndex(std::span<const std::optional<TorrentData::UpdateKey>> keys
+    ) {
         return indexOfCasted<QJsonArray::size_type>(keys, TorrentData::UpdateKey::Id);
     }
 
@@ -517,7 +517,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(mData.id, replaceTrackerKey, QJsonArray{trackerId, announce}, true);
     }
 
-    void Torrent::removeTrackers(const std::vector<int>& ids) {
+    void Torrent::removeTrackers(std::span<const int> ids) {
         mRpc->setTorrentProperty(mData.id, removeTrackerKey, toJsonArray(ids), true);
     }
 
@@ -525,18 +525,18 @@ namespace libtremotesf {
         if (enabled != mFilesEnabled) {
             mFilesEnabled = enabled;
             if (mFilesEnabled) {
-                mRpc->getTorrentsFiles({mData.id}, false);
+                mRpc->getTorrentsFiles(std::array{mData.id}, false);
             } else {
                 mFiles.clear();
             }
         }
     }
 
-    void Torrent::setFilesWanted(const std::vector<int>& fileIds, bool wanted) {
+    void Torrent::setFilesWanted(std::span<const int> fileIds, bool wanted) {
         mRpc->setTorrentProperty(mData.id, wanted ? wantedFilesKey : unwantedFilesKey, toJsonArray(fileIds));
     }
 
-    void Torrent::setFilesPriority(const std::vector<int>& fileIds, TorrentFile::Priority priority) {
+    void Torrent::setFilesPriority(std::span<const int> fileIds, TorrentFile::Priority priority) {
         QLatin1String propertyName;
         switch (priority) {
         case TorrentFile::Priority::Low:
@@ -560,7 +560,7 @@ namespace libtremotesf {
         if (enabled != mPeersEnabled) {
             mPeersEnabled = enabled;
             if (mPeersEnabled) {
-                mRpc->getTorrentsPeers({mData.id}, false);
+                mRpc->getTorrentsPeers(std::array{mData.id}, false);
             } else {
                 mPeers.clear();
             }
@@ -576,7 +576,7 @@ namespace libtremotesf {
         return c;
     }
 
-    bool Torrent::update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values) {
+    bool Torrent::update(std::span<const std::optional<TorrentData::UpdateKey>> keys, const QJsonArray& values) {
         const bool c = mData.update(keys, values, false);
         emit updated();
         if (c) {

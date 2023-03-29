@@ -6,6 +6,7 @@
 #define LIBTREMOTESF_TORRENT_H
 
 #include <optional>
+#include <span>
 #include <vector>
 
 #include <QDateTime>
@@ -53,7 +54,7 @@ namespace libtremotesf {
 
         enum class UpdateKey;
         [[nodiscard]] bool
-        update(const std::vector<std::optional<UpdateKey>>& keys, const QJsonArray& values, bool firstTime);
+        update(std::span<const std::optional<UpdateKey>> keys, const QJsonArray& values, bool firstTime);
 
         int id{};
         QString hashString{};
@@ -134,7 +135,7 @@ namespace libtremotesf {
         explicit Torrent(int id, const QJsonObject& object, Rpc* rpc, QObject* parent = nullptr);
         explicit Torrent(
             int id,
-            const std::vector<std::optional<TorrentData::UpdateKey>>& keys,
+            std::span<const std::optional<TorrentData::UpdateKey>> keys,
             const QJsonArray& values,
             Rpc* rpc,
             QObject* parent = nullptr
@@ -145,7 +146,7 @@ namespace libtremotesf {
         [[nodiscard]] static QJsonArray updateFields();
         [[nodiscard]] static std::optional<int> idFromJson(const QJsonObject& object);
         [[nodiscard]] static std::optional<QJsonArray::size_type>
-        idKeyIndex(const std::vector<std::optional<TorrentData::UpdateKey>>& keys);
+        idKeyIndex(std::span<const std::optional<TorrentData::UpdateKey>> keys);
         [[nodiscard]] static std::vector<std::optional<TorrentData::UpdateKey>>
         mapUpdateKeys(const QJsonArray& stringKeys);
 
@@ -163,7 +164,7 @@ namespace libtremotesf {
 
         void addTrackers(const QStringList& announceUrls);
         void setTracker(int trackerId, const QString& announce);
-        void removeTrackers(const std::vector<int>& trackerIds);
+        void removeTrackers(std::span<const int> trackerIds);
 
         [[nodiscard]] const TorrentData& data() const { return mData; };
 
@@ -171,8 +172,8 @@ namespace libtremotesf {
         void setFilesEnabled(bool enabled);
         [[nodiscard]] const std::vector<TorrentFile>& files() const { return mFiles; };
 
-        void setFilesWanted(const std::vector<int>& fileIds, bool wanted);
-        void setFilesPriority(const std::vector<int>& fileIds, TorrentFile::Priority priority);
+        void setFilesWanted(std::span<const int> fileIds, bool wanted);
+        void setFilesPriority(std::span<const int> fileIds, TorrentFile::Priority priority);
         void renameFile(const QString& path, const QString& newName);
 
         [[nodiscard]] bool isPeersEnabled() const { return mPeersEnabled; };
@@ -181,7 +182,7 @@ namespace libtremotesf {
 
         [[nodiscard]] bool update(const QJsonObject& object);
         [[nodiscard]] bool
-        update(const std::vector<std::optional<TorrentData::UpdateKey>>& keys, const QJsonArray& values);
+        update(std::span<const std::optional<TorrentData::UpdateKey>> keys, const QJsonArray& values);
         void updateFiles(const QJsonObject& torrentMap);
         void updatePeers(const QJsonObject& torrentMap);
 
