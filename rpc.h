@@ -60,20 +60,7 @@ namespace libtremotesf {
         bool autoReconnectEnabled{};
         int autoReconnectInterval{};
 
-        bool operator==(const ConnectionConfiguration& rhs) const {
-            return address == rhs.address && port == rhs.port && apiPath == rhs.apiPath && proxyType == rhs.proxyType &&
-                   proxyHostname == rhs.proxyHostname && proxyPort == rhs.proxyPort && proxyUser == rhs.proxyUser &&
-                   proxyPassword == rhs.proxyPassword && https == rhs.https &&
-                   selfSignedCertificateEnabled == rhs.selfSignedCertificateEnabled &&
-                   selfSignedCertificate == rhs.selfSignedCertificate &&
-                   clientCertificateEnabled == rhs.clientCertificateEnabled &&
-                   clientCertificate == rhs.clientCertificate && authentication == rhs.authentication &&
-                   username == rhs.username && password == rhs.password && updateInterval == rhs.updateInterval &&
-                   timeout == rhs.timeout && autoReconnectEnabled == rhs.autoReconnectEnabled &&
-                   autoReconnectInterval == rhs.autoReconnectInterval;
-        }
-
-        bool operator!=(const ConnectionConfiguration& rhs) const { return !(rhs == *this); }
+        bool operator==(const ConnectionConfiguration& rhs) const = default;
     };
 
     enum class RpcConnectionState { Disconnected, Connecting, Connected };
@@ -112,10 +99,7 @@ namespace libtremotesf {
             QString errorMessage{};
             QString detailedErrorMessage{};
 
-            inline bool operator==(const Status& other) const noexcept {
-                return connectionState == other.connectionState && error == other.error &&
-                       errorMessage == other.errorMessage && detailedErrorMessage == other.detailedErrorMessage;
-            }
+            bool operator==(const Status& other) const = default;
         };
 
         bool isConnected() const;
