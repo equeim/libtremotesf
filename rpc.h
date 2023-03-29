@@ -147,25 +147,25 @@ namespace libtremotesf {
             const QString& link, const QString& downloadDirectory, TorrentData::Priority bandwidthPriority, bool start
         );
 
-        void startTorrents(const std::vector<int>& ids);
-        void startTorrentsNow(const std::vector<int>& ids);
-        void pauseTorrents(const std::vector<int>& ids);
-        void removeTorrents(const std::vector<int>& ids, bool deleteFiles);
-        void checkTorrents(const std::vector<int>& ids);
-        void moveTorrentsToTop(const std::vector<int>& ids);
-        void moveTorrentsUp(const std::vector<int>& ids);
-        void moveTorrentsDown(const std::vector<int>& ids);
-        void moveTorrentsToBottom(const std::vector<int>& ids);
+        void startTorrents(std::span<const int> ids);
+        void startTorrentsNow(std::span<const int> ids);
+        void pauseTorrents(std::span<const int> ids);
+        void removeTorrents(std::span<const int> ids, bool deleteFiles);
+        void checkTorrents(std::span<const int> ids);
+        void moveTorrentsToTop(std::span<const int> ids);
+        void moveTorrentsUp(std::span<const int> ids);
+        void moveTorrentsDown(std::span<const int> ids);
+        void moveTorrentsToBottom(std::span<const int> ids);
 
-        void reannounceTorrents(const std::vector<int>& ids);
+        void reannounceTorrents(std::span<const int> ids);
 
         void setSessionProperty(const QString& property, const QJsonValue& value);
         void setSessionProperties(const QJsonObject& properties);
         void
         setTorrentProperty(int id, const QString& property, const QJsonValue& value, bool updateIfSuccessful = false);
-        void setTorrentsLocation(const std::vector<int>& ids, const QString& location, bool moveFiles);
-        void getTorrentsFiles(const std::vector<int>& ids, bool asDataUpdate);
-        void getTorrentsPeers(const std::vector<int>& ids, bool asDataUpdate);
+        void setTorrentsLocation(std::span<const int> ids, const QString& location, bool moveFiles);
+        void getTorrentsFiles(std::span<const int> ids, bool asDataUpdate);
+        void getTorrentsPeers(std::span<const int> ids, bool asDataUpdate);
 
         void renameTorrentFile(int torrentId, const QString& filePath, const QString& newName);
 
@@ -183,7 +183,7 @@ namespace libtremotesf {
 
         void getServerSettings();
         void getTorrents();
-        void checkTorrentsSingleFile(const std::vector<int>& torrentIds);
+        void checkTorrentsSingleFile(std::span<const int> torrentIds);
         void getServerStats();
 
         bool checkIfUpdateCompleted();

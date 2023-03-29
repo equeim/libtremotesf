@@ -408,7 +408,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::startTorrents(const std::vector<int>& ids) {
+    void Rpc::startTorrents(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-start"_l1,
@@ -423,7 +423,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::startTorrentsNow(const std::vector<int>& ids) {
+    void Rpc::startTorrentsNow(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-start-now"_l1,
@@ -438,7 +438,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::pauseTorrents(const std::vector<int>& ids) {
+    void Rpc::pauseTorrents(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-stop"_l1,
@@ -453,7 +453,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::removeTorrents(const std::vector<int>& ids, bool deleteFiles) {
+    void Rpc::removeTorrents(std::span<const int> ids, bool deleteFiles) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-remove"_l1,
@@ -468,7 +468,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::checkTorrents(const std::vector<int>& ids) {
+    void Rpc::checkTorrents(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-verify"_l1,
@@ -483,7 +483,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::moveTorrentsToTop(const std::vector<int>& ids) {
+    void Rpc::moveTorrentsToTop(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "queue-move-top"_l1,
@@ -498,7 +498,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::moveTorrentsUp(const std::vector<int>& ids) {
+    void Rpc::moveTorrentsUp(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "queue-move-up"_l1,
@@ -513,7 +513,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::moveTorrentsDown(const std::vector<int>& ids) {
+    void Rpc::moveTorrentsDown(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "queue-move-down"_l1,
@@ -528,7 +528,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::moveTorrentsToBottom(const std::vector<int>& ids) {
+    void Rpc::moveTorrentsToBottom(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "queue-move-bottom"_l1,
@@ -543,7 +543,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::reannounceTorrents(const std::vector<int>& ids) {
+    void Rpc::reannounceTorrents(std::span<const int> ids) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-reannounce"_l1,
@@ -578,7 +578,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::setTorrentsLocation(const std::vector<int>& ids, const QString& location, bool moveFiles) {
+    void Rpc::setTorrentsLocation(std::span<const int> ids, const QString& location, bool moveFiles) {
         if (isConnected()) {
             mRequestRouter->postRequest(
                 "torrent-set-location"_l1,
@@ -593,7 +593,7 @@ namespace libtremotesf {
         }
     }
 
-    void Rpc::getTorrentsFiles(const std::vector<int>& ids, bool asDataUpdate) {
+    void Rpc::getTorrentsFiles(std::span<const int> ids, bool asDataUpdate) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "files"_l1, "fileStats"_l1}}, {"ids"_l1, toJsonArray(ids)}},
@@ -619,7 +619,7 @@ namespace libtremotesf {
         );
     }
 
-    void Rpc::getTorrentsPeers(const std::vector<int>& ids, bool asDataUpdate) {
+    void Rpc::getTorrentsPeers(std::span<const int> ids, bool asDataUpdate) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "peers"_l1}}, {"ids"_l1, toJsonArray(ids)}},
@@ -1031,7 +1031,7 @@ namespace libtremotesf {
         );
     }
 
-    void Rpc::checkTorrentsSingleFile(const std::vector<int>& torrentIds) {
+    void Rpc::checkTorrentsSingleFile(std::span<const int> torrentIds) {
         mRequestRouter->postRequest(
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "priorities"_l1}}, {"ids"_l1, toJsonArray(torrentIds)}},
