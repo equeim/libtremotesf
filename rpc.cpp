@@ -101,19 +101,19 @@ namespace libtremotesf {
           mServerSettings(new ServerSettings(this, this)),
           mServerStats(new ServerStats(this)) {
         mAutoReconnectTimer->setSingleShot(true);
-        QObject::connect(mAutoReconnectTimer, &QTimer::timeout, this, [=] {
+        QObject::connect(mAutoReconnectTimer, &QTimer::timeout, this, [=, this] {
             logInfo("Auto reconnection");
             connect();
         });
 
         mUpdateTimer->setSingleShot(true);
-        QObject::connect(mUpdateTimer, &QTimer::timeout, this, [=] { updateData(); });
+        QObject::connect(mUpdateTimer, &QTimer::timeout, this, [=, this] { updateData(); });
 
         QObject::connect(
             mRequestRouter,
             &RequestRouter::requestFailed,
             this,
-            [=](RpcError error, const QString& errorMessage, const QString& detailedErrorMessage) {
+            [=, this](RpcError error, const QString& errorMessage, const QString& detailedErrorMessage) {
                 setStatus({RpcConnectionState::Disconnected, error, errorMessage, detailedErrorMessage});
                 if (mAutoReconnectEnabled && !mUpdateDisabled) {
                     logInfo("Auto reconnecting in {} seconds", mAutoReconnectTimer->interval() / 1000);
@@ -349,13 +349,13 @@ namespace libtremotesf {
             );
         });
         auto watcher = new QFutureWatcher<QByteArray>(this);
-        QObject::connect(watcher, &QFutureWatcher<QByteArray>::finished, this, [=] {
+        QObject::connect(watcher, &QFutureWatcher<QByteArray>::finished, this, [=, this] {
             if (isConnected()) {
                 mRequestRouter->postRequest(
                     "torrent-add"_l1,
                     watcher->result(),
                     RequestRouter::RequestType::Independent,
-                    [=](const RequestRouter::Response& response) {
+                    [=, this](const RequestRouter::Response& response) {
                         if (response.success) {
                             if (response.arguments.contains(torrentDuplicateKey)) {
                                 emit torrentAddDuplicate();
@@ -393,7 +393,7 @@ namespace libtremotesf {
                  {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
                  {"paused"_l1, !start}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         if (response.arguments.contains(torrentDuplicateKey)) {
                             emit torrentAddDuplicate();
@@ -414,7 +414,7 @@ namespace libtremotesf {
                 "torrent-start"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -429,7 +429,7 @@ namespace libtremotesf {
                 "torrent-start-now"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -444,7 +444,7 @@ namespace libtremotesf {
                 "torrent-stop"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -459,7 +459,7 @@ namespace libtremotesf {
                 "torrent-remove"_l1,
                 {{"ids"_l1, toJsonArray(ids)}, {"delete-local-data"_l1, deleteFiles}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -474,7 +474,7 @@ namespace libtremotesf {
                 "torrent-verify"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -489,7 +489,7 @@ namespace libtremotesf {
                 "queue-move-top"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -504,7 +504,7 @@ namespace libtremotesf {
                 "queue-move-up"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -519,7 +519,7 @@ namespace libtremotesf {
                 "queue-move-down"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -534,7 +534,7 @@ namespace libtremotesf {
                 "queue-move-bottom"_l1,
                 {{"ids"_l1, toJsonArray(ids)}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -569,7 +569,7 @@ namespace libtremotesf {
                 "torrent-set"_l1,
                 {{"ids"_l1, QJsonArray{id}}, {property, value}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success && updateIfSuccessful) {
                         updateData();
                     }
@@ -584,7 +584,7 @@ namespace libtremotesf {
                 "torrent-set-location"_l1,
                 {{"ids"_l1, toJsonArray(ids)}, {"location"_l1, location}, {"move"_l1, moveFiles}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         updateData();
                     }
@@ -598,7 +598,7 @@ namespace libtremotesf {
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "files"_l1, "fileStats"_l1}}, {"ids"_l1, toJsonArray(ids)}},
             asDataUpdate ? RequestRouter::RequestType::DataUpdate : RequestRouter::RequestType::Independent,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
@@ -624,7 +624,7 @@ namespace libtremotesf {
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "peers"_l1}}, {"ids"_l1, toJsonArray(ids)}},
             asDataUpdate ? RequestRouter::RequestType::DataUpdate : RequestRouter::RequestType::Independent,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (response.success) {
                     const QJsonArray torrents(response.arguments.value(torrentsKey).toArray());
                     for (const auto& torrentJson : torrents) {
@@ -651,7 +651,7 @@ namespace libtremotesf {
                 "torrent-rename-path"_l1,
                 {{"ids"_l1, QJsonArray{torrentId}}, {"path"_l1, filePath}, {"name"_l1, newName}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         Torrent* torrent = torrentById(torrentId);
                         if (torrent) {
@@ -680,7 +680,7 @@ namespace libtremotesf {
                                   "\"method\":\"session-get\""
                                   "}"),
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         emit gotDownloadDirFreeSpace(toInt64(response.arguments.value("download-dir-free-space"_l1)));
                     }
@@ -695,7 +695,7 @@ namespace libtremotesf {
                 "free-space"_l1,
                 {{"path"_l1, path}},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     emit gotFreeSpaceForPath(
                         path,
                         response.success,
@@ -731,7 +731,7 @@ namespace libtremotesf {
                 "session-close"_l1,
                 QJsonObject{},
                 RequestRouter::RequestType::Independent,
-                [=](const RequestRouter::Response& response) {
+                [=, this](const RequestRouter::Response& response) {
                     if (response.success) {
                         logInfo("Successfully sent shutdown request, disconnecting");
                         disconnect();
@@ -833,7 +833,7 @@ namespace libtremotesf {
             "session-get"_l1,
             QByteArrayLiteral("{\"method\":\"session-get\"}"),
             RequestRouter::RequestType::DataUpdate,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (response.success) {
                     mServerSettings->update(response.arguments);
                     if (connectionState() == ConnectionState::Connecting) {
@@ -965,7 +965,7 @@ namespace libtremotesf {
             "torrent-get"_l1,
             *requestData,
             RequestRouter::RequestType::DataUpdate,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (!response.success) {
                     return;
                 }
@@ -1036,7 +1036,7 @@ namespace libtremotesf {
             "torrent-get"_l1,
             {{"fields"_l1, QJsonArray{"id"_l1, "priorities"_l1}}, {"ids"_l1, toJsonArray(torrentIds)}},
             RequestRouter::RequestType::DataUpdate,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (response.success) {
                     const auto torrentJsons = response.arguments.value(torrentsKey).toArray();
                     for (const auto& torrentJson : torrentJsons) {
@@ -1060,7 +1060,7 @@ namespace libtremotesf {
             "session-stats"_l1,
             QByteArrayLiteral("{\"method\":\"session-stats\"}"),
             RequestRouter::RequestType::DataUpdate,
-            [=](const RequestRouter::Response& response) {
+            [=, this](const RequestRouter::Response& response) {
                 if (response.success) {
                     mServerStats->update(response.arguments);
                     maybeFinishUpdateOrConnection();
@@ -1110,7 +1110,7 @@ namespace libtremotesf {
             return;
         }
         logInfo("checkIfServerIsLocal: resolving IP address for host name {}", host);
-        mPendingHostInfoLookupId = QHostInfo::lookupHost(host, this, [=](const QHostInfo& info) {
+        mPendingHostInfoLookupId = QHostInfo::lookupHost(host, this, [=, this](const QHostInfo& info) {
             logInfo("checkIfServerIsLocal: resolved IP address for host name {}", host);
             const auto addresses = info.addresses();
             if (!addresses.isEmpty()) {

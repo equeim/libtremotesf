@@ -248,7 +248,7 @@ namespace libtremotesf::impl {
         reply->ignoreSslErrors(mExpectedSslErrors);
         auto sslErrors = std::make_shared<QList<QSslError>>();
 
-        QObject::connect(reply, &QNetworkReply::sslErrors, this, [=](const QList<QSslError>& errors) {
+        QObject::connect(reply, &QNetworkReply::sslErrors, this, [=, this](const QList<QSslError>& errors) {
             for (const QSslError& error : errors) {
                 if (!mExpectedSslErrors.contains(error)) {
                     sslErrors->push_back(error);
@@ -256,7 +256,7 @@ namespace libtremotesf::impl {
             }
         });
 
-        QObject::connect(reply, &QNetworkReply::finished, this, [=]() mutable {
+        QObject::connect(reply, &QNetworkReply::finished, this, [=, this]() mutable {
             onRequestFinished(reply, std::move(*sslErrors));
         });
     }
@@ -320,7 +320,7 @@ namespace libtremotesf::impl {
             });
         auto watcher = new ParseFutureWatcher(this);
         watcher->setProperty(metadataProperty, QVariant::fromValue(metadata));
-        QObject::connect(watcher, &ParseFutureWatcher::finished, this, [=] {
+        QObject::connect(watcher, &ParseFutureWatcher::finished, this, [=, this] {
             if (!mPendingParseFutures.erase(watcher)) {
                 // Future was cancelled
                 return;
