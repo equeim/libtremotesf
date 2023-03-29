@@ -18,11 +18,8 @@ struct Item {
     int id;
     QString data;
 
-    inline bool operator==(const Item& other) const { return other.id == id && other.data == data; }
-
-    inline bool operator!=(const Item& other) const { return !(other == *this); }
-
-    inline bool operator<(const Item& other) const { return id < other.id; }
+    bool operator==(const Item& other) const = default;
+    bool operator<(const Item& other) const { return id < other.id; }
 };
 
 namespace fmt {

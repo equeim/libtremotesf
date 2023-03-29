@@ -19,7 +19,7 @@ namespace libtremotesf {
         explicit Peer(QString&& address, const QJsonObject& peerJson);
         bool update(const QJsonObject& peerJson);
 
-        bool operator==(const Peer& other) const { return address == other.address; }
+        bool operator==(const Peer& other) const = default;
 
         QString address{};
         QString client{};
