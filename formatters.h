@@ -5,6 +5,7 @@
 #ifndef LIBTREMOTESF_FORMATTERS_H
 #define LIBTREMOTESF_FORMATTERS_H
 
+#include <concepts>
 #include <stdexcept>
 #include <system_error>
 #include <type_traits>
@@ -24,9 +25,6 @@
 #else
 #    define FORMAT_CONST const
 #endif
-
-// Include it here just because it's useful
-#include "literals.h"
 
 namespace libtremotesf {
     struct SimpleFormatter {
@@ -74,6 +72,9 @@ namespace libtremotesf::impl {
     inline constexpr auto singleArgumentFormatString = "{}";
 
     template<typename T>
+    concept QDebugPrintable = requires(T t, QDebug d) { d << t; };
+
+    template<QDebugPrintable T>
     struct QDebugFormatter : SimpleFormatter {
         fmt::format_context::iterator format(const T& t, fmt::format_context& ctx) FORMAT_CONST {
             QString buffer{};
@@ -83,59 +84,67 @@ namespace libtremotesf::impl {
         }
     };
 
-    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, int64_t value, fmt::format_context& ctx);
-    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, uint64_t value, fmt::format_context& ctx);
+    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, qint64 value, fmt::format_context& ctx);
+    fmt::format_context::iterator formatQEnum(const QMetaEnum& meta, quint64 value, fmt::format_context& ctx);
 
     template<typename T>
+        requires std::is_enum_v<T>
     struct QEnumFormatter : SimpleFormatter {
-        static_assert(std::is_enum_v<T>);
-
         fmt::format_context::iterator format(T t, fmt::format_context& ctx) FORMAT_CONST {
             const auto meta = QMetaEnum::fromType<T>();
-            const auto underlying = static_cast<std::underlying_type_t<T>>(t);
-            if constexpr (std::is_signed_v<decltype(underlying)>) {
-                return formatQEnum(meta, static_cast<int64_t>(underlying), ctx);
+            using UnderlyingType = std::underlying_type_t<T>;
+            const auto underlying = static_cast<UnderlyingType>(t);
+            if constexpr (std::signed_integral<UnderlyingType>) {
+                return formatQEnum(meta, static_cast<qint64>(underlying), ctx);
             } else {
-                return formatQEnum(meta, static_cast<uint64_t>(underlying), ctx);
+                return formatQEnum(meta, static_cast<quint64>(underlying), ctx);
             }
         }
     };
 }
 
-template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<QObject, T>>> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const T& object, format_context& ctx) FORMAT_CONST {
-        QString buffer{};
-        QDebug stream(&buffer);
-        stream.nospace() << &object;
-        return fmt::format_to(ctx.out(), libtremotesf::impl::singleArgumentFormatString, buffer);
+namespace fmt {
+    template<std::derived_from<QObject> T>
+    struct formatter<T> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const T& object, format_context& ctx) FORMAT_CONST {
+            QString buffer{};
+            QDebug stream(&buffer);
+            stream.nospace() << &object;
+            return fmt::format_to(ctx.out(), libtremotesf::impl::singleArgumentFormatString, buffer);
+        }
+    };
+}
+
+#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class)                                   \
+    namespace fmt {                                                              \
+        template<>                                                               \
+        struct formatter<Class> : libtremotesf::impl::QDebugFormatter<Class> {}; \
     }
-};
 
-#define SPECIALIZE_FORMATTER_FOR_QDEBUG(Class) \
-    template<>                                 \
-    struct fmt::formatter<Class> : libtremotesf::impl::QDebugFormatter<Class> {};
+#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum)                                 \
+    namespace fmt {                                                           \
+        template<>                                                            \
+        struct formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {}; \
+    }
 
-#define SPECIALIZE_FORMATTER_FOR_Q_ENUM(Enum) \
-    template<>                                \
-    struct fmt::formatter<Enum> : libtremotesf::impl::QEnumFormatter<Enum> {};
+namespace fmt {
+    template<>
+    struct formatter<std::exception> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const std::exception& e, format_context& ctx) FORMAT_CONST;
+    };
 
-template<>
-struct fmt::formatter<std::exception> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const std::exception& e, fmt::format_context& ctx) FORMAT_CONST;
-};
+    template<std::derived_from<std::exception> T>
+        requires(!std::same_as<T, std::exception>)
+    struct formatter<T> : formatter<std::exception> {};
 
-template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::exception, T>>> : formatter<std::exception> {};
+    template<>
+    struct formatter<std::system_error> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const std::system_error& e, format_context& ctx) FORMAT_CONST;
+    };
 
-template<>
-struct fmt::formatter<std::system_error> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const std::system_error& e, fmt::format_context& ctx) FORMAT_CONST;
-};
-
-template<typename T>
-struct fmt::formatter<T, char, std::enable_if_t<std::is_base_of_v<std::system_error, T>>>
-    : formatter<std::system_error> {};
+    template<std::derived_from<std::system_error> T>
+    struct formatter<T> : formatter<std::system_error> {};
+}
 
 #ifdef Q_OS_WIN
 namespace winrt {
@@ -143,15 +152,17 @@ namespace winrt {
     struct hresult_error;
 }
 
-template<>
-struct fmt::formatter<winrt::hstring> : fmt::formatter<QString> {
-    format_context::iterator format(const winrt::hstring& str, fmt::format_context& ctx) FORMAT_CONST;
-};
+namespace fmt {
+    template<>
+    struct formatter<winrt::hstring> : formatter<QString> {
+        format_context::iterator format(const winrt::hstring& str, format_context& ctx) FORMAT_CONST;
+    };
 
-template<>
-struct fmt::formatter<winrt::hresult_error> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const winrt::hresult_error& e, fmt::format_context& ctx) FORMAT_CONST;
-};
+    template<>
+    struct formatter<winrt::hresult_error> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const winrt::hresult_error& e, format_context& ctx) FORMAT_CONST;
+    };
+}
 #endif
 
 #endif // LIBTREMOTESF_FORMATTERS_H
