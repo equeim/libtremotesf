@@ -50,7 +50,7 @@ namespace {
             mServer.set_keep_alive_timeout(1);
             port = mServer.bind_to_any_port(host.toStdString());
             logInfo("Bound to port {}", port);
-            mServer.Post(testApiPath.data(), [=](const httplib::Request& req, httplib::Response& res) {
+            mServer.Post(testApiPath.data(), [=, this](const httplib::Request& req, httplib::Response& res) {
                 httplib::Server::Handler handler{};
                 {
                     std::unique_lock lock(mHandlerMutex);
@@ -63,7 +63,7 @@ namespace {
                 }
             });
 
-            mListenFuture = std::async([=] {
+            mListenFuture = std::async([=, this] {
                 logInfo("Starting listening on address {} and port {}", host, port);
                 const bool ok = mServer.listen_after_bind();
                 logInfo("Stopped listening, ok = {}", ok);
