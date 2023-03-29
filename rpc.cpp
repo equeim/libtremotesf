@@ -858,7 +858,7 @@ namespace libtremotesf {
         QJsonValue json{};
     };
 
-    class TorrentsListUpdater : public ItemListUpdater<std::unique_ptr<Torrent>, NewTorrent, std::vector<NewTorrent>> {
+    class TorrentsListUpdater : public ItemListUpdater<std::unique_ptr<Torrent>, std::vector<NewTorrent>> {
     public:
         inline explicit TorrentsListUpdater(Rpc& rpc) : mRpc(rpc) {}
 
