@@ -217,9 +217,11 @@ SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::Priority)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::RatioLimitMode)
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::TorrentData::IdleSeedingLimitMode)
 
-template<>
-struct fmt::formatter<libtremotesf::Torrent> : libtremotesf::SimpleFormatter {
-    format_context::iterator format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST;
-};
+namespace fmt {
+    template<>
+    struct formatter<libtremotesf::Torrent> : libtremotesf::SimpleFormatter {
+        format_context::iterator format(const libtremotesf::Torrent& torrent, format_context& ctx) FORMAT_CONST;
+    };
+}
 
 #endif // LIBTREMOTESF_TORRENT_H
