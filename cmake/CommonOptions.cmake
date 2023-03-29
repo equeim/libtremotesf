@@ -136,7 +136,7 @@ function(set_common_options_on_targets)
         list(APPEND common_compile_definitions ${TREMOTESF_COMMON_COMPILE_DEFINITIONS})
     endif()
 
-    set(common_public_compile_features cxx_std_17)
+    set(common_public_compile_features cxx_std_20)
     if (DEFINED TREMOTESF_COMMON_PUBLIC_COMPILE_FEATURES)
         list(APPEND common_public_compile_features ${TREMOTESF_COMMON_PUBLIC_COMPILE_FEATURES})
     endif()
