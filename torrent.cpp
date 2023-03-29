@@ -228,7 +228,7 @@ namespace libtremotesf {
             EnumMapping(TorrentData::IdleSeedingLimitMode::Unlimited, 2)});
     }
 
-    int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonValue(value); }
+    int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonConstant(value); }
 
     bool TorrentData::update(const QJsonObject& object, bool firstTime) {
         bool changed = false;
@@ -467,7 +467,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::RatioLimitMode),
-            ratioLimitModeMapper.toJsonValue(mode)
+            ratioLimitModeMapper.toJsonConstant(mode)
         );
     }
 
@@ -491,7 +491,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::BandwidthPriority),
-            priorityMapper.toJsonValue(priority)
+            priorityMapper.toJsonConstant(priority)
         );
     }
 
@@ -500,7 +500,7 @@ namespace libtremotesf {
         mRpc->setTorrentProperty(
             mData.id,
             updateKeyString(TorrentData::UpdateKey::IdleSeedingLimitMode),
-            idleSeedingLimitModeMapper.toJsonValue(mode)
+            idleSeedingLimitModeMapper.toJsonConstant(mode)
         );
     }
 

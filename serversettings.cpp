@@ -297,7 +297,7 @@ namespace libtremotesf {
             if (mSaveOnSet) {
                 mRpc->setSessionProperty(
                     alternativeSpeedLimitsDaysKey,
-                    alternativeSpeedLimitsDaysMapper.toJsonValue(days)
+                    alternativeSpeedLimitsDaysMapper.toJsonConstant(days)
                 );
             }
         }
@@ -327,7 +327,7 @@ namespace libtremotesf {
     void ServerSettings::setEncryptionMode(ServerSettingsData::EncryptionMode mode) {
         mData.encryptionMode = mode;
         if (mSaveOnSet) {
-            mRpc->setSessionProperty(encryptionModeKey, encryptionModeMapper.toJsonValue(mode));
+            mRpc->setSessionProperty(encryptionModeKey, encryptionModeMapper.toJsonConstant(mode));
         }
     }
 
@@ -507,12 +507,12 @@ namespace libtremotesf {
              {alternativeSpeedLimitsBeginTimeKey, mData.alternativeSpeedLimitsBeginTime.msecsSinceStartOfDay() / 60000},
              {alternativeSpeedLimitsEndTimeKey, mData.alternativeSpeedLimitsEndTime.msecsSinceStartOfDay() / 60000},
              {alternativeSpeedLimitsDaysKey,
-              alternativeSpeedLimitsDaysMapper.toJsonValue(mData.alternativeSpeedLimitsDays)},
+              alternativeSpeedLimitsDaysMapper.toJsonConstant(mData.alternativeSpeedLimitsDays)},
 
              {peerPortKey, mData.peerPort},
              {randomPortEnabledKey, mData.randomPortEnabled},
              {portForwardingEnabledKey, mData.portForwardingEnabled},
-             {encryptionModeKey, encryptionModeMapper.toJsonValue(mData.encryptionMode)},
+             {encryptionModeKey, encryptionModeMapper.toJsonConstant(mData.encryptionMode)},
              {utpEnabledKey, mData.utpEnabled},
              {pexEnabledKey, mData.pexEnabled},
              {dhtEnabledKey, mData.dhtEnabled},
