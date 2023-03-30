@@ -32,13 +32,11 @@ namespace libtremotesf::impl {
     }
 #else
     namespace {
-        template<typename T, size_t N>
-        [[maybe_unused]] void removeSubstring(std::string& str, T (&substring)[N]) {
-            constexpr auto substringLen = N - 1;
+        void removeSubstring(std::string& str, std::string_view substring) {
             while (true) {
                 size_t pos = 0;
-                if (pos = str.find(substring, pos, substringLen); pos != std::string::npos) {
-                    str.erase(pos, N - 1);
+                if (pos = str.find(substring, pos); pos != std::string::npos) {
+                    str.erase(pos, substring.size());
                 } else {
                     break;
                 }
