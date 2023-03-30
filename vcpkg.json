@@ -53,17 +53,5 @@
       ]
     }
   },
-  "default-features": [],
-  "overrides": [
-    {
-      "name": "qtbase",
-      "version": "6.4.3",
-      "port-version": 0
-    },
-    {
-      "name": "qtbase-tremotesf-android",
-      "version": "6.4.3",
-      "port-version": 0
-    }
-  ]
+  "default-features": []
 }
