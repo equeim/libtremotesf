@@ -141,25 +141,25 @@ jobs:
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
-    - name: Build libtremotesf with Qt 6 and MSVC
+    - name: Build libtremotesf with Qt 6 and MSVC toolcain
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
         output-directories-suffix: -qt6
 
-    - name: Build libtremotesf with Qt 6 and clang-cl
+    - name: Build libtremotesf with Qt 6 and MSVC + Clang toolchain
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows-msvc-clang-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON -D CMAKE_CXX_COMPILER=clang-cl
         output-directories-suffix: -qt6-clang-cl
 
-    - name: Build libtremotesf with Qt 5 and MSVC
+    - name: Build libtremotesf with Qt 5 and MSVC toolchain
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=OFF
         output-directories-suffix: -qt5
 
-    - name: Build libtremotesf with Qt 5 and clang-cl
+    - name: Build libtremotesf with Qt 5 and MSVC + Clang toolchain
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows-msvc-clang-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=OFF -D CMAKE_CXX_COMPILER=clang-cl
