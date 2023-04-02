@@ -141,7 +141,7 @@ jobs:
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
-    - name: Build libtremotesf with Qt 6 and MSVC toolcain
+    - name: Build libtremotesf with Qt 6 and MSVC toolchain
       uses: equeim/action-cmake-build@v9
       with:
         cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
