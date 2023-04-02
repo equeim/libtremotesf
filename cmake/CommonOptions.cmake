@@ -118,8 +118,12 @@ function(set_common_options_on_targets)
     )
 
     if (WIN32)
-        # Minimum supported version, 0x0603 = Windows 8.1
-        list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603)
+        # Minimum supported version, 0x0603 = Windows 8.1, 0x0A00 = Windows 10
+        if (TREMOTESF_QT6)
+            list(APPEND common_compile_definitions WINVER=0x0A00 _WIN32_WINNT=0x0A00)
+        else()
+            list(APPEND common_compile_definitions WINVER=0x0603 _WIN32_WINNT=0x0603)
+        endif()
         # Disable implicit ANSI codepage counterparts to Win32 functions dealing with strings
         list(APPEND common_compile_definitions UNICODE)
         # Slim down <windows.h>, can be undefined locally
