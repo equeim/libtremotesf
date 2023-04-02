@@ -110,7 +110,7 @@ jobs:
           ctest --preset base-release
           echo '::endgroup'
 
-  build-windows:
+  build-windows-msvc:
     runs-on: windows-latest
 
     steps:
@@ -172,6 +172,63 @@ jobs:
         name: vcpkg-logs
         retention-days: ${{ github.event_name == 'push' && github.retention_days || 3 }}
         path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
+
+  build-windows-mingw:
+    strategy:
+      fail-fast: false
+      matrix:
+        qt-version: [5, 6]
+
+    runs-on: windows-latest
+
+    steps:
+    - name: Checkout
+      uses: actions/checkout@v3
+      with:
+        submodules: 'true'
+
+    - name: Set up MSYS2
+      uses: msys2/setup-msys2@v2
+      with:
+        msystem: 'CLANG64'
+        update: 'true'
+        install: |
+          mingw-w64-clang-x86_64-clang
+          mingw-w64-clang-x86_64-cmake
+          mingw-w64-clang-x86_64-cppwinrt
+          mingw-w64-clang-x86_64-fmt
+          mingw-w64-clang-x86_64-libpsl
+          mingw-w64-clang-x86_64-openssl
+          mingw-w64-clang-x86_64-pkgconf
+          mingw-w64-clang-x86_64-qt${{matrix.qt-version}}-base
+
+    - name: Generate C++/WinRT headers
+      shell: msys2 {0}
+      run: |
+          cppwinrt -input sdk -output /clang64/include
+
+    - name: Add GCC problem matcher
+      uses: ammaraskar/gcc-problem-matcher@master
+
+    - name: Build with LLVM MinGW toolchain
+      shell: msys2 {0}
+      run: |
+          set -e -o pipefail
+          echo '::group::Configuring CMake'
+          cmake -S . --preset base -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+          echo '::endgroup'
+          echo '::group::Building Debug'
+          cmake --build --preset base-debug
+          echo '::endgroup'
+          echo '::group::Testing Debug'
+          ctest --preset base-debug
+          echo '::endgroup'
+          echo '::group::Building Release'
+          cmake --build --preset base-release
+          echo '::endgroup'
+          echo '::group::Testing Release'
+          ctest --preset base-release
+          echo '::endgroup'
 
   reuse-lint:
     runs-on: ubuntu-latest
