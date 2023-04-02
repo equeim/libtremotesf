@@ -35,7 +35,7 @@ jobs:
           compiler: clang
 
     env:
-      RPM_PACKAGES: git cmake 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' 'pkgconfig(libpsl)' 'pkgconfig(openssl)' pkgconf ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} ${{ startsWith(matrix.container-image, 'opensuse') && 'ninja' || 'ninja-build' }} ${{ startsWith(matrix.container-image, 'fedora') && '''cmake(httplib)''' || '' }}
+      RPM_PACKAGES: git cmake 'cmake(Qt${{matrix.qt-version}}Core)' 'cmake(Qt${{matrix.qt-version}}Concurrent)' 'cmake(Qt${{matrix.qt-version}}Network)' 'cmake(Qt${{matrix.qt-version}}Test)' 'cmake(fmt)' 'pkgconfig(libpsl)' openssl-devel pkgconf ${{ matrix.compiler == 'gcc' && 'gcc-c++' || 'clang' }} ${{ startsWith(matrix.container-image, 'opensuse') && 'ninja' || 'ninja-build' }} ${{ startsWith(matrix.container-image, 'fedora') && '''cmake(httplib)''' || '' }}
       DEB_PACKAGES: ca-certificates git cmake ninja-build libfmt-dev libpsl-dev libssl-dev pkgconf ${{ matrix.qt-version == '6' && 'qt6-base-dev' || 'qtbase5-dev' }} ${{ matrix.compiler == 'gcc' && 'g++' || 'clang' }} ${{ startsWith(matrix.container-image, 'ubuntu') && 'libcpp-httplib-dev' || '' }}
 
     runs-on: ubuntu-latest
