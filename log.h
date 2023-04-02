@@ -12,6 +12,11 @@
 #include <QString>
 #include <fmt/core.h>
 
+#ifdef Q_OS_WIN
+#    include <guiddef.h>
+#    include <winrt/base.h>
+#endif
+
 #include "formatters.h"
 
 #if FMT_VERSION < 80000
