@@ -5,49 +5,41 @@
 #include "demangle.h"
 
 #include <cstdlib>
-#include <type_traits>
-#include <QScopeGuard>
+#include <memory>
+#include <string_view>
 
-#if defined(__has_include)
-#    if __has_include(<cxxabi.h>)
-#        define HAVE_CXXABI_H
-#    endif
-#elif defined(__GLIBCXX__) || defined(__GLIBCPP__)
-#    define HAVE_CXXABI_H
-#endif
-
-#ifdef HAVE_CXXABI_H
+#if __has_include(<cxxabi.h>)
 #    include <cxxabi.h>
+#    define LIBTREMOTESF_HAVE_CXXABI_H
 #endif
 
 namespace libtremotesf::impl {
-#ifdef HAVE_CXXABI_H
+#ifdef LIBTREMOTESF_HAVE_CXXABI_H
     std::string demangleTypeName(const char* typeName) {
-        int status{};
-        char* demangled = abi::__cxa_demangle(typeName, nullptr, nullptr, &status);
-        const auto guard = QScopeGuard([&] {
-            if (demangled) free(demangled);
-        });
-        return demangled ? demangled : typeName;
+        const std::unique_ptr<char, decltype(&free)> demangled(
+            abi::__cxa_demangle(typeName, nullptr, nullptr, nullptr),
+            &free
+        );
+        return demangled ? demangled.get() : typeName;
     }
 #else
     namespace {
+        using namespace std::string_view_literals;
+        constexpr auto structPrefix = "struct "sv;
+        constexpr auto classPrefix = "class "sv;
+
         void removeSubstring(std::string& str, std::string_view substring) {
-            while (true) {
-                size_t pos = 0;
-                if (pos = str.find(substring, pos); pos != std::string::npos) {
-                    str.erase(pos, substring.size());
-                } else {
-                    break;
-                }
+            size_t pos{};
+            while ((pos = str.find(substring, pos)) != std::string::npos) {
+                str.erase(pos, substring.size());
             }
         }
     }
 
     std::string demangleTypeName(const char* typeName) {
         std::string demangled = typeName;
-        removeSubstring(demangled, "struct ");
-        removeSubstring(demangled, "class ");
+        removeSubstring(demangled, structPrefix);
+        removeSubstring(demangled, classPrefix);
         return demangled;
     }
 #endif
