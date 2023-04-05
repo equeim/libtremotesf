@@ -25,7 +25,7 @@
 #    define FORMAT_STRING fmt::format_string<Args...>
 #endif
 
-#if defined(__GNUC__)
+#if __has_cpp_attribute(gnu::always_inline)
 #    define ALWAYS_INLINE [[gnu::always_inline]] inline
 #elif defined(_MSC_VER)
 #    define ALWAYS_INLINE __forceinline
