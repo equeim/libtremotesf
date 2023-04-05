@@ -39,6 +39,8 @@ add_library(
     addressutils.h
     demangle.cpp
     demangle.h
+    fileutils.cpp
+    fileutils.h
     formatters.cpp
     formatters.h
     itemlistupdater.h

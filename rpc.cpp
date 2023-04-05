@@ -5,7 +5,7 @@
 #include "rpc.h"
 
 #include <QCoreApplication>
-#include <QDir>
+#include <QFile>
 #include <QFutureWatcher>
 #include <QJsonArray>
 #include <QHostAddress>
@@ -14,17 +14,16 @@
 #include <QTimer>
 #include <QSslCertificate>
 #include <QSslKey>
-#include <QStandardPaths>
 #include <QtConcurrentRun>
 
 #include "addressutils.h"
+#include "fileutils.h"
 #include "jsonutils.h"
 #include "itemlistupdater.h"
 #include "log.h"
 #include "requestrouter.h"
 #include "serversettings.h"
 #include "serverstats.h"
-#include "target_os.h"
 #include "torrent.h"
 
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QHostAddress)
@@ -39,56 +38,6 @@ namespace libtremotesf {
 
         constexpr auto torrentsKey = "torrents"_l1;
         constexpr auto torrentDuplicateKey = "torrent-duplicate"_l1;
-
-        constexpr auto sessionIdFileLocation = [] {
-            if constexpr (isTargetOsWindows) {
-                return QStandardPaths::GenericDataLocation;
-            } else {
-                return QStandardPaths::TempLocation;
-            }
-        }();
-
-        constexpr QLatin1String sessionIdFilePrefix = [] {
-            if constexpr (isTargetOsWindows) {
-                return "Transmission/tr_session_id_"_l1;
-            } else {
-                return "tr_session_id_"_l1;
-            }
-        }();
-
-        QString readFileAsBase64String(QFile& file) {
-            if (!file.isOpen() && !file.open(QIODevice::ReadOnly)) {
-                logWarning("Failed to open file {}", file.fileName());
-                return {};
-            }
-
-            static constexpr qint64 bufferSize = 1024 * 1024 - 1; // 1 MiB minus 1 byte (dividable by 3)
-            QString string{};
-            string.reserve(static_cast<QString::size_type>(((4 * file.size() / 3) + 3) & ~3));
-
-            QByteArray buffer{};
-            buffer.resize(static_cast<QByteArray::size_type>(std::min(bufferSize, file.size())));
-
-            qint64 offset{};
-
-            while (true) {
-                const qint64 n = file.read(buffer.data() + offset, buffer.size() - offset);
-                if (n <= 0) {
-                    if (offset > 0) {
-                        buffer.resize(static_cast<QByteArray::size_type>(offset));
-                        string.append(QLatin1String(buffer.toBase64()));
-                    }
-                    break;
-                }
-                offset += n;
-                if (offset == buffer.size()) {
-                    string.append(QLatin1String(buffer.toBase64()));
-                    offset = 0;
-                }
-            }
-
-            return string;
-        }
     }
 
     using namespace impl;
@@ -315,9 +264,10 @@ namespace libtremotesf {
             );
         } else {
             logWarning(
-                "addTorrentFile: failed to open file, error = {}, error string = {}",
-                static_cast<std::underlying_type_t<QFile::FileError>>(file->error()),
-                file->errorString()
+                "addTorrentFile: failed to open file {}: {} (QFileDevice::FileError {})",
+                filePath,
+                file->errorString(),
+                static_cast<std::underlying_type_t<QFile::FileError>>(file->error())
             );
             emit torrentAddError();
         }
@@ -336,48 +286,56 @@ namespace libtremotesf {
         if (!isConnected()) {
             return;
         }
-        const auto future = QtConcurrent::run([=, file = std::move(file)]() {
-            return RequestRouter::makeRequestData(
-                "torrent-add"_l1,
-                {{"metainfo"_l1, readFileAsBase64String(*file)},
-                 {"download-dir"_l1, downloadDirectory},
-                 {"files-unwanted"_l1, toJsonArray(unwantedFiles)},
-                 {"priority-high"_l1, toJsonArray(highPriorityFiles)},
-                 {"priority-low"_l1, toJsonArray(lowPriorityFiles)},
-                 {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
-                 {"paused"_l1, !start}}
-            );
-        });
-        auto watcher = new QFutureWatcher<QByteArray>(this);
-        QObject::connect(watcher, &QFutureWatcher<QByteArray>::finished, this, [=, this] {
-            if (isConnected()) {
-                mRequestRouter->postRequest(
+        const auto future = QtConcurrent::run([=, this, file = std::move(file)]() -> std::optional<QByteArray> {
+            try {
+                return RequestRouter::makeRequestData(
                     "torrent-add"_l1,
-                    watcher->result(),
-                    RequestRouter::RequestType::Independent,
-                    [=, this](const RequestRouter::Response& response) {
-                        if (response.success) {
-                            if (response.arguments.contains(torrentDuplicateKey)) {
-                                emit torrentAddDuplicate();
-                            } else {
-                                if (!renamedFiles.empty()) {
-                                    const auto torrentJson = response.arguments.value("torrent-added"_l1).toObject();
-                                    const auto id = Torrent::idFromJson(torrentJson);
-                                    if (id.has_value()) {
-                                        for (const auto& [filePath, newName] : renamedFiles) {
-                                            renameTorrentFile(*id, filePath, newName);
-                                        }
+                    {{"metainfo"_l1, readFileAsBase64String(*file)},
+                     {"download-dir"_l1, downloadDirectory},
+                     {"files-unwanted"_l1, toJsonArray(unwantedFiles)},
+                     {"priority-high"_l1, toJsonArray(highPriorityFiles)},
+                     {"priority-low"_l1, toJsonArray(lowPriorityFiles)},
+                     {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
+                     {"paused"_l1, !start}}
+                );
+            } catch (const std::runtime_error& e) {
+                logWarning("addTorrentFile: failed to read file {}: {}", fileNameOrHandle(*file), e.what());
+                emit torrentAddError();
+                return std::nullopt;
+            }
+        });
+        using Watcher = QFutureWatcher<std::optional<QByteArray>>;
+        auto watcher = new Watcher(this);
+        QObject::connect(watcher, &Watcher::finished, this, [=, this] {
+            std::optional<QByteArray> requestData = watcher->result();
+            watcher->deleteLater();
+            if (!requestData.has_value()) return;
+            if (!isConnected()) return;
+            mRequestRouter->postRequest(
+                "torrent-add"_l1,
+                requestData.value(),
+                RequestRouter::RequestType::Independent,
+                [=, this](const RequestRouter::Response& response) {
+                    if (response.success) {
+                        if (response.arguments.contains(torrentDuplicateKey)) {
+                            emit torrentAddDuplicate();
+                        } else {
+                            if (!renamedFiles.empty()) {
+                                const auto torrentJson = response.arguments.value("torrent-added"_l1).toObject();
+                                const auto id = Torrent::idFromJson(torrentJson);
+                                if (id.has_value()) {
+                                    for (const auto& [filePath, newName] : renamedFiles) {
+                                        renameTorrentFile(*id, filePath, newName);
                                     }
                                 }
-                                updateData();
                             }
-                        } else {
-                            emit torrentAddError();
+                            updateData();
                         }
+                    } else {
+                        emit torrentAddError();
                     }
-                );
-                watcher->deleteLater();
-            }
+                }
+            );
         });
         watcher->setFuture(future);
     }
@@ -1098,7 +1056,8 @@ namespace libtremotesf {
 
     void Rpc::checkIfServerIsLocal() {
         logInfo("checkIfServerIsLocal() called");
-        if (isSessionIdFileExists()) {
+        if (mServerSettings->data().hasSessionIdFile() && !mRequestRouter->sessionId().isEmpty() &&
+            isTransmissionSessionIdFileExists(mRequestRouter->sessionId())) {
             mServerIsLocal = true;
             logInfo("checkIfServerIsLocal: server is running locally: true");
             return;
@@ -1127,23 +1086,5 @@ namespace libtremotesf {
             mPendingHostInfoLookupId = std::nullopt;
             maybeFinishUpdateOrConnection();
         });
-    }
-
-    bool Rpc::isSessionIdFileExists() const {
-        if constexpr (targetOs != TargetOs::UnixAndroid) {
-            if (mServerSettings->data().hasSessionIdFile() && !mRequestRouter->sessionId().isEmpty()) {
-                const auto file =
-                    QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix + mRequestRouter->sessionId());
-                if (!file.isEmpty()) {
-                    logInfo(
-                        "isSessionIdFileExists: found transmission-daemon session id file {}",
-                        QDir::toNativeSeparators(file)
-                    );
-                    return true;
-                }
-                logInfo("isSessionIdFileExists: did not find transmission-daemon session id file");
-            }
-        }
-        return false;
     }
 }
