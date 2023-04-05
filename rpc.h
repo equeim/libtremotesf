@@ -191,7 +191,6 @@ namespace libtremotesf {
         void maybeFinishUpdateOrConnection();
 
         void checkIfServerIsLocal();
-        [[nodiscard]] bool isSessionIdFileExists() const;
 
         impl::RequestRouter* mRequestRouter{};
 
