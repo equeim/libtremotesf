@@ -26,9 +26,6 @@ SPECIALIZE_FORMATTER_FOR_QDEBUG(QJsonObject)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QNetworkProxy)
 SPECIALIZE_FORMATTER_FOR_QDEBUG(QSslError)
 
-Q_DECLARE_METATYPE(libtremotesf::impl::RpcRequestMetadata)
-Q_DECLARE_METATYPE(libtremotesf::impl::NetworkRequestMetadata)
-
 namespace fmt {
     template<>
     struct formatter<QSsl::SslProtocol> : libtremotesf::SimpleFormatter {
@@ -429,3 +426,6 @@ namespace libtremotesf::impl {
         return detailedErrorMessage;
     }
 }
+
+Q_DECLARE_METATYPE(libtremotesf::impl::RpcRequestMetadata)
+Q_DECLARE_METATYPE(libtremotesf::impl::NetworkRequestMetadata)
