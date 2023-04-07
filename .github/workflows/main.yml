@@ -71,7 +71,11 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
+        freebsd-version: ['12.4-RELEASE', '13.2-RELEASE']
         qt-version: [5, 6]
+    env:
+      BOX_CACHE_KEY: vagrant-box-freebsd-${{ matrix.freebsd-version }}
+      FREEBSD_VERSION: ${{ matrix.freebsd-version }}
 
     runs-on: macos-latest
     steps:
@@ -83,32 +87,52 @@ jobs:
     - name: Add GCC problem matcher
       uses: ammaraskar/gcc-problem-matcher@master
 
-    - name: Build on FreeBSD
-      uses: vmactions/freebsd-vm@22aefae156db38ea5ab7563f89808dc82db8e325
+    - name: Restore Vagrant box
+      id: restore-box
+      uses: actions/cache/restore@v3
       with:
-        release: '13.1'
-        copyback: 'false'
-        usesh: 'true'
-        prepare: |
-          set -e -o pipefail
-          pkg install -y cmake ninja pkgconf libpsl libfmt cpp-httplib ${{ matrix.qt-version == '6' && 'qt6-base' || 'qt5-buildtools qt5-qmake qt5-core qt5-network qt5-concurrent qt5-testlib' }}
-        run: |
-          set -e -o pipefail
-          echo '::group::Configuring CMake'
-          cmake -S . --preset base -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
-          echo '::endgroup'
-          echo '::group::Building Debug'
-          cmake --build --preset base-debug
-          echo '::endgroup'
-          echo '::group::Testing Debug'
-          ctest --preset base-debug
-          echo '::endgroup'
-          echo '::group::Building Release'
-          cmake --build --preset base-release
-          echo '::endgroup'
-          echo '::group::Testing Release'
-          ctest --preset base-release
-          echo '::endgroup'
+        path: ~/.vagrant.d/boxes
+        key: ${{ env.BOX_CACHE_KEY }}
+
+    - name: Start FreeBSD VM
+      run: |
+        echo '::group::Starting VM'
+        VAGRANT_CWD="$GITHUB_WORKSPACE/.github/workflows" vagrant up --provider=virtualbox
+        echo '::endgroup'
+        echo '::group::Adding vagrant shell to PATH'
+        echo "$GITHUB_WORKSPACE/.github/workflows" >> "$GITHUB_PATH"
+        echo '::endgroup'
+
+    - name: Save Vagrant box
+      if: steps.restore-box.outputs.cache-hit != 'true' && github.event_name != 'pull_request'
+      uses: actions/cache/save@v3
+      with:
+        path: ~/.vagrant.d/boxes
+        key: ${{ env.BOX_CACHE_KEY }}
+
+    - name: Install dependencies
+      shell: vagrant-freebsd-shell.sh {0}
+      run: |
+        sudo pkg install -y cmake ninja pkgconf libpsl libfmt cpp-httplib ${{ matrix.qt-version == '6' && 'qt6-base' || 'qt5-buildtools qt5-qmake qt5-core qt5-network qt5-concurrent qt5-testlib' }}
+
+    - name: Build for FreeBSD
+      shell: vagrant-freebsd-shell.sh {0}
+      run: |
+        echo '::group::Configuring CMake'
+        cmake -S . --preset base -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        echo '::endgroup'
+        echo '::group::Building Debug'
+        cmake --build --preset base-debug
+        echo '::endgroup'
+        echo '::group::Testing Debug'
+        ctest --preset base-debug
+        echo '::endgroup'
+        echo '::group::Building Release'
+        cmake --build --preset base-release
+        echo '::endgroup'
+        echo '::group::Testing Release'
+        ctest --preset base-release
+        echo '::endgroup'
 
   build-windows-msvc:
     runs-on: windows-latest
