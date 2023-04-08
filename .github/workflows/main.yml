@@ -132,17 +132,16 @@ jobs:
       uses: equeim/action-setup-msvc-environment@v1
 
     - name: Set up vcpkg
-      uses: equeim/action-setup-vcpkg@v4
+      uses: equeim/action-setup-vcpkg@v5
       with:
-        run-install: true
+        run-install: 'true'
         install-root: C:\vcpkg_installed
         triplet: x64-windows-static
         host-triplet: x64-windows-static
         install-features: qt5 qt6
         binary-cache-path: C:\vcpkg_binary_cache
         save-cache: ${{ github.event_name != 'pull_request' }}
-      env:
-        VCPKG_OVERLAY_TRIPLETS: ${{ github.workspace }}\vcpkg-windows-overlay-triplets
+        overlay-triplets-path: ${{ github.workspace }}\vcpkg-windows-overlay-triplets
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
