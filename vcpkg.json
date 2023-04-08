@@ -7,11 +7,6 @@
     "fmt",
     "cpp-httplib",
     {
-      "name": "libpsl",
-      "default-features": false,
-      "features": ["libidn2"]
-    },
-    {
       "name": "pkgconf",
       "platform": "windows"
     }

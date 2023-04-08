@@ -29,8 +29,14 @@ include(cmake/CommonOptions.cmake)
 
 find_package(Qt${TREMOTESF_QT_VERSION_MAJOR} ${TREMOTESF_MINIMUM_QT_VERSION} REQUIRED COMPONENTS Core Concurrent Network)
 find_package(fmt 7.0 REQUIRED)
-find_package(PkgConfig REQUIRED)
-pkg_check_modules(libpsl REQUIRED IMPORTED_TARGET libpsl)
+
+if (WIN32 OR ANDROID)
+    set(registrable_domain_qt ON)
+else()
+    set(registrable_domain_qt OFF)
+    find_package(PkgConfig REQUIRED)
+    pkg_check_modules(libpsl REQUIRED IMPORTED_TARGET libpsl)
+endif()
 
 add_library(
     libtremotesf
@@ -70,7 +76,12 @@ add_library(
     tracker.h
 )
 
-target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt PkgConfig::libpsl)
+target_link_libraries(libtremotesf PUBLIC Qt::Core Qt::Network fmt::fmt)
+if (registrable_domain_qt)
+    target_compile_definitions(libtremotesf PRIVATE LIBTREMOTESF_REGISTRABLE_DOMAIN_QT)
+else()
+    target_link_libraries(libtremotesf PRIVATE PkgConfig::libpsl)
+endif()
 target_include_directories(libtremotesf PRIVATE ${Qt${TREMOTESF_QT_VERSION_MAJOR}Concurrent_INCLUDE_DIRS})
 
 qt_import_plugins(libtremotesf EXCLUDE_BY_TYPE bearer)
@@ -99,6 +110,7 @@ if (BUILD_TESTING AND NOT ANDROID)
     endif()
     if (NOT httplib_FOUND)
         message(STATUS "Did not found cpp-httplib as a CMake package, trying pkg-config")
+        find_package(PkgConfig REQUIRED)
         pkg_check_modules(httplib IMPORTED_TARGET cpp-httplib>=0.11 cpp-httplib<=0.12)
     endif()
     if (NOT httplib_FOUND)
@@ -122,6 +134,10 @@ if (BUILD_TESTING AND NOT ANDROID)
     add_executable(pathutils_test pathutils_test.cpp)
     add_test(NAME pathutils_test COMMAND pathutils_test)
     target_link_libraries(pathutils_test libtremotesf Qt::Test)
+
+    add_executable(tracker_test tracker_test.cpp)
+    add_test(NAME tracker_test COMMAND tracker_test)
+    target_link_libraries(tracker_test libtremotesf Qt::Test)
 endif()
 
 set_common_options_on_targets()
