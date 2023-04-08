@@ -86,42 +86,14 @@ jobs:
     - name: Add GCC problem matcher
       uses: ammaraskar/gcc-problem-matcher@master
 
-    - name: Compute box cache key
-      run: |
-        echo 'BOX_CACHE_KEY=vagrant-box-freebsd${{ matrix.freebsd-version }}-${{ hashFiles('.github/workflows/Vagrantfile') }}' >> "$GITHUB_ENV"
-
-    - name: Restore Vagrant box
-      id: restore-box
-      uses: actions/cache/restore@v3
-      with:
-        path: ~/.vagrant.d/boxes
-        key: ${{ env.BOX_CACHE_KEY }}
-
     - name: Start FreeBSD VM
-      id: vagrant-up
       run: |
-        echo '::group::Determining whether box needs to be updated'
-        if vagrant --machine-readable box outdated --force | grep --quiet 'A newer version'; then
-            echo 'Box needs to be udpated'
-            echo "box-updated=true" >> "$GITHUB_OUTPUT"
-        else
-            echo 'Box does not need to be udpated'
-            echo "box-updated=false" >> "$GITHUB_OUTPUT"
-        fi
-        echo '::endgroup'
         echo '::group::Starting VM'
         VAGRANT_CWD="$GITHUB_WORKSPACE/.github/workflows" vagrant up --provider=virtualbox
         echo '::endgroup'
         echo '::group::Adding vagrant shell to PATH'
         echo "$GITHUB_WORKSPACE/.github/workflows" >> "$GITHUB_PATH"
         echo '::endgroup'
-
-    - name: Save Vagrant box
-      if: (steps.restore-box.outputs.cache-hit != 'true' || steps.vagrant-up.box-updated == 'true') && github.event_name != 'pull_request'
-      uses: actions/cache/save@v3
-      with:
-        path: ~/.vagrant.d/boxes
-        key: ${{ env.BOX_CACHE_KEY }}
 
     - name: Install dependencies
       shell: vagrant-freebsd-shell.sh {0}
