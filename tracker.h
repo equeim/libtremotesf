@@ -12,6 +12,7 @@
 #include "formatters.h"
 
 class QJsonObject;
+class QUrl;
 
 namespace libtremotesf {
     class Tracker {
@@ -69,6 +70,10 @@ namespace libtremotesf {
 
         int mId{};
     };
+
+    namespace impl {
+        QString registrableDomainFromUrl(const QUrl& url);
+    }
 }
 
 SPECIALIZE_FORMATTER_FOR_Q_ENUM(libtremotesf::Tracker::Status)

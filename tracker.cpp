@@ -9,7 +9,10 @@
 #include <QJsonObject>
 #include <QHostAddress>
 #include <QUrl>
-#include <libpsl.h>
+
+#ifndef LIBTREMOTESF_REGISTRABLE_DOMAIN_QT
+#    include <libpsl.h>
+#endif
 
 #include "jsonutils.h"
 #include "literals.h"
@@ -34,20 +37,7 @@ namespace libtremotesf {
         if (announce != mAnnounce) {
             changed = true;
             mAnnounce = std::move(announce);
-
-            const auto host = QUrl(mAnnounce).host().toLower().normalized(QString::NormalizationForm_KC);
-            const bool isIpAddress = !QHostAddress(host).isNull();
-            if (!isIpAddress) {
-                const auto domain = host.toUtf8();
-                const char* registrableDomain = psl_registrable_domain(psl_builtin(), domain);
-                if (registrableDomain) {
-                    mSite = QString::fromUtf8(registrableDomain);
-                } else {
-                    mSite = host;
-                }
-            } else {
-                mSite = host;
-            }
+            mSite = registrableDomainFromUrl(QUrl(mAnnounce));
         }
 
         const bool announceError =
@@ -87,4 +77,80 @@ namespace libtremotesf {
 
         return changed;
     }
+}
+
+#ifdef LIBTREMOTESF_REGISTRABLE_DOMAIN_QT
+#    if QT_VERSION_MAJOR >= 6
+// Private Qt API
+bool qIsEffectiveTLD(QStringView domain);
+
+namespace {
+    QString registrableDomainFromDomain(const QString& fullDomain, [[maybe_unused]] const QUrl& url) {
+        QStringView domain = fullDomain;
+        QStringView previousDomain = fullDomain;
+        while (!domain.isEmpty()) {
+            if (qIsEffectiveTLD(domain)) {
+                return previousDomain.toString();
+            }
+            const auto dotIndex = domain.indexOf('.');
+            if (dotIndex == -1) {
+                break;
+            }
+            previousDomain = domain;
+            domain = domain.sliced(dotIndex + 1);
+        }
+        return fullDomain;
+    }
+}
+#    else
+namespace {
+    QString registrableDomainFromDomain(const QString& fullDomain, const QUrl& url) {
+#        if defined(__GNUC__) || defined(__clang__)
+#            pragma GCC diagnostic push
+#            pragma GCC diagnostic ignored "-Wdeprecated-declarations"
+#        elif defined(_MSC_VER)
+#            pragma warning(push)
+#            pragma warning(disable : 4996)
+#        endif
+        const auto tld = url.topLevelDomain();
+#        if defined(__GNUC__) || defined(__clang__)
+#            pragma GCC diagnostic pop
+#        elif defined(_MSC_VER)
+#            pragma warning(pop)
+#        endif
+        if (tld.isEmpty()) {
+            return fullDomain;
+        }
+        const auto dotBeforeTldIndex = fullDomain.lastIndexOf(tld);
+        if (dotBeforeTldIndex == -1) {
+            return fullDomain;
+        }
+        const auto dotBeforeRegistrableIndex = fullDomain.lastIndexOf('.', dotBeforeTldIndex - 1);
+        return fullDomain.mid(dotBeforeRegistrableIndex + 1);
+    }
+}
+#    endif
+#else
+namespace {
+    QString registrableDomainFromDomain(const QString& fullDomain, [[maybe_unused]] const QUrl& url) {
+        const auto fullDomainUtf8 = fullDomain.toUtf8();
+        const auto psl = psl_builtin();
+        if (!psl) {
+            return fullDomain;
+        }
+        const auto registrable = psl_registrable_domain(psl, fullDomainUtf8);
+        return registrable ? QString(registrable) : fullDomain;
+    }
+}
+#endif
+
+QString libtremotesf::impl::registrableDomainFromUrl(const QUrl& url) {
+    auto host = url.host().toLower().normalized(QString::NormalizationForm_KC);
+    if (host.isEmpty()) {
+        return {};
+    }
+    if (const bool isIpAddress = !QHostAddress(host).isNull(); isIpAddress) {
+        return host;
+    }
+    return registrableDomainFromDomain(host, url);
 }
