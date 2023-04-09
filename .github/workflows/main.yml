@@ -17,7 +17,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        container-image: ['fedora:36', 'fedora:37', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'ubuntu:22.04', 'ubuntu:22.10']
+        container-image: ['fedora:37', 'fedora:38', 'opensuse/tumbleweed:latest', 'mageia:8', 'debian:11', 'debian:bookworm', 'ubuntu:22.04', 'ubuntu:22.10']
         qt-version: [5, 6]
         compiler: [gcc, clang]
         exclude:
