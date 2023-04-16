@@ -27,6 +27,8 @@
 
 #if __has_cpp_attribute(gnu::always_inline)
 #    define ALWAYS_INLINE [[gnu::always_inline]] inline
+#elif __has_cpp_attribute(msvc::forceinline)
+#    define ALWAYS_INLINE [[msvc::forceinline]] inline
 #elif defined(_MSC_VER)
 #    define ALWAYS_INLINE __forceinline
 #else
