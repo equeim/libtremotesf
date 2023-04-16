@@ -383,9 +383,18 @@ namespace libtremotesf {
         mData.rpcVersion = serverSettings.value("rpc-version"_l1).toInt();
         mData.minimumRpcVersion = serverSettings.value("rpc-version-minimum"_l1).toInt();
 
+        if (const auto newConfigDir = serverSettings.value("config-dir"_l1).toString();
+            newConfigDir != mData.configDirectory) {
+            mData.configDirectory = newConfigDir;
+            // Transmission's config directory is likely located under 'C:\Users' on Windows
+            // If config-dir somehow is an UNC path then we are out of luck - we can't reliably distinguish
+            // between Unix path and Windows UNC path unless we already know the OS. And that's what we are trying to determine here
+            mData.pathOs = isAbsoluteWindowsDOSFilePath(mData.configDirectory) ? PathOs::Windows : PathOs::Unix;
+        }
+
         setChanged(
             mData.downloadDirectory,
-            normalizePath(serverSettings.value(downloadDirectoryKey).toString()),
+            normalizePath(serverSettings.value(downloadDirectoryKey).toString(), mData.pathOs),
             changed
         );
         setChanged(mData.trashTorrentFiles, serverSettings.value(trashTorrentFilesKey).toBool(), changed);
@@ -398,7 +407,7 @@ namespace libtremotesf {
         );
         setChanged(
             mData.incompleteDirectory,
-            normalizePath(serverSettings.value(incompleteDirectoryKey).toString()),
+            normalizePath(serverSettings.value(incompleteDirectoryKey).toString(), mData.pathOs),
             changed
         );
 

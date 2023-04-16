@@ -2,10 +2,11 @@
 //
 // SPDX-License-Identifier: GPL-3.0-or-later
 
+#include <stdexcept>
 #include <QRegularExpression>
 
-#include "literals.h"
 #include "pathutils.h"
+#include "literals.h"
 
 namespace libtremotesf {
     // We can't use QDir::to/fromNativeSeparators because it checks for current OS,
@@ -15,45 +16,83 @@ namespace libtremotesf {
         constexpr auto windowsSeparatorChar = '\\';
         constexpr auto unixSeparatorChar = '/';
         constexpr auto unixSeparatorString = "/"_l1;
-        constexpr QString::size_type minimumWindowsPathLength = 3; // e.g. C:/
 
-        bool isAbsoluteWindowsFilePath(const QString& path) {
-            static const QRegularExpression regex(R"(^[A-Za-z]:[\\/].*$)"_l1);
+        enum class PathType { Unix, WindowsAbsoluteDOSFilePath, WindowsUNCOrDOSDevicePath };
+
+        bool isWindowsUNCOrDOSDevicePath(QStringView path) {
+            static const QRegularExpression regex(R"(^(?:\\|//).*$)"_l1);
             return regex.match(path).hasMatch();
+        }
+
+        PathType determinePathType(QStringView path, PathOs pathOs) {
+            switch (pathOs) {
+            case PathOs::Unix:
+                return PathType::Unix;
+            case PathOs::Windows:
+                if (isAbsoluteWindowsDOSFilePath(path)) {
+                    return PathType::WindowsAbsoluteDOSFilePath;
+                }
+                if (isWindowsUNCOrDOSDevicePath(path)) {
+                    return PathType::WindowsUNCOrDOSDevicePath;
+                }
+                return PathType::WindowsAbsoluteDOSFilePath;
+            }
+            throw std::logic_error("Unknown PathOs value");
         }
 
         void convertFromNativeWindowsSeparators(QString& path) {
             path.replace(windowsSeparatorChar, unixSeparatorChar);
         }
 
+        void convertToNativeWindowsSeparators(QString& path) { path.replace(unixSeparatorChar, windowsSeparatorChar); }
+
         void capitalizeWindowsDriveLetter(QString& path) {
-            const auto drive = path[0];
-            if (drive.isLower()) {
-                path[0] = drive.toUpper();
+            if (path.size() >= 2 && path[1] == ':') {
+                const auto drive = path[0];
+                if (drive.isLower()) {
+                    path[0] = drive.toUpper();
+                }
             }
         }
 
-        void collapseRepeatingSeparators(QString& path) {
-            static const QRegularExpression regex(R"(/+)"_l1);
+        void collapseRepeatingSeparators(QString& path, PathType pathType) {
+            const auto& regex = [pathType]() -> const QRegularExpression& {
+                if (pathType == PathType::WindowsUNCOrDOSDevicePath) {
+                    // Don't collapse leading '//'
+                    static const QRegularExpression regex(R"((?!^)//+)"_l1);
+                    return regex;
+                }
+                static const QRegularExpression regex(R"(//+)"_l1);
+                return regex;
+            }();
             path.replace(regex, unixSeparatorString);
         }
 
-        void dropTrailingSeparator(QString& path, bool isAbsoluteWindowsFilePath) {
-            if (path.size() <= 1) return;
-            if (isAbsoluteWindowsFilePath && path.size() <= minimumWindowsPathLength) return;
+        void dropTrailingSeparator(QString& path, PathType pathType) {
+            const auto minimumLength = [pathType] {
+                switch (pathType) {
+                case PathType::Unix:
+                    return 1; // e.g. '/'
+                case PathType::WindowsAbsoluteDOSFilePath:
+                    return 3; // e.g. 'C:/'
+                case PathType::WindowsUNCOrDOSDevicePath:
+                    return 2; // e.g. '//'
+                }
+                throw std::logic_error("Unknown PathOs value");
+            }();
+            if (path.size() <= minimumLength) return;
             if (path.back() == unixSeparatorChar) {
                 path.chop(1);
             }
         }
-
-        QString toNativeWindowsSeparators(const QString& path) {
-            QString native = path;
-            native.replace(unixSeparatorChar, windowsSeparatorChar);
-            return native;
-        }
     }
 
-    QString normalizePath(const QString& path) {
+    bool isAbsoluteWindowsDOSFilePath(QStringView path) {
+        static const QRegularExpression regex(R"(^[A-Za-z]:[\\/].*$)"_l1);
+        return regex.match(path).hasMatch();
+    }
+
+    QString normalizePath(const QString& path, PathOs pathOs) {
         if (path.isEmpty()) {
             return path;
         }
@@ -61,20 +100,26 @@ namespace libtremotesf {
         if (normalized.isEmpty()) {
             return normalized;
         }
-        const bool windows = isAbsoluteWindowsFilePath(normalized);
-        if (windows) {
+        const auto pathType = determinePathType(normalized, pathOs);
+        if (pathType != PathType::Unix) {
             convertFromNativeWindowsSeparators(normalized);
-            capitalizeWindowsDriveLetter(normalized);
+            if (pathType == PathType::WindowsAbsoluteDOSFilePath) {
+                capitalizeWindowsDriveLetter(normalized);
+            }
         }
-        collapseRepeatingSeparators(normalized);
-        dropTrailingSeparator(normalized, windows);
+        collapseRepeatingSeparators(normalized, pathType);
+        dropTrailingSeparator(normalized, pathType);
         return normalized;
     }
 
-    QString toNativeSeparators(const QString& path) {
-        if (!path.isEmpty() && isAbsoluteWindowsFilePath(path)) {
-            return toNativeWindowsSeparators(path);
+    QString toNativeSeparators(const QString& path, PathOs pathOs) {
+        if (path.isEmpty()) {
+            return path;
         }
-        return path;
+        QString native = path;
+        if (determinePathType(native, pathOs) != PathType::Unix) {
+            convertToNativeWindowsSeparators(native);
+        }
+        return native;
     }
 }

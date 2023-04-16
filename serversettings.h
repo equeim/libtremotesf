@@ -9,6 +9,7 @@
 #include <QTime>
 
 #include "formatters.h"
+#include "pathutils.h"
 
 class QJsonObject;
 
@@ -42,6 +43,9 @@ namespace libtremotesf {
 
         int rpcVersion = 0;
         int minimumRpcVersion = 0;
+
+        QString configDirectory;
+        PathOs pathOs = PathOs::Unix;
 
         QString downloadDirectory;
         bool startAddedTorrents = false;
