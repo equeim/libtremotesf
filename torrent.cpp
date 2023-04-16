@@ -230,33 +230,41 @@ namespace libtremotesf {
 
     int TorrentData::priorityToInt(Priority value) { return priorityMapper.toJsonConstant(value); }
 
-    bool TorrentData::update(const QJsonObject& object, bool firstTime) {
+    bool TorrentData::update(const QJsonObject& object, bool firstTime, const Rpc* rpc) {
         bool changed = false;
         for (auto i = object.begin(), end = object.end(); i != end; ++i) {
             const auto key = mapUpdateKey(i.key());
             if (key.has_value()) {
-                updateProperty(*key, i.value(), changed, firstTime);
+                updateProperty(*key, i.value(), changed, firstTime, rpc);
             }
         }
         return changed;
     }
 
     bool TorrentData::update(
-        std::span<const std::optional<TorrentData::UpdateKey>> keys, const QJsonArray& values, bool firstTime
+        std::span<const std::optional<TorrentData::UpdateKey>> keys,
+        const QJsonArray& values,
+        bool firstTime,
+        const Rpc* rpc
     ) {
         bool changed = false;
         const auto count = std::min(keys.size(), static_cast<size_t>(values.size()));
         for (size_t i = 0; i < count; ++i) {
             const auto key = keys[i];
             if (key.has_value()) {
-                updateProperty(*key, values[static_cast<QJsonArray::size_type>(i)], changed, firstTime);
+                updateProperty(*key, values[static_cast<QJsonArray::size_type>(i)], changed, firstTime, rpc);
             }
         }
         return changed;
     }
 
-    void
-    TorrentData::updateProperty(TorrentData::UpdateKey intKey, const QJsonValue& value, bool& changed, bool firstTime) {
+    void TorrentData::updateProperty(
+        TorrentData::UpdateKey intKey,
+        const QJsonValue& value,
+        bool& changed,
+        bool firstTime,
+        const Rpc* rpc
+    ) {
         const auto key = static_cast<UpdateKey>(intKey);
         switch (static_cast<UpdateKey>(key)) {
         case TorrentData::UpdateKey::Id:
@@ -354,7 +362,11 @@ namespace libtremotesf {
         case TorrentData::UpdateKey::IdleSeedingLimit:
             return setChanged(idleSeedingLimit, value.toInt(), changed);
         case TorrentData::UpdateKey::DownloadDirectory:
-            return setChanged(downloadDirectory, normalizePath(value.toString()), changed);
+            return setChanged(
+                downloadDirectory,
+                normalizePath(value.toString(), rpc->serverSettings()->data().pathOs),
+                changed
+            );
         case TorrentData::UpdateKey::Creator:
             return setChanged(creator, value.toString(), changed);
         case TorrentData::UpdateKey::CreationDate:
@@ -398,7 +410,7 @@ namespace libtremotesf {
 
     Torrent::Torrent(int id, const QJsonObject& object, Rpc* rpc, QObject* parent) : QObject(parent), mRpc(rpc) {
         mData.id = id;
-        [[maybe_unused]] bool changed = mData.update(object, true);
+        [[maybe_unused]] const bool changed = mData.update(object, true, rpc);
     }
 
     Torrent::Torrent(
@@ -410,7 +422,7 @@ namespace libtremotesf {
     )
         : QObject(parent), mRpc(rpc) {
         mData.id = id;
-        [[maybe_unused]] bool changed = mData.update(keys, values, true);
+        [[maybe_unused]] const bool changed = mData.update(keys, values, true, rpc);
     }
 
     QJsonArray Torrent::updateFields() {
@@ -568,7 +580,7 @@ namespace libtremotesf {
     }
 
     bool Torrent::update(const QJsonObject& object) {
-        const bool c = mData.update(object, false);
+        const bool c = mData.update(object, false, mRpc);
         emit updated();
         if (c) {
             emit changed();
@@ -577,7 +589,7 @@ namespace libtremotesf {
     }
 
     bool Torrent::update(std::span<const std::optional<TorrentData::UpdateKey>> keys, const QJsonArray& values) {
-        const bool c = mData.update(keys, values, false);
+        const bool c = mData.update(keys, values, false, mRpc);
         emit updated();
         if (c) {
             emit changed();

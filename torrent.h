@@ -50,11 +50,11 @@ namespace libtremotesf {
         enum class IdleSeedingLimitMode { Global, Single, Unlimited };
         Q_ENUM(IdleSeedingLimitMode)
 
-        [[nodiscard]] bool update(const QJsonObject& object, bool firstTime);
+        [[nodiscard]] bool update(const QJsonObject& object, bool firstTime, const Rpc* rpc);
 
         enum class UpdateKey;
         [[nodiscard]] bool
-        update(std::span<const std::optional<UpdateKey>> keys, const QJsonArray& values, bool firstTime);
+        update(std::span<const std::optional<UpdateKey>> keys, const QJsonArray& values, bool firstTime, const Rpc* rpc);
 
         int id{};
         QString hashString{};
@@ -126,7 +126,9 @@ namespace libtremotesf {
         [[nodiscard]] bool isSeedingStalled() const { return peersGettingFromUsCount == 0; }
 
     private:
-        void updateProperty(TorrentData::UpdateKey key, const QJsonValue& value, bool& changed, bool firstTime);
+        void updateProperty(
+            TorrentData::UpdateKey key, const QJsonValue& value, bool& changed, bool firstTime, const Rpc* rpc
+        );
     };
 
     class Torrent : public QObject {

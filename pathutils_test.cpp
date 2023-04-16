@@ -15,64 +15,74 @@ private:
     struct NormalizeTestCase {
         QString inputPath{};
         QString expectedNormalizedPath{};
+        PathOs pathOs;
     };
 
     struct NativeSeparatorsTestCase {
         QString inputPath{};
         QString expectedNativeSeparatorsPath{};
+        PathOs pathOs;
     };
 private slots:
     void checkNormalize() {
         const auto testCases = std::array{
-            NormalizeTestCase{"", ""},
-            NormalizeTestCase{"/", "/"},
-            NormalizeTestCase{"//", "/"},
-            NormalizeTestCase{"///", "/"},
-            NormalizeTestCase{" / ", "/"},
-            NormalizeTestCase{"///home//foo", "/home/foo"},
-            NormalizeTestCase{"C:/home//foo", "C:/home/foo"},
-            NormalizeTestCase{"C:/home//foo/", "C:/home/foo"},
-            NormalizeTestCase{R"(C:\home\foo)", "C:/home/foo"},
-            NormalizeTestCase{R"(C:\home\foo\\)", "C:/home/foo"},
-            NormalizeTestCase{R"(z:\home\foo)", "Z:/home/foo"},
-            NormalizeTestCase{R"(D:\)", "D:/"},
-            NormalizeTestCase{R"( D:\ )", "D:/"},
-            NormalizeTestCase{R"(D:\\)", "D:/"},
-            NormalizeTestCase{"D:/", "D:/"},
-            NormalizeTestCase{"D://", "D:/"},
+            NormalizeTestCase{"", "", PathOs::Unix},
+            NormalizeTestCase{"", "", PathOs::Windows},
+
+            NormalizeTestCase{"/", "/", PathOs::Unix},
+            NormalizeTestCase{"/", "/", PathOs::Windows}, // Whatever that is we leave it as it is
+
+            NormalizeTestCase{"//", "/", PathOs::Unix},
+            NormalizeTestCase{"//", "//", PathOs::Windows}, // UNC path
+
+            NormalizeTestCase{"///", "/", PathOs::Unix},
+            NormalizeTestCase{"///", "//", PathOs::Windows}, // UNC path? whatever
+
+            NormalizeTestCase{" / ", "/", PathOs::Unix},
+            NormalizeTestCase{" / ", "/", PathOs::Windows}, // Whatever that is we leave it as it is
+
+            NormalizeTestCase{"///home//foo", "/home/foo", PathOs::Unix},
+
+            NormalizeTestCase{"C:/home//foo", "C:/home/foo", PathOs::Windows},
+            NormalizeTestCase{"C:/home//foo/", "C:/home/foo", PathOs::Windows},
+            NormalizeTestCase{R"(C:\home\foo)", "C:/home/foo", PathOs::Windows},
+            NormalizeTestCase{R"(C:\home\foo\\)", "C:/home/foo", PathOs::Windows},
+            NormalizeTestCase{R"(z:\home\foo)", "Z:/home/foo", PathOs::Windows},
+            NormalizeTestCase{R"(D:\)", "D:/", PathOs::Windows},
+            NormalizeTestCase{R"( D:\ )", "D:/", PathOs::Windows},
+            NormalizeTestCase{R"(D:\\)", "D:/", PathOs::Windows},
+            NormalizeTestCase{"D:/", "D:/", PathOs::Windows},
+            NormalizeTestCase{"D://", "D:/", PathOs::Windows},
+            NormalizeTestCase{R"(\\LOCALHOST\c$\home\foo)", R"(//LOCALHOST/c$/home/foo)", PathOs::Windows},
 
             // Backslashes in Unix paths are untouched
-            NormalizeTestCase{R"(///home//fo\o)", R"(/home/fo\o)"},
+            NormalizeTestCase{R"(///home//fo\o)", R"(/home/fo\o)", PathOs::Unix},
 
             // Internal whitespace is untouched
-            NormalizeTestCase{"///home//fo  o", "/home/fo  o"},
-            NormalizeTestCase{R"(C:\home\fo o)", "C:/home/fo o"},
+            NormalizeTestCase{"///home//fo  o", "/home/fo  o", PathOs::Unix},
+            NormalizeTestCase{R"(C:\home\fo o)", "C:/home/fo o", PathOs::Windows},
 
-            // These are not absolute Windows file paths and are left untouched
-            NormalizeTestCase{"d:", "d:"},
-            NormalizeTestCase{"d:foo", "d:foo"},
-            NormalizeTestCase{R"(C::\wtf)", R"(C::\wtf)"},
-            NormalizeTestCase{R"(\\LOCALHOST\c$\home\foo)", R"(\\LOCALHOST\c$\home\foo)"}};
+            // Weird cases from the top of my head
+            NormalizeTestCase{"d:", "D:", PathOs::Windows},
+            NormalizeTestCase{"d:foo", "D:foo", PathOs::Windows},
+            NormalizeTestCase{R"(c::\wtf)", R"(C::/wtf)", PathOs::Windows}};
 
-        for (const auto& [inputPath, expectedNormalizedPath] : testCases) {
-            QCOMPARE(normalizePath(inputPath), expectedNormalizedPath);
+        for (const auto& [inputPath, expectedNormalizedPath, pathOs] : testCases) {
+            QCOMPARE(normalizePath(inputPath, pathOs), expectedNormalizedPath);
         }
     }
 
     void checkToNativeSeparators() {
         const auto testCases = std::array{
-            NativeSeparatorsTestCase{"/", "/"},
-            NativeSeparatorsTestCase{"/home/foo", "/home/foo"},
-            NativeSeparatorsTestCase{"C:/", R"(C:\)"},
-            NativeSeparatorsTestCase{"C:/home/foo", R"(C:\home\foo)"},
+            NativeSeparatorsTestCase{"/", "/", PathOs::Unix},
+            NativeSeparatorsTestCase{"/home/foo", "/home/foo", PathOs::Unix},
 
-            // These are not absolute Windows file paths and are left untouched
-            NativeSeparatorsTestCase{"d:", "d:"},
-            NativeSeparatorsTestCase{"d:foo", "d:foo"},
-            NativeSeparatorsTestCase{R"(C::/wtf)", R"(C::/wtf)"},
-            NativeSeparatorsTestCase{R"(//LOCALHOST/c$/home/foo)", R"(//LOCALHOST/c$/home/foo)"}};
-        for (const auto& [inputPath, expectedNativeSeparatorsPath] : testCases) {
-            QCOMPARE(toNativeSeparators(inputPath), expectedNativeSeparatorsPath);
+            NativeSeparatorsTestCase{"C:/", R"(C:\)", PathOs::Windows},
+            NativeSeparatorsTestCase{"C:/home/foo", R"(C:\home\foo)", PathOs::Windows},
+            NativeSeparatorsTestCase{R"(//LOCALHOST/c$/home/foo)", R"(\\LOCALHOST\c$\home\foo)", PathOs::Windows},
+            NativeSeparatorsTestCase{R"(C::/wtf)", R"(C::\wtf)", PathOs::Windows}};
+        for (const auto& [inputPath, expectedNativeSeparatorsPath, pathOs] : testCases) {
+            QCOMPARE(toNativeSeparators(inputPath, pathOs), expectedNativeSeparatorsPath);
         }
     }
 };
