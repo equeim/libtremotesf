@@ -228,13 +228,13 @@ namespace libtremotesf {
     void Rpc::connect() {
         if (connectionState() == ConnectionState::Disconnected &&
             !mRequestRouter->configuration().serverUrl.isEmpty()) {
-            setStatus(Status{ConnectionState::Connecting});
+            setStatus(Status{.connectionState = ConnectionState::Connecting});
             getServerSettings();
         }
     }
 
     void Rpc::disconnect() {
-        setStatus(Status{ConnectionState::Disconnected});
+        setStatus(Status{.connectionState = ConnectionState::Disconnected});
         mAutoReconnectTimer->stop();
     }
 
@@ -796,9 +796,13 @@ namespace libtremotesf {
                     mServerSettings->update(response.arguments);
                     if (connectionState() == ConnectionState::Connecting) {
                         if (mServerSettings->data().minimumRpcVersion > minimumRpcVersion) {
-                            setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooNew});
+                            setStatus(
+                                Status{.connectionState = ConnectionState::Disconnected, .error = Error::ServerIsTooNew}
+                            );
                         } else if (mServerSettings->data().rpcVersion < minimumRpcVersion) {
-                            setStatus(Status{ConnectionState::Disconnected, Error::ServerIsTooOld});
+                            setStatus(
+                                Status{.connectionState = ConnectionState::Disconnected, .error = Error::ServerIsTooOld}
+                            );
                         } else {
                             updateData();
                             checkIfServerIsLocal();
@@ -1044,7 +1048,7 @@ namespace libtremotesf {
         }
         if (connecting) {
             if (checkIfConnectionCompleted()) {
-                setStatus(Status{ConnectionState::Connected});
+                setStatus(Status{.connectionState = ConnectionState::Connected});
             } else {
                 return;
             }

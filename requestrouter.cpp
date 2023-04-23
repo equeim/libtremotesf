@@ -329,7 +329,7 @@ namespace libtremotesf::impl {
                     logWarning("method '{}' failed, response: {}", metadata.method, *json);
                 }
                 if (metadata.onResponse) {
-                    metadata.onResponse({getReplyArguments(*json), success});
+                    metadata.onResponse({.arguments = getReplyArguments(*json), .success = success});
                 }
             } else {
                 emit requestFailed(RpcError::ParseError, {}, {});
