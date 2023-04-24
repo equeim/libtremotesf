@@ -316,21 +316,19 @@ namespace libtremotesf {
                 requestData.value(),
                 RequestRouter::RequestType::Independent,
                 [=, this](const RequestRouter::Response& response) {
-                    if (response.success) {
-                        if (response.arguments.contains(torrentDuplicateKey)) {
-                            emit torrentAddDuplicate();
-                        } else {
-                            if (!renamedFiles.empty()) {
-                                const auto torrentJson = response.arguments.value("torrent-added"_l1).toObject();
-                                const auto id = Torrent::idFromJson(torrentJson);
-                                if (id.has_value()) {
-                                    for (const auto& [filePath, newName] : renamedFiles) {
-                                        renameTorrentFile(*id, filePath, newName);
-                                    }
+                    if (response.arguments.contains(torrentDuplicateKey)) {
+                        emit torrentAddDuplicate();
+                    } else if (response.success) {
+                        if (!renamedFiles.empty()) {
+                            const auto torrentJson = response.arguments.value("torrent-added"_l1).toObject();
+                            const auto id = Torrent::idFromJson(torrentJson);
+                            if (id.has_value()) {
+                                for (const auto& [filePath, newName] : renamedFiles) {
+                                    renameTorrentFile(*id, filePath, newName);
                                 }
                             }
-                            updateData();
                         }
+                        updateData();
                     } else {
                         emit torrentAddError();
                     }
@@ -352,12 +350,10 @@ namespace libtremotesf {
                  {"paused"_l1, !start}},
                 RequestRouter::RequestType::Independent,
                 [=, this](const RequestRouter::Response& response) {
-                    if (response.success) {
-                        if (response.arguments.contains(torrentDuplicateKey)) {
-                            emit torrentAddDuplicate();
-                        } else {
-                            updateData();
-                        }
+                    if (response.arguments.contains(torrentDuplicateKey)) {
+                        emit torrentAddDuplicate();
+                    } else if (response.success) {
+                        updateData();
                     } else {
                         emit torrentAddError();
                     }
