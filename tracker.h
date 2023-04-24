@@ -32,17 +32,17 @@ namespace libtremotesf {
 
         explicit Tracker(int id, const QJsonObject& trackerMap);
 
-        int id() const { return mId; };
-        const QString& announce() const { return mAnnounce; };
-        const QString& site() const { return mSite; };
+        [[nodiscard]] int id() const { return mId; };
+        [[nodiscard]] const QString& announce() const { return mAnnounce; };
+        [[nodiscard]] const QString& site() const { return mSite; };
 
-        Status status() const { return mStatus; };
-        QString errorMessage() const { return mErrorMessage; };
+        [[nodiscard]] Status status() const { return mStatus; };
+        [[nodiscard]] QString errorMessage() const { return mErrorMessage; };
 
-        int peers() const { return mPeers; };
-        int seeders() const { return mSeeders; }
-        int leechers() const { return mLeechers; }
-        const QDateTime& nextUpdateTime() const { return mNextUpdateTime; };
+        [[nodiscard]] int peers() const { return mPeers; };
+        [[nodiscard]] int seeders() const { return mSeeders; }
+        [[nodiscard]] int leechers() const { return mLeechers; }
+        [[nodiscard]] const QDateTime& nextUpdateTime() const { return mNextUpdateTime; };
 
         bool update(const QJsonObject& trackerMap);
 

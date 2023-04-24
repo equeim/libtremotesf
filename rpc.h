@@ -86,12 +86,12 @@ namespace libtremotesf {
         explicit Rpc(QObject* parent = nullptr);
         ~Rpc() override;
 
-        ServerSettings* serverSettings() const;
-        ServerStats* serverStats() const;
+        [[nodiscard]] ServerSettings* serverSettings() const;
+        [[nodiscard]] ServerStats* serverStats() const;
 
-        const std::vector<std::unique_ptr<Torrent>>& torrents() const;
-        libtremotesf::Torrent* torrentByHash(const QString& hash) const;
-        Torrent* torrentById(int id) const;
+        [[nodiscard]] const std::vector<std::unique_ptr<Torrent>>& torrents() const;
+        [[nodiscard]] libtremotesf::Torrent* torrentByHash(const QString& hash) const;
+        [[nodiscard]] Torrent* torrentById(int id) const;
 
         struct Status {
             ConnectionState connectionState{ConnectionState::Disconnected};
@@ -102,17 +102,17 @@ namespace libtremotesf {
             bool operator==(const Status& other) const = default;
         };
 
-        bool isConnected() const;
-        const Status& status() const;
-        ConnectionState connectionState() const;
-        Error error() const;
-        const QString& errorMessage() const;
-        const QString& detailedErrorMessage() const;
-        bool isLocal() const;
+        [[nodiscard]] bool isConnected() const;
+        [[nodiscard]] const Status& status() const;
+        [[nodiscard]] ConnectionState connectionState() const;
+        [[nodiscard]] Error error() const;
+        [[nodiscard]] const QString& errorMessage() const;
+        [[nodiscard]] const QString& detailedErrorMessage() const;
+        [[nodiscard]] bool isLocal() const;
 
-        int torrentsCount() const;
+        [[nodiscard]] int torrentsCount() const;
 
-        bool isUpdateDisabled() const;
+        [[nodiscard]] bool isUpdateDisabled() const;
         void setUpdateDisabled(bool disabled);
 
         void setConnectionConfiguration(const ConnectionConfiguration& configuration);
