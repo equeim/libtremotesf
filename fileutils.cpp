@@ -91,7 +91,7 @@ namespace libtremotesf::impl {
     }
 
     QString fileNameOrHandle(const QFile& file) {
-        if (const QString fileName = file.fileName(); !fileName.isEmpty()) {
+        if (auto fileName = file.fileName(); !fileName.isEmpty()) {
             return fileName;
         }
         return QString::fromLatin1("handle=%1").arg(file.handle());

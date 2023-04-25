@@ -197,7 +197,7 @@ namespace libtremotesf::impl {
         NetworkRequestMetadata metadata{};
         metadata.postData = data;
         metadata.rpcMetadata = {method, type, std::move(onResponse)};
-        postRequest(std::move(request), std::move(metadata));
+        postRequest(request, std::move(metadata));
     }
 
     bool RequestRouter::hasPendingDataUpdateRequests() const {
