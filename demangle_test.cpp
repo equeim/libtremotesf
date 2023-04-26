@@ -23,42 +23,42 @@ class DemangleTest : public QObject {
     Q_OBJECT
 private slots:
     void checkInt() {
-        int foo{};
+        const int foo{};
         QCOMPARE(typeName(foo), "int");
     }
 
     void checkStruct() {
-        Foo foo{};
+        const Foo foo{};
         QCOMPARE(typeName(foo), "Foo");
     }
 
     void checkClass() {
-        Bar bar{};
+        const Bar bar{};
         QCOMPARE(typeName(bar), "Bar");
     }
 
     void checkNamespacedStruct() {
-        foobar::Foo foo{};
+        const foobar::Foo foo{};
         QCOMPARE(typeName(foo), "foobar::Foo");
     }
 
     void checkNamespacedClass() {
-        foobar::Bar bar{};
+        const foobar::Bar bar{};
         QCOMPARE(typeName(bar), "foobar::Bar");
     }
 
     void checkTemplatedStruct() {
-        What<int> what{};
+        const What<int> what{};
         QCOMPARE(typeName(what), "What<int>");
     }
 
     void checkTemplatedStruct2() {
-        What<Foo> what{};
+        const What<Foo> what{};
         QCOMPARE(typeName(what), "What<Foo>");
     }
 
     void checkTemplatedStruct3() {
-        What<foobar::Foo> what{};
+        const What<foobar::Foo> what{};
         QCOMPARE(typeName(what), "What<foobar::Foo>");
     }
 };
