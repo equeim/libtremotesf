@@ -21,9 +21,12 @@ namespace libtremotesf {
         inline explicit ItemBatchProcessor(std::function<void(size_t, size_t)>&& action) : mAction(std::move(action)) {}
 
         void nextIndex(size_t index) {
-            if (!firstIndex) {
+            if (!firstIndex.has_value()) {
                 reset(index);
-            } else if (index == *lastIndex) {
+                return;
+            }
+            if (!lastIndex.has_value()) throw std::logic_error("lastIndex is empty");
+            if (index == *lastIndex) {
                 lastIndex = index + 1;
             } else {
                 commit();
@@ -48,6 +51,8 @@ namespace libtremotesf {
         }
 
         size_t commit() {
+            if (!firstIndex.has_value()) throw std::logic_error("firstIndex is empty");
+            if (!lastIndex.has_value()) throw std::logic_error("lastIndex is empty");
             mAction(*firstIndex, *lastIndex);
             const size_t size = *lastIndex - *firstIndex;
             firstIndex = std::nullopt;
