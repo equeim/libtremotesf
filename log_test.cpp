@@ -294,12 +294,12 @@ private slots:
     }
 
     void warningStdException() {
-        std::runtime_error e("nope");
+        const std::runtime_error e("nope");
         logWarning(e);
     }
 
     void warningWithStdException() {
-        std::runtime_error e("nope");
+        const std::runtime_error e("nope");
         logWarningWithException(e, "oh no");
     }
 

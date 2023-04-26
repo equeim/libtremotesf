@@ -53,7 +53,7 @@ namespace {
             mServer.Post(testApiPath.data(), [=, this](const httplib::Request& req, httplib::Response& res) {
                 httplib::Server::Handler handler{};
                 {
-                    std::unique_lock lock(mHandlerMutex);
+                    const std::unique_lock lock(mHandlerMutex);
                     handler = mHandler;
                 }
                 if (handler) {
@@ -89,11 +89,11 @@ namespace {
         int port{};
 
         void handle(httplib::Server::Handler&& handler) {
-            std::unique_lock lock(mHandlerMutex);
+            const std::unique_lock lock(mHandlerMutex);
             mHandler = std::move(handler);
         }
         void clearHandler() {
-            std::unique_lock lock(mHandlerMutex);
+            const std::unique_lock lock(mHandlerMutex);
             mHandler = {};
         }
 
