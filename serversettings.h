@@ -90,8 +90,9 @@ namespace libtremotesf {
         int maximumPeersGlobally = 0;
     };
 
-    class ServerSettings : public QObject {
+    class ServerSettings final : public QObject {
         Q_OBJECT
+
     public:
         explicit ServerSettings(Rpc* rpc = nullptr, QObject* parent = nullptr);
 

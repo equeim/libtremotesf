@@ -636,11 +636,14 @@ namespace libtremotesf {
     namespace {
         using NewPeer = std::pair<QJsonObject, QString>;
 
-        class PeersListUpdater : public ItemListUpdater<Peer, std::vector<NewPeer>> {
+        class PeersListUpdater final : public ItemListUpdater<Peer, std::vector<NewPeer>> {
+
         public:
-            std::vector<std::pair<int, int>> removedIndexRanges;
-            std::vector<std::pair<int, int>> changedIndexRanges;
-            int addedCount = 0;
+            PeersListUpdater() = default;
+
+            std::vector<std::pair<int, int>> removedIndexRanges{};
+            std::vector<std::pair<int, int>> changedIndexRanges{};
+            int addedCount{};
 
         protected:
             std::vector<NewPeer>::iterator
@@ -690,7 +693,7 @@ namespace libtremotesf {
             }
         }
 
-        PeersListUpdater updater;
+        PeersListUpdater updater{};
         updater.update(mPeers, std::move(newPeers));
 
         emit peersUpdated(updater.removedIndexRanges, updater.changedIndexRanges, updater.addedCount);

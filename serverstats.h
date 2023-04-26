@@ -28,8 +28,9 @@ namespace libtremotesf {
         int mSessionCount{};
     };
 
-    class ServerStats : public QObject {
+    class ServerStats final : public QObject {
         Q_OBJECT
+
     public:
         using QObject::QObject;
 

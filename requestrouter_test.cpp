@@ -41,8 +41,6 @@ namespace {
     template<std::derived_from<httplib::Server> Server = httplib::Server>
     class TestHttpServer {
     public:
-        Q_DISABLE_COPY_MOVE(TestHttpServer)
-
         template<typename... Args>
         explicit TestHttpServer(Args&&... args) : mServer(std::forward<Args>(args)...) {
             logInfo("Server is valid = {}", mServer.is_valid());
@@ -85,6 +83,8 @@ namespace {
             mListenFuture.wait();
         }
 
+        Q_DISABLE_COPY_MOVE(TestHttpServer)
+
         const QString host{QHostAddress(QHostAddress::LocalHost).toString()};
         int port{};
 
@@ -118,8 +118,9 @@ namespace {
         }
     }
 
-    class RequestRouterTest : public QObject {
+    class RequestRouterTest final : public QObject {
         Q_OBJECT
+
     public:
         RequestRouterTest() { mThreadPool.setMaxThreadCount(1); }
 

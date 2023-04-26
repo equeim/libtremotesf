@@ -31,7 +31,7 @@ namespace fmt {
     };
 }
 
-class AbortTest : public std::exception {};
+class AbortTest final : public std::exception {};
 
 #define QVERIFY_THROW(statement)                                                                                  \
     do {                                                                                                          \
@@ -43,7 +43,7 @@ class AbortTest : public std::exception {};
         if (!QTest::qCompare(actual, expected, #actual, #expected, __FILE__, __LINE__)) throw AbortTest(); \
     } while (false)
 
-class Updater : public libtremotesf::ItemListUpdater<Item> {
+class Updater final : public libtremotesf::ItemListUpdater<Item> {
 public:
     std::vector<std::pair<size_t, size_t>> aboutToRemoveIndexRanges;
     std::vector<std::pair<size_t, size_t>> removedIndexRanges;
@@ -91,8 +91,9 @@ protected:
     }
 };
 
-class ItemListUpdaterTest : public QObject {
+class ItemListUpdaterTest final : public QObject {
     Q_OBJECT
+
 private slots:
     void emptyListDidNotChange() { checkUpdate({}, {}); }
 

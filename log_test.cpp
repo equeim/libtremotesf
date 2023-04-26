@@ -28,8 +28,9 @@ using namespace libtremotesf;
 static constexpr auto E_ACCESSDENIED = static_cast<int32_t>(0x80070005);
 #endif
 
-class PrintlnTest : public QObject {
+class PrintlnTest final : public QObject {
     Q_OBJECT
+
 private slots:
     void stdoutStringLiteral() {
         printlnStdout("foo");
