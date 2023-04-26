@@ -2,7 +2,26 @@
 #
 # SPDX-License-Identifier: CC0-1.0
 
-*.user
-/vcpkg_installed
+/.cache
+
+/.kdev4
+/*.kdev4
+
 /.vs
+/.vscode
+
+/build
+/compile_commands.json
+
+/installroot
 /out
+/RPMS
+
+/vcpkg-installed
+
+/*.list
+/*.user
+/*.user.*
+
+/.idea
+/cmake-build*
