@@ -85,6 +85,7 @@ namespace libtremotesf {
 
         explicit Rpc(QObject* parent = nullptr);
         ~Rpc() override;
+        Q_DISABLE_COPY_MOVE(Rpc)
 
         ServerSettings* serverSettings() const;
         ServerStats* serverStats() const;

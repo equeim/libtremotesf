@@ -9,7 +9,7 @@
 
 using namespace libtremotesf::impl;
 
-class TrackerTest : public QObject {
+class TrackerTest final : public QObject {
     Q_OBJECT
 
 private slots:

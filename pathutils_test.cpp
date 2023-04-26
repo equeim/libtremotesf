@@ -9,8 +9,9 @@
 
 using namespace libtremotesf;
 
-class PathUtilsTest : public QObject {
+class PathUtilsTest final : public QObject {
     Q_OBJECT
+
 private:
     struct NormalizeTestCase {
         QString inputPath{};

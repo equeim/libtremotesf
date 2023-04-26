@@ -31,8 +31,9 @@ namespace libtremotesf::impl {
     struct RpcRequestMetadata;
     struct NetworkRequestMetadata;
 
-    class RequestRouter : public QObject {
+    class RequestRouter final : public QObject {
         Q_OBJECT
+
     public:
         explicit RequestRouter(QThreadPool* threadPool, QObject* parent = nullptr);
         explicit RequestRouter(QObject* parent = nullptr);

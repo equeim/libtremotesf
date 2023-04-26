@@ -19,8 +19,9 @@ namespace foobar {
 template<typename T>
 struct What {};
 
-class DemangleTest : public QObject {
+class DemangleTest final : public QObject {
     Q_OBJECT
+
 private slots:
     void checkInt() {
         const int foo{};

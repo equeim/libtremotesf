@@ -131,8 +131,9 @@ namespace libtremotesf {
         );
     };
 
-    class Torrent : public QObject {
+    class Torrent final : public QObject {
         Q_OBJECT
+
     public:
         explicit Torrent(int id, const QJsonObject& object, Rpc* rpc, QObject* parent = nullptr);
         explicit Torrent(
