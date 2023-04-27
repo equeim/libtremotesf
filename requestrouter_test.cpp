@@ -18,6 +18,7 @@
 #include <fmt/chrono.h>
 #include <httplib.h>
 
+#include "fileutils.h"
 #include "literals.h"
 #include "log.h"
 #include "requestrouter.h"
@@ -328,7 +329,7 @@ namespace {
                     QSslCertificate::fromPath(TEST_DATA_PATH "/client-certificate-and-key.pem", QSsl::Pem).first();
                 {
                     QFile file(TEST_DATA_PATH "/client-certificate-and-key.pem");
-                    file.open(QIODevice::ReadOnly);
+                    openFile(file, QIODevice::ReadOnly);
                     config.clientPrivateKey = QSslKey(&file, QSsl::Rsa);
                 }
                 mRouter.setConfiguration(std::move(config));
