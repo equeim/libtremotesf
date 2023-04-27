@@ -16,84 +16,250 @@
 #include "log.h"
 #include "target_os.h"
 
-namespace libtremotesf::impl {
-    QString readFileAsBase64String(QFile& file) {
-        QString string{};
-        string.reserve(static_cast<QString::size_type>(((4 * file.size() / 3) + 3) & ~3));
+namespace fmt {
+    format_context::iterator formatter<QFile::FileError>::format(QFile::FileError e, format_context& ctx) FORMAT_CONST {
+        const std::string_view string = [e] {
+            using namespace std::string_view_literals;
+            switch (e) {
+            case QFileDevice::NoError:
+                return "NoError"sv;
+            case QFileDevice::ReadError:
+                return "ReadError"sv;
+            case QFileDevice::WriteError:
+                return "WriteError"sv;
+            case QFileDevice::FatalError:
+                return "FatalError"sv;
+            case QFileDevice::ResourceError:
+                return "ResourceError"sv;
+            case QFileDevice::OpenError:
+                return "OpenError"sv;
+            case QFileDevice::AbortError:
+                return "AbortError"sv;
+            case QFileDevice::TimeOutError:
+                return "TimeOutError"sv;
+            case QFileDevice::UnspecifiedError:
+                return "UnspecifiedError"sv;
+            case QFileDevice::RemoveError:
+                return "RemoveError"sv;
+            case QFileDevice::RenameError:
+                return "RenameError"sv;
+            case QFileDevice::PositionError:
+                return "PositionError"sv;
+            case QFileDevice::ResizeError:
+                return "ResizeError"sv;
+            case QFileDevice::PermissionsError:
+                return "PermissionsError"sv;
+            case QFileDevice::CopyError:
+                return "CopyError"sv;
+            }
+            return std::string_view{};
+        }();
+        if (string.empty()) {
+            return fmt::format_to(ctx.out(), "QFileDevice::FileError::<unnamed value {}>", static_cast<std::underlying_type_t<decltype(e)>>(e));
+        }
+        return fmt::format_to(ctx.out(), "QFileDevice::FileError::{}", string);
+    }
+}
 
-        static constexpr qint64 bufferSize = 1024 * 1024 - 1; // 1 MiB minus 1 byte (dividable by 3)
-        QByteArray buffer{};
-        buffer.resize(static_cast<QByteArray::size_type>(std::min(bufferSize, file.size())));
+namespace libtremotesf {
+    void openFile(QFile& file, QIODevice::OpenMode mode) {
+        if (!file.open(mode)) {
+            throw QFileError(fmt::format(
+                "Failed to open file \"{}\": {} ({})",
+                file.fileName(),
+                file.errorString(),
+                file.error()
+            ));
+        }
+    }
 
-        std::span<char> emptyBufferRemainder = buffer;
-        while (true) {
-            const qint64 bytes =
-                file.read(emptyBufferRemainder.data(), static_cast<qint64>(emptyBufferRemainder.size()));
-            if (bytes == -1) {
-                throw std::runtime_error(fmt::format(
-                    "{} (QFileDevice::FileError {})",
-                    file.errorString(),
-                    static_cast<std::underlying_type_t<QFile::FileError>>(file.error())
-                ));
-            }
-            if (bytes == 0) {
-                // End of file
-                const auto filledBufferSize =
-                    buffer.size() - static_cast<QByteArray::size_type>(emptyBufferRemainder.size());
-                if (filledBufferSize > 0) {
-                    buffer.resize(filledBufferSize);
-                    string.append(QLatin1String(buffer.toBase64()));
-                }
-                return string;
-            }
-            if (bytes == static_cast<qint64>(emptyBufferRemainder.size())) {
-                // Read whole buffer
-                string.append(QLatin1String(buffer.toBase64()));
-                emptyBufferRemainder = buffer;
-            } else {
-                // Read part of buffer
-                emptyBufferRemainder = emptyBufferRemainder.subspan(static_cast<size_t>(bytes));
-            }
+    void openFileFromFd(QFile& file, int fd, QIODevice::OpenMode mode) {
+        if (!file.open(fd, mode)) {
+            throw QFileError(
+                fmt::format("Failed to open file from fd={}: {} ({})", fd, file.errorString(), file.error())
+            );
         }
     }
 
     namespace {
-        constexpr auto sessionIdFileLocation = [] {
-            if constexpr (isTargetOsWindows) {
-                return QStandardPaths::GenericDataLocation;
-            } else {
-                return QStandardPaths::TempLocation;
-            }
-        }();
+        enum class FileOp { Read, Write };
+        enum class ErrorType { FileError, EndOfFile };
+        void throwReadOrWriteError(const QFile& file, FileOp op, ErrorType type) {
+            using namespace std::string_view_literals;
 
-        constexpr QLatin1String sessionIdFilePrefix = [] {
-            if constexpr (isTargetOsWindows) {
-                return "Transmission/tr_session_id_"_l1;
-            } else {
-                return "tr_session_id_"_l1;
+            const std::string_view opString = [op] {
+                switch (op) {
+                case FileOp::Read:
+                    return "read from"sv;
+                case FileOp::Write:
+                    return "write to"sv;
+                }
+                throw std::logic_error("Unknown FileOp value");
+            }();
+
+            std::string errorStringAllocated{};
+            const std::string_view errorString = [&file, type, &errorStringAllocated]() -> std::string_view {
+                switch (type) {
+                case ErrorType::FileError:
+                    errorStringAllocated = fmt::format("{} ({})", file.errorString(), file.error());
+                    return errorStringAllocated;
+                case ErrorType::EndOfFile:
+                    return "unexpected end of file"sv;
+                }
+                throw std::logic_error("Unknown ErrorType value");
+            }();
+
+            if (const QString fileName = file.fileName(); !fileName.isEmpty()) {
+                throw QFileError(fmt::format("Failed to {} file \"{}\": {}", opString, fileName, errorString));
             }
-        }();
+            throw QFileError(fmt::format("Failed to {} file with fd={}: {}", opString, file.handle(), errorString));
+        }
+
+        struct ReadWholeBuffer {};
+        struct ReadUntilEndOfFile {
+            qint64 bytesRead{};
+        };
+        using ReadResult = std::variant<ReadWholeBuffer, ReadUntilEndOfFile>;
+        [[nodiscard]] ReadResult readWholeBufferOrUntilEndOfFile(QFile& file, std::span<char> buffer) {
+            std::span<char> emptyBufferRemainder = buffer;
+            while (true) {
+                const qint64 bytesRead =
+                    file.read(emptyBufferRemainder.data(), static_cast<qint64>(emptyBufferRemainder.size()));
+                if (bytesRead == -1) {
+                    // Error, throw
+                    throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+                }
+                if (bytesRead == 0) {
+                    // End of file, return
+                    const auto filledBufferSize = static_cast<qint64>(buffer.size() - emptyBufferRemainder.size());
+                    return ReadUntilEndOfFile{.bytesRead = filledBufferSize};
+                }
+                if (bytesRead == static_cast<qint64>(emptyBufferRemainder.size())) {
+                    // Read whole buffer, return
+                    return ReadWholeBuffer{};
+                }
+                // Read part of buffer, continue
+                emptyBufferRemainder = emptyBufferRemainder.subspan(static_cast<size_t>(bytesRead));
+            }
+        }
     }
 
-    bool isTransmissionSessionIdFileExists(const QByteArray& sessionId) {
-        if constexpr (targetOs != TargetOs::UnixAndroid) {
-            const auto file = QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix % sessionId);
-            if (!file.isEmpty()) {
-                logInfo(
-                    "isSessionIdFileExists: found transmission-daemon session id file {}",
-                    QDir::toNativeSeparators(file)
-                );
-                return true;
-            }
-            logInfo("isSessionIdFileExists: did not find transmission-daemon session id file");
+    void readBytes(QFile& file, std::span<char> buffer) {
+        const auto result = readWholeBufferOrUntilEndOfFile(file, buffer);
+        if (std::holds_alternative<ReadUntilEndOfFile>(result)) {
+            throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
         }
-        return false;
     }
 
-    QString fileNameOrHandle(const QFile& file) {
-        if (auto fileName = file.fileName(); !fileName.isEmpty()) {
-            return fileName;
+    void skipBytes(QFile& file, qint64 bytes) {
+        auto remainingBytes = bytes;
+        while (remainingBytes > 0) {
+            const auto bytesSkipped = file.skip(remainingBytes);
+            if (bytesSkipped == -1) {
+                // Error, throw
+                throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+            }
+            if (bytesSkipped == 0) {
+                // End of file, throw
+                throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
+            }
+            remainingBytes -= bytesSkipped;
         }
-        return QString::fromLatin1("handle=%1").arg(file.handle());
+    }
+
+    std::span<char> peekBytes(QFile& file, std::span<char> buffer) {
+        const auto peeked = file.peek(buffer.data(), static_cast<qint64>(buffer.size()));
+        if (peeked == -1) {
+            throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+        }
+        if (peeked == 0) {
+            throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
+        }
+        return buffer.subspan(0, static_cast<size_t>(peeked));
+    }
+
+    void writeBytes(QFile& file, std::span<const char> data) {
+        std::span<const char> remainingData = data;
+        while (true) {
+            const qint64 bytesWritten = file.write(remainingData.data(), static_cast<qint64>(remainingData.size()));
+            if (bytesWritten == -1) {
+                // Error, throw
+                throwReadOrWriteError(file, FileOp::Write, ErrorType::FileError);
+            }
+            if (bytesWritten == static_cast<qint64>(remainingData.size())) {
+                // Written whole buffer, return
+                break;
+            }
+            // Written part of buffer, continue
+            remainingData = remainingData.subspan(static_cast<size_t>(bytesWritten));
+        }
+    }
+
+    QByteArray readFile(const QString& path) {
+        QFile file(path);
+        openFile(file, QIODevice::ReadOnly);
+        auto data = file.readAll();
+        if (file.error() != QFileDevice::NoError) {
+            throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+        }
+        return data;
+    }
+
+    namespace impl {
+        QString readFileAsBase64String(QFile& file) {
+            QString string{};
+            string.reserve(static_cast<QString::size_type>(((4 * file.size() / 3) + 3) & ~3));
+
+            static constexpr qint64 bufferSize = 1024 * 1024 - 1; // 1 MiB minus 1 byte (dividable by 3)
+            QByteArray buffer(bufferSize, '\0');
+
+            while (true) {
+                const auto result = readWholeBufferOrUntilEndOfFile(file, buffer);
+                if (std::holds_alternative<ReadWholeBuffer>(result)) {
+                    string.append(QLatin1String(buffer.toBase64()));
+                    continue;
+                }
+                if (std::holds_alternative<ReadUntilEndOfFile>(result)) {
+                    buffer.resize(static_cast<QByteArray::size_type>(std::get<ReadUntilEndOfFile>(result).bytesRead));
+                    string.append(QLatin1String(buffer.toBase64()));
+                    break;
+                }
+            }
+
+            return string;
+        }
+
+        namespace {
+            constexpr auto sessionIdFileLocation = [] {
+                if constexpr (isTargetOsWindows) {
+                    return QStandardPaths::GenericDataLocation;
+                } else {
+                    return QStandardPaths::TempLocation;
+                }
+            }();
+
+            constexpr QLatin1String sessionIdFilePrefix = [] {
+                if constexpr (isTargetOsWindows) {
+                    return "Transmission/tr_session_id_"_l1;
+                } else {
+                    return "tr_session_id_"_l1;
+                }
+            }();
+        }
+
+        bool isTransmissionSessionIdFileExists(const QByteArray& sessionId) {
+            if constexpr (targetOs != TargetOs::UnixAndroid) {
+                const auto file = QStandardPaths::locate(sessionIdFileLocation, sessionIdFilePrefix % sessionId);
+                if (!file.isEmpty()) {
+                    logInfo(
+                        "isSessionIdFileExists: found transmission-daemon session id file {}",
+                        QDir::toNativeSeparators(file)
+                    );
+                    return true;
+                }
+                logInfo("isSessionIdFileExists: did not find transmission-daemon session id file");
+            }
+            return false;
+        }
     }
 }

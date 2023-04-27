@@ -251,26 +251,24 @@ namespace libtremotesf {
         if (!isConnected()) {
             return;
         }
-        if (auto file = std::make_shared<QFile>(filePath); file->open(QIODevice::ReadOnly)) {
-            addTorrentFile(
-                std::move(file),
-                downloadDirectory,
-                unwantedFiles,
-                highPriorityFiles,
-                lowPriorityFiles,
-                renamedFiles,
-                bandwidthPriority,
-                start
-            );
-        } else {
-            logWarning(
-                "addTorrentFile: failed to open file {}: {} (QFileDevice::FileError {})",
-                filePath,
-                file->errorString(),
-                static_cast<std::underlying_type_t<QFile::FileError>>(file->error())
-            );
+        auto file = std::make_shared<QFile>(filePath);
+        try {
+            openFile(*file, QIODevice::ReadOnly);
+        } catch (const QFileError& e) {
+            logWarningWithException(e, "addTorrentFile: failed to open torrent file");
             emit torrentAddError();
+            return;
         }
+        addTorrentFile(
+            std::move(file),
+            downloadDirectory,
+            unwantedFiles,
+            highPriorityFiles,
+            lowPriorityFiles,
+            renamedFiles,
+            bandwidthPriority,
+            start
+        );
     }
 
     void Rpc::addTorrentFile(
@@ -298,8 +296,8 @@ namespace libtremotesf {
                      {"bandwidthPriority"_l1, TorrentData::priorityToInt(bandwidthPriority)},
                      {"paused"_l1, !start}}
                 );
-            } catch (const std::runtime_error& e) {
-                logWarning("addTorrentFile: failed to read file {}: {}", fileNameOrHandle(*file), e.what());
+            } catch (const QFileError& e) {
+                logWarningWithException(e, "addTorrentFile: failed to read torrent file");
                 emit torrentAddError();
                 return std::nullopt;
             }
