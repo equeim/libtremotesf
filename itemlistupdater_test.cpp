@@ -31,7 +31,7 @@ namespace fmt {
     };
 }
 
-class AbortTest final : public std::exception {};
+class AbortTest : public std::exception {};
 
 #define QVERIFY_THROW(statement)                                                                                  \
     do {                                                                                                          \
