@@ -219,8 +219,8 @@ namespace libtremotesf {
                     string.append(QLatin1String(buffer.toBase64()));
                     continue;
                 }
-                if (std::holds_alternative<ReadUntilEndOfFile>(result)) {
-                    buffer.resize(static_cast<QByteArray::size_type>(std::get<ReadUntilEndOfFile>(result).bytesRead));
+                if (const auto readUntilEndOfFile = std::get_if<ReadUntilEndOfFile>(&result); readUntilEndOfFile) {
+                    buffer.resize(static_cast<QByteArray::size_type>(readUntilEndOfFile->bytesRead));
                     string.append(QLatin1String(buffer.toBase64()));
                     break;
                 }
