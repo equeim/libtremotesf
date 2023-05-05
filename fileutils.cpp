@@ -121,6 +121,11 @@ namespace libtremotesf {
         };
         using ReadResult = std::variant<ReadWholeBuffer, ReadUntilEndOfFile>;
         [[nodiscard]] ReadResult readWholeBufferOrUntilEndOfFile(QFile& file, std::span<char> buffer) {
+            if (buffer.empty()) {
+                // If buffer's size is 0 then file.read() will return 0 which we will confuse with EOF condition
+                // Just return early, there is nothing for us to do
+                return ReadWholeBuffer{};
+            }
             std::span<char> emptyBufferRemainder = buffer;
             while (true) {
                 const qint64 bytesRead =
