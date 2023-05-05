@@ -157,6 +157,13 @@ namespace libtremotesf {
     }
 
     void skipBytes(QFile& file, qint64 bytes) {
+        if (bytes < 0) {
+            throw std::invalid_argument(fmt::format("Argument bytes has invalid value {}, can't be negative", bytes));
+        }
+        if (bytes == 0) {
+            // Nothing to do
+            return;
+        }
         auto remainingBytes = bytes;
         while (remainingBytes > 0) {
             const auto bytesSkipped = file.skip(remainingBytes);
