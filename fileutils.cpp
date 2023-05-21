@@ -209,6 +209,13 @@ namespace libtremotesf {
         return data;
     }
 
+    void deleteFile(const QString& path) {
+        QFile file(path);
+        if (!file.remove()) {
+            throw QFileError(fmt::format("Failed to delete {}: {}", fileDescription(file), errorDescription(file)));
+        }
+    }
+
     namespace impl {
         QString readFileAsBase64String(QFile& file) {
             QString string{};
