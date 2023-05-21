@@ -36,6 +36,8 @@ namespace libtremotesf {
 
     [[nodiscard]] QByteArray readFile(const QString& path);
 
+    void deleteFile(const QString& path);
+
     namespace impl {
         [[nodiscard]] QString readFileAsBase64String(QFile& file);
         [[nodiscard]] bool isTransmissionSessionIdFileExists(const QByteArray& sessionId);
@@ -51,6 +53,7 @@ namespace tremotesf {
     using libtremotesf::peekBytes;
     using libtremotesf::writeBytes;
     using libtremotesf::readFile;
+    using libtremotesf::deleteFile;
 }
 
 #endif // LIBTREMOTESF_FILEUTILS_H
