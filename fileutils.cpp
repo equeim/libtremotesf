@@ -55,64 +55,40 @@ namespace fmt {
             return std::string_view{};
         }();
         if (string.empty()) {
-            return fmt::format_to(ctx.out(), "QFileDevice::FileError::<unnamed value {}>", static_cast<std::underlying_type_t<decltype(e)>>(e));
+            return fmt::format_to(
+                ctx.out(),
+                "QFileDevice::FileError::<unnamed value {}>",
+                static_cast<std::underlying_type_t<decltype(e)>>(e)
+            );
         }
         return fmt::format_to(ctx.out(), "QFileDevice::FileError::{}", string);
     }
 }
 
 namespace libtremotesf {
-    void openFile(QFile& file, QIODevice::OpenMode mode) {
-        if (!file.open(mode)) {
-            throw QFileError(fmt::format(
-                "Failed to open file \"{}\": {} ({})",
-                file.fileName(),
-                file.errorString(),
-                file.error()
-            ));
-        }
-    }
-
-    void openFileFromFd(QFile& file, int fd, QIODevice::OpenMode mode) {
-        if (!file.open(fd, mode)) {
-            throw QFileError(
-                fmt::format("Failed to open file from fd={}: {} ({})", fd, file.errorString(), file.error())
-            );
-        }
-    }
-
     namespace {
-        enum class FileOp { Read, Write };
-        enum class ErrorType { FileError, EndOfFile };
-        void throwReadOrWriteError(const QFile& file, FileOp op, ErrorType type) {
-            using namespace std::string_view_literals;
-
-            const std::string_view opString = [op] {
-                switch (op) {
-                case FileOp::Read:
-                    return "read from"sv;
-                case FileOp::Write:
-                    return "write to"sv;
-                }
-                throw std::logic_error("Unknown FileOp value");
-            }();
-
-            std::string errorStringAllocated{};
-            const std::string_view errorString = [&file, type, &errorStringAllocated]() -> std::string_view {
-                switch (type) {
-                case ErrorType::FileError:
-                    errorStringAllocated = fmt::format("{} ({})", file.errorString(), file.error());
-                    return errorStringAllocated;
-                case ErrorType::EndOfFile:
-                    return "unexpected end of file"sv;
-                }
-                throw std::logic_error("Unknown ErrorType value");
-            }();
-
+        std::string fileDescription(const QFile& file) {
             if (const QString fileName = file.fileName(); !fileName.isEmpty()) {
-                throw QFileError(fmt::format("Failed to {} file \"{}\": {}", opString, fileName, errorString));
+                return fmt::format(R"(file "{}")", fileName);
             }
-            throw QFileError(fmt::format("Failed to {} file with fd={}: {}", opString, file.handle(), errorString));
+            return fmt::format("file with handle={}", file.handle());
+        }
+
+        std::string errorDescription(const QFile& file) {
+            return fmt::format("{} ({})", file.errorString(), file.error());
+        }
+
+        enum class ReadErrorType { FileError, UnexpectedEndOfFile };
+        void throwReadError(const QFile& file, ReadErrorType type) {
+            switch (type) {
+            case ReadErrorType::UnexpectedEndOfFile:
+                throw QFileError(fmt::format("Failed to read from {}: unexpected end of file", fileDescription(file)));
+            case ReadErrorType::FileError:
+                throw QFileError(
+                    fmt::format("Failed to read from {}: {}", fileDescription(file), errorDescription(file))
+                );
+            }
+            throw std::logic_error("Unknown ReadErrorType value");
         }
 
         struct ReadWholeBuffer {};
@@ -132,7 +108,7 @@ namespace libtremotesf {
                     file.read(emptyBufferRemainder.data(), static_cast<qint64>(emptyBufferRemainder.size()));
                 if (bytesRead == -1) {
                     // Error, throw
-                    throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+                    throwReadError(file, ReadErrorType::FileError);
                 }
                 if (bytesRead == 0) {
                     // End of file, return
@@ -149,10 +125,22 @@ namespace libtremotesf {
         }
     }
 
+    void openFile(QFile& file, QIODevice::OpenMode mode) {
+        if (!file.open(mode)) {
+            throw QFileError(fmt::format("Failed to open {}: {}", fileDescription(file), errorDescription(file)));
+        }
+    }
+
+    void openFileFromFd(QFile& file, int fd, QIODevice::OpenMode mode) {
+        if (!file.open(fd, mode)) {
+            throw QFileError(fmt::format("Failed to open file from handle={}: {}", fd, errorDescription(file)));
+        }
+    }
+
     void readBytes(QFile& file, std::span<char> buffer) {
         const auto result = readWholeBufferOrUntilEndOfFile(file, buffer);
         if (std::holds_alternative<ReadUntilEndOfFile>(result)) {
-            throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
+            throwReadError(file, ReadErrorType::UnexpectedEndOfFile);
         }
     }
 
@@ -169,23 +157,26 @@ namespace libtremotesf {
             const auto bytesSkipped = file.skip(remainingBytes);
             if (bytesSkipped == -1) {
                 // Error, throw
-                throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+                throwReadError(file, ReadErrorType::FileError);
             }
             if (bytesSkipped == 0) {
                 // End of file, throw
-                throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
+                throwReadError(file, ReadErrorType::UnexpectedEndOfFile);
             }
             remainingBytes -= bytesSkipped;
         }
     }
 
     std::span<char> peekBytes(QFile& file, std::span<char> buffer) {
+        if (buffer.empty()) {
+            return buffer;
+        }
         const auto peeked = file.peek(buffer.data(), static_cast<qint64>(buffer.size()));
         if (peeked == -1) {
-            throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+            throwReadError(file, ReadErrorType::FileError);
         }
         if (peeked == 0) {
-            throwReadOrWriteError(file, FileOp::Read, ErrorType::EndOfFile);
+            throwReadError(file, ReadErrorType::UnexpectedEndOfFile);
         }
         return buffer.subspan(0, static_cast<size_t>(peeked));
     }
@@ -196,7 +187,8 @@ namespace libtremotesf {
             const qint64 bytesWritten = file.write(remainingData.data(), static_cast<qint64>(remainingData.size()));
             if (bytesWritten == -1) {
                 // Error, throw
-                throwReadOrWriteError(file, FileOp::Write, ErrorType::FileError);
+                throw QFileError(fmt::format("Failed to write to {}: {}", fileDescription(file), errorDescription(file))
+                );
             }
             if (bytesWritten == static_cast<qint64>(remainingData.size())) {
                 // Written whole buffer, return
@@ -212,7 +204,7 @@ namespace libtremotesf {
         openFile(file, QIODevice::ReadOnly);
         auto data = file.readAll();
         if (file.error() != QFileDevice::NoError) {
-            throwReadOrWriteError(file, FileOp::Read, ErrorType::FileError);
+            throwReadError(file, ReadErrorType::FileError);
         }
         return data;
     }
