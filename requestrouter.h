@@ -87,7 +87,6 @@ namespace libtremotesf::impl {
 
         bool retryRequest(const QNetworkRequest& request, NetworkRequestMetadata&& metadata);
 
-        void onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator) const;
         void onRequestFinished(QNetworkReply* reply, QList<QSslError>&& sslErrors);
         void onRequestSuccess(QNetworkReply* reply, RpcRequestMetadata&& metadata);
         void onRequestError(QNetworkReply* reply, QList<QSslError>&& sslErrors, NetworkRequestMetadata&& metadata);
@@ -98,6 +97,7 @@ namespace libtremotesf::impl {
         std::unordered_set<QNetworkReply*> mPendingNetworkRequests{};
         std::unordered_set<QObject*> mPendingParseFutures{};
         QByteArray mSessionId{};
+        QByteArray mBasicAuthHeaderValue{};
 
         RequestsConfiguration mConfiguration{};
         QSslConfiguration mSslConfiguration{};
