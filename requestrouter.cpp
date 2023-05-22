@@ -119,12 +119,6 @@ namespace libtremotesf::impl {
           mNetwork(new QNetworkAccessManager(this)),
           mThreadPool(threadPool ? threadPool : QThreadPool::globalInstance()) {
         mNetwork->setAutoDeleteReplies(true);
-        QObject::connect(
-            mNetwork,
-            &QNetworkAccessManager::authenticationRequired,
-            this,
-            &RequestRouter::onAuthenticationRequired
-        );
     }
 
     RequestRouter::RequestRouter(QObject* parent) : RequestRouter(nullptr, parent) {}
@@ -162,6 +156,10 @@ namespace libtremotesf::impl {
             }
             logDebug(" - Timeout: {}", mConfiguration.timeout);
             logDebug(" - HTTP Basic access authentication: {}", mConfiguration.authentication);
+            if (mConfiguration.authentication) {
+                auto base64Credentials = QString("%1:%2").arg(mConfiguration.username, mConfiguration.password).toUtf8().toBase64();
+                mBasicAuthHeaderValue = QByteArray("Basic ").append(base64Credentials);
+            }
             if (https) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
                 logDebug(" - Available TLS backends: {}", QSslSocket::availableBackends());
@@ -238,6 +236,9 @@ namespace libtremotesf::impl {
         if (!mSessionId.isEmpty()) {
             request.setRawHeader(sessionIdHeader, mSessionId);
         }
+        if (mConfiguration.authentication) {
+            request.setRawHeader(QByteArray("Authorization"), QByteArray(mBasicAuthHeaderValue));
+        }
         QNetworkReply* reply = mNetwork->post(request, metadata.postData);
         reply->setProperty(metadataProperty, QVariant::fromValue(metadata));
         mPendingNetworkRequests.insert(reply);
@@ -266,17 +267,6 @@ namespace libtremotesf::impl {
         logWarning("Retrying '{}' request, retry attempts = {}", metadata.rpcMetadata.method, metadata.retryAttempts);
         postRequest(request, std::move(metadata));
         return true;
-    }
-
-    void RequestRouter::onAuthenticationRequired(QNetworkReply*, QAuthenticator* authenticator) const {
-        logDebug("Authentication requested");
-        if (mConfiguration.authentication) {
-            logDebug("Authenticating");
-            authenticator->setUser(mConfiguration.username);
-            authenticator->setPassword(mConfiguration.password);
-        } else {
-            logWarning("Authentication requested, but authentication is disabled");
-        }
     }
 
     void RequestRouter::onRequestFinished(QNetworkReply* reply, QList<QSslError>&& sslErrors) {
