@@ -242,7 +242,7 @@ namespace libtremotesf::impl {
             request.setRawHeader(sessionIdHeader, mSessionId);
         }
         if (mConfiguration.authentication) {
-            request.setRawHeader(authorizationHeader, QByteArray(mBasicAuthHeaderValue));
+            request.setRawHeader(authorizationHeader, mBasicAuthHeaderValue);
         }
         QNetworkReply* reply = mNetwork->post(request, metadata.postData);
         reply->setProperty(metadataProperty, QVariant::fromValue(metadata));
