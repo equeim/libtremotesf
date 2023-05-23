@@ -88,6 +88,7 @@ namespace fmt {
 namespace libtremotesf::impl {
     namespace {
         const auto sessionIdHeader = QByteArrayLiteral("X-Transmission-Session-Id");
+        const auto authorizationHeader = QByteArrayLiteral("Authorization");
 
         constexpr auto metadataProperty = "libtremotesf::impl::RequestRouter metadata";
 
@@ -157,7 +158,11 @@ namespace libtremotesf::impl {
             logDebug(" - Timeout: {}", mConfiguration.timeout);
             logDebug(" - HTTP Basic access authentication: {}", mConfiguration.authentication);
             if (mConfiguration.authentication) {
-                auto base64Credentials = QString("%1:%2").arg(mConfiguration.username, mConfiguration.password).toUtf8().toBase64();
+                auto base64Credentials = QString("%1:%2")
+                                             .arg(mConfiguration.username, mConfiguration.password)
+                                             .normalized(QString::NormalizationForm_C)
+                                             .toUtf8()
+                                             .toBase64();
                 mBasicAuthHeaderValue = QByteArray("Basic ").append(base64Credentials);
             }
             if (https) {
@@ -237,7 +242,7 @@ namespace libtremotesf::impl {
             request.setRawHeader(sessionIdHeader, mSessionId);
         }
         if (mConfiguration.authentication) {
-            request.setRawHeader(QByteArray("Authorization"), QByteArray(mBasicAuthHeaderValue));
+            request.setRawHeader(authorizationHeader, QByteArray(mBasicAuthHeaderValue));
         }
         QNetworkReply* reply = mNetwork->post(request, metadata.postData);
         reply->setProperty(metadataProperty, QVariant::fromValue(metadata));
