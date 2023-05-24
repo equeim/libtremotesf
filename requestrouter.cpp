@@ -163,7 +163,7 @@ namespace libtremotesf::impl {
                                              .normalized(QString::NormalizationForm_C)
                                              .toUtf8()
                                              .toBase64();
-                mBasicAuthHeaderValue = QByteArray("Basic ").append(base64Credentials);
+                mAuthorizationHeaderValue = QByteArray("Basic ").append(base64Credentials);
             }
             if (https) {
 #if QT_VERSION >= QT_VERSION_CHECK(6, 1, 0)
@@ -242,7 +242,7 @@ namespace libtremotesf::impl {
             request.setRawHeader(sessionIdHeader, mSessionId);
         }
         if (mConfiguration.authentication) {
-            request.setRawHeader(authorizationHeader, mBasicAuthHeaderValue);
+            request.setRawHeader(authorizationHeader, mAuthorizationHeaderValue);
         }
         QNetworkReply* reply = mNetwork->post(request, metadata.postData);
         reply->setProperty(metadataProperty, QVariant::fromValue(metadata));

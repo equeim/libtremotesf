@@ -97,7 +97,7 @@ namespace libtremotesf::impl {
         std::unordered_set<QNetworkReply*> mPendingNetworkRequests{};
         std::unordered_set<QObject*> mPendingParseFutures{};
         QByteArray mSessionId{};
-        QByteArray mBasicAuthHeaderValue{};
+        QByteArray mAuthorizationHeaderValue{};
 
         RequestsConfiguration mConfiguration{};
         QSslConfiguration mSslConfiguration{};
