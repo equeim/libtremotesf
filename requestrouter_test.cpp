@@ -175,7 +175,7 @@ namespace {
             QTcpServer tcpServer{};
             tcpServer.listen(QHostAddress::LocalHost);
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setPort(tcpServer.serverPort());
                 config.timeout = 100ms;
                 mRouter.setConfiguration(std::move(config));
@@ -189,7 +189,7 @@ namespace {
 
         void checkTcpConnectionRefusedIsHandled() {
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 // It is likely that there is nothing listening on this port, so we will get ConnectionRefusedError
                 config.serverUrl.setPort(9);
                 mRouter.setConfiguration(std::move(config));
@@ -211,7 +211,7 @@ namespace {
             });
             tcpServer.listen(QHostAddress::LocalHost);
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setPort(tcpServer.serverPort());
                 mRouter.setConfiguration(std::move(config));
             }
@@ -228,7 +228,7 @@ namespace {
                 res.status = 500;
             });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.retryAttempts = retryAttempts;
                 mRouter.setConfiguration(std::move(config));
             }
@@ -245,7 +245,7 @@ namespace {
             );
             server.handle([&](const httplib::Request&, httplib::Response& res) { success(res); });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setScheme("https"_l1);
                 config.serverUrl.setPort(server.port);
                 mRouter.setConfiguration(std::move(config));
@@ -262,7 +262,7 @@ namespace {
             );
             server.handle([&](const httplib::Request&, httplib::Response& res) { success(res); });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setScheme("https"_l1);
                 config.serverUrl.setPort(server.port);
                 config.serverCertificateChain =
@@ -281,7 +281,7 @@ namespace {
             );
             server.handle([&](const httplib::Request&, httplib::Response& res) { success(res); });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setScheme("https"_l1);
                 config.serverUrl.setPort(server.port);
                 config.serverCertificateChain = QSslCertificate::fromPath(TEST_DATA_PATH "/chain.pem", QSsl::Pem);
@@ -300,7 +300,7 @@ namespace {
             );
             server.handle([&](const httplib::Request&, httplib::Response& res) { success(res); });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setScheme("https"_l1);
                 config.serverUrl.setPort(server.port);
                 config.serverCertificateChain =
@@ -320,7 +320,7 @@ namespace {
             );
             server.handle([&](const httplib::Request&, httplib::Response& res) { success(res); });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.serverUrl.setScheme("https"_l1);
                 config.serverUrl.setPort(server.port);
                 config.serverCertificateChain =
@@ -412,7 +412,7 @@ namespace {
                 checkAuthentication(req, res, user.toStdString(), password.toStdString());
             });
             {
-                RequestRouter::RequestsConfiguration config = mRouter.configuration();
+                RequestRouter::RequestsConfiguration config = mRouter.configuration().value();
                 config.authentication = true;
                 config.username = user;
                 config.password = password;
@@ -514,7 +514,7 @@ namespace {
             const bool ok = QTest::qWaitFor(
                 [&] { return !std::holds_alternative<std::monostate>(responseOrError); },
                 static_cast<int>(
-                    duration_cast<milliseconds>(testTimeout * (mRouter.configuration().retryAttempts + 1) + 1s).count()
+                    duration_cast<milliseconds>(testTimeout * (mRouter.configuration().value().retryAttempts + 1) + 1s).count()
                 )
             );
             if (!ok) {

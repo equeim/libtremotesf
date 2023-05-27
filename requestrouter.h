@@ -7,6 +7,7 @@
 
 #include <chrono>
 #include <functional>
+#include <optional>
 #include <unordered_map>
 #include <unordered_set>
 
@@ -22,7 +23,6 @@
 
 #include "rpc.h"
 
-class QAuthenticator;
 class QNetworkReply;
 class QSslError;
 class QThreadPool;
@@ -53,8 +53,9 @@ namespace libtremotesf::impl {
 
         enum class RequestType { DataUpdate, Independent };
 
-        const RequestsConfiguration& configuration() const { return mConfiguration; }
+        const std::optional<RequestsConfiguration>& configuration() const { return mConfiguration; }
         void setConfiguration(RequestsConfiguration configuration);
+        void resetConfiguration();
 
         struct Response {
             QJsonObject arguments{};
@@ -99,7 +100,7 @@ namespace libtremotesf::impl {
         QByteArray mSessionId{};
         QByteArray mAuthorizationHeaderValue{};
 
-        RequestsConfiguration mConfiguration{};
+        std::optional<RequestsConfiguration> mConfiguration{};
         QSslConfiguration mSslConfiguration{};
         QList<QSslError> mExpectedSslErrors{};
 
