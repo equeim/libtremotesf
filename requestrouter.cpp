@@ -125,41 +125,43 @@ namespace libtremotesf::impl {
     RequestRouter::RequestRouter(QObject* parent) : RequestRouter(nullptr, parent) {}
 
     void RequestRouter::setConfiguration(RequestsConfiguration configuration) {
+        logDebug("Setting requests configuration");
+
         mConfiguration = std::move(configuration);
 
-        mNetwork->setProxy(mConfiguration.proxy);
+        mNetwork->setProxy(mConfiguration->proxy);
         mNetwork->clearAccessCache();
 
-        const bool https = mConfiguration.serverUrl.scheme() == "https"_l1;
+        const bool https = mConfiguration->serverUrl.scheme() == "https"_l1;
 
         mSslConfiguration = QSslConfiguration::defaultConfiguration();
         if (https) {
-            if (!mConfiguration.clientCertificate.isNull()) {
-                mSslConfiguration.setLocalCertificate(mConfiguration.clientCertificate);
+            if (!mConfiguration->clientCertificate.isNull()) {
+                mSslConfiguration.setLocalCertificate(mConfiguration->clientCertificate);
             }
-            if (!mConfiguration.clientPrivateKey.isNull()) {
-                mSslConfiguration.setPrivateKey(mConfiguration.clientPrivateKey);
+            if (!mConfiguration->clientPrivateKey.isNull()) {
+                mSslConfiguration.setPrivateKey(mConfiguration->clientPrivateKey);
             }
             mExpectedSslErrors.clear();
-            mExpectedSslErrors.reserve(mConfiguration.serverCertificateChain.size() * 3);
-            for (const auto& certificate : mConfiguration.serverCertificateChain) {
+            mExpectedSslErrors.reserve(mConfiguration->serverCertificateChain.size() * 3);
+            for (const auto& certificate : mConfiguration->serverCertificateChain) {
                 mExpectedSslErrors.push_back(QSslError(QSslError::HostNameMismatch, certificate));
                 mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificate, certificate));
                 mExpectedSslErrors.push_back(QSslError(QSslError::SelfSignedCertificateInChain, certificate));
             }
         }
 
-        if (!mConfiguration.serverUrl.isEmpty()) {
+        if (!mConfiguration->serverUrl.isEmpty()) {
             logDebug("Connection configuration:");
-            logDebug(" - Server url: {}", mConfiguration.serverUrl.toString());
-            if (mConfiguration.proxy.type() != QNetworkProxy::NoProxy) {
-                logDebug(" - Proxy: {}", mConfiguration.proxy);
+            logDebug(" - Server url: {}", mConfiguration->serverUrl.toString());
+            if (mConfiguration->proxy.type() != QNetworkProxy::NoProxy) {
+                logDebug(" - Proxy: {}", mConfiguration->proxy);
             }
-            logDebug(" - Timeout: {}", mConfiguration.timeout);
-            logDebug(" - HTTP Basic access authentication: {}", mConfiguration.authentication);
-            if (mConfiguration.authentication) {
+            logDebug(" - Timeout: {}", mConfiguration->timeout);
+            logDebug(" - HTTP Basic access authentication: {}", mConfiguration->authentication);
+            if (mConfiguration->authentication) {
                 auto base64Credentials = QString("%1:%2")
-                                             .arg(mConfiguration.username, mConfiguration.password)
+                                             .arg(mConfiguration->username, mConfiguration->password)
                                              .normalized(QString::NormalizationForm_C)
                                              .toUtf8()
                                              .toBase64();
@@ -174,14 +176,20 @@ namespace libtremotesf::impl {
                 logDebug(" - TLS library version: {}", QSslSocket::sslLibraryVersionString());
                 logDebug(
                     " - Manually validating server's certificate chain: {}",
-                    !mConfiguration.serverCertificateChain.isEmpty()
+                    !mConfiguration->serverCertificateChain.isEmpty()
                 );
                 logDebug(
                     " - Client certificate authentication: {}",
-                    !mConfiguration.clientCertificate.isNull() && !mConfiguration.clientPrivateKey.isNull()
+                    !mConfiguration->clientCertificate.isNull() && !mConfiguration->clientPrivateKey.isNull()
                 );
             }
         }
+    }
+
+    void RequestRouter::resetConfiguration() {
+        logDebug("Resetting requests configuration");
+        mConfiguration.reset();
+        mNetwork->clearAccessCache();
     }
 
     void RequestRouter::postRequest(
@@ -193,10 +201,15 @@ namespace libtremotesf::impl {
     void RequestRouter::postRequest(
         QLatin1String method, const QByteArray& data, RequestType type, std::function<void(Response)>&& onResponse
     ) {
-        QNetworkRequest request(mConfiguration.serverUrl);
+        if (!mConfiguration.has_value()) {
+            logWarning("Requests configuration is not set");
+            return;
+        }
+
+        QNetworkRequest request(mConfiguration->serverUrl);
         request.setHeader(QNetworkRequest::ContentTypeHeader, "application/json"_l1);
         request.setSslConfiguration(mSslConfiguration);
-        request.setTransferTimeout(static_cast<int>(mConfiguration.timeout.count()));
+        request.setTransferTimeout(static_cast<int>(mConfiguration->timeout.count()));
         NetworkRequestMetadata metadata{};
         metadata.postData = data;
         metadata.rpcMetadata = {method, type, std::move(onResponse)};
@@ -241,7 +254,7 @@ namespace libtremotesf::impl {
         if (!mSessionId.isEmpty()) {
             request.setRawHeader(sessionIdHeader, mSessionId);
         }
-        if (mConfiguration.authentication) {
+        if (mConfiguration->authentication) {
             request.setRawHeader(authorizationHeader, mAuthorizationHeaderValue);
         }
         QNetworkReply* reply = mNetwork->post(request, metadata.postData);
@@ -265,8 +278,12 @@ namespace libtremotesf::impl {
     }
 
     bool RequestRouter::retryRequest(const QNetworkRequest& request, NetworkRequestMetadata&& metadata) {
+        if (!mConfiguration.has_value()) {
+            logWarning("Not retrying request, requests configuration is not set");
+            return false;
+        }
         metadata.retryAttempts++;
-        if (metadata.retryAttempts > mConfiguration.retryAttempts) {
+        if (metadata.retryAttempts > mConfiguration->retryAttempts) {
             return false;
         }
         logWarning("Retrying '{}' request, retry attempts = {}", metadata.rpcMetadata.method, metadata.retryAttempts);

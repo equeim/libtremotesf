@@ -161,7 +161,6 @@ namespace libtremotesf {
                 }
             }
         } else {
-            //std::to_string(/*server.port*/);
             requestsConfig.serverUrl.setPath(configuration.apiPath);
             if (auto error = requestsConfig.serverUrl.errorString(); !error.isEmpty()) {
                 logWarning("Error setting URL path: {}", error);
@@ -220,14 +219,13 @@ namespace libtremotesf {
 
     void Rpc::resetConnectionConfiguration() {
         disconnect();
-        mRequestRouter->setConfiguration({});
+        mRequestRouter->resetConfiguration();
         mAutoReconnectEnabled = false;
         mAutoReconnectTimer->stop();
     }
 
     void Rpc::connect() {
-        if (connectionState() == ConnectionState::Disconnected &&
-            !mRequestRouter->configuration().serverUrl.isEmpty()) {
+        if (connectionState() == ConnectionState::Disconnected && mRequestRouter->configuration().has_value()) {
             setStatus(Status{.connectionState = ConnectionState::Connecting});
             getServerSettings();
         }
@@ -1061,7 +1059,7 @@ namespace libtremotesf {
             logInfo("checkIfServerIsLocal: server is running locally: true");
             return;
         }
-        const auto host = mRequestRouter->configuration().serverUrl.host();
+        const auto host = mRequestRouter->configuration()->serverUrl.host();
         if (auto localIp = isLocalIpAddress(host); localIp.has_value()) {
             mServerIsLocal = *localIp;
             logInfo("checkIfServerIsLocal: server is running locally: {}", *mServerIsLocal);
