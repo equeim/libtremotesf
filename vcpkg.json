@@ -9,44 +9,26 @@
     {
       "name": "pkgconf",
       "platform": "windows"
-    }
-  ],
-  "features": {
-    "qt5": {
-      "description": "Build with Qt 5",
-      "supports": "windows",
-      "dependencies": [
-        {
-          "name": "qt5-base",
-          "default-features": false
-        }
-      ]
     },
-    "qt6": {
-      "description": "Build with Qt 6",
-      "dependencies": [
-        {
-          "name": "qtbase",
-          "default-features": false,
-          "host": true
-        },
-        {
-          "name": "qtbase",
-          "default-features": false,
-          "features": [
-            "concurrent",
-            "network",
-            "openssl",
-            "testlib"
-          ],
-          "platform": "!android"
-        },
-        {
-          "name": "qtbase-tremotesf-android",
-          "platform": "android"
-        }
-      ]
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "host": true
+    },
+    {
+      "name": "qtbase",
+      "default-features": false,
+      "features": [
+        "concurrent",
+        "network",
+        "openssl",
+        "testlib"
+      ],
+      "platform": "!android"
+    },
+    {
+      "name": "qtbase-tremotesf-android",
+      "platform": "android"
     }
-  },
-  "default-features": []
+  ]
 }

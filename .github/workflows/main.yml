@@ -123,11 +123,6 @@ jobs:
         echo '::endgroup'
 
   build-windows-msvc:
-    strategy:
-      fail-fast: false
-      matrix:
-        qt-version: [5, 6]
-
     runs-on: windows-latest
 
     steps:
@@ -139,6 +134,10 @@ jobs:
     - name: Set up MSVC environment
       uses: equeim/action-setup-msvc-environment@v1
 
+    - name: Set VCPKG_ROOT environment variable
+      run: |
+        echo "VCPKG_ROOT=$env:VCPKG_INSTALLATION_ROOT" >> '${{ github.env }}'
+
     - name: Set up vcpkg
       uses: equeim/action-setup-vcpkg@v5
       with:
@@ -147,23 +146,22 @@ jobs:
         triplet: x64-windows-static
         host-triplet: x64-windows-static
         overlay-triplets-path: ${{ github.workspace }}\vcpkg-windows-overlay-triplets
-        install-features: qt${{ matrix.qt-version }}
         binary-cache-path: C:\vcpkg_binary_cache
         save-cache: ${{ github.event_name != 'pull_request' }}
-        cache-key-tag: qt${{ matrix.qt-version }}
+        cache-key-tag: qt6
 
     # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
 
-    - name: Build libtremotesf with Qt ${{ matrix.qt-version }} and MSVC toolchain
+    - name: Build libtremotesf with MSVC toolchain
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
         output-directories-suffix: -msvc
 
-    - name: Build libtremotesf with Qt ${{ matrix.qt-version }} and MSVC + Clang toolchain
+    - name: Build libtremotesf with MSVC + Clang toolchain
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows-msvc-clang-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+        cmake-arguments: --preset windows-msvc-clang-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
         output-directories-suffix: -msvc-clang
 
     - name: Archive vcpkg logs
@@ -175,11 +173,6 @@ jobs:
         path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
 
   build-windows-mingw:
-    strategy:
-      fail-fast: false
-      matrix:
-        qt-version: [5, 6]
-
     runs-on: windows-latest
 
     steps:
@@ -200,7 +193,7 @@ jobs:
           mingw-w64-clang-x86_64-fmt
           mingw-w64-clang-x86_64-openssl
           mingw-w64-clang-x86_64-pkgconf
-          mingw-w64-clang-x86_64-qt${{matrix.qt-version}}-base
+          mingw-w64-clang-x86_64-qt6-base
 
     - name: Generate C++/WinRT headers
       shell: msys2 {0}
@@ -215,7 +208,7 @@ jobs:
       run: |
           set -e -o pipefail
           echo '::group::Configuring CMake'
-          cmake -S . --preset base -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }}
+          cmake -S . --preset base -D TREMOTESF_QT6=ON
           echo '::endgroup'
           echo '::group::Building Debug'
           cmake --build --preset base-debug
