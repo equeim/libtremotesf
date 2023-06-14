@@ -121,6 +121,10 @@ jobs:
         echo '::endgroup'
 
   build-windows-msvc:
+    strategy:
+      fail-fast: false
+      matrix:
+        toolchain: ['msvc', 'msvc-clang']
     runs-on: windows-latest
 
     steps:
@@ -145,29 +149,19 @@ jobs:
         host-triplet: x64-windows-static
         overlay-triplets-path: ${{ github.workspace }}\vcpkg-windows-overlay-triplets
         binary-cache-path: C:\vcpkg_binary_cache
-        save-cache: ${{ github.event_name != 'pull_request' }}
-        cache-key-tag: qt6
+        save-cache: ${{ github.event_name != 'pull_request' && matrix.toolchain == 'msvc' }}
 
-    # We don't use matrix for compiler because we want for vcpkg to install dependencies only once
-
-    - name: Build libtremotesf with MSVC toolchain
+    - name: Build libtremotesf with ${{ matrix.toolchain == 'msvc-clang' && 'MSVC + Clang' || 'MSVC' }} toolchain
       uses: equeim/action-cmake-build@v9
       with:
-        cmake-arguments: --preset windows-msvc-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
-        output-directories-suffix: -msvc
-
-    - name: Build libtremotesf with MSVC + Clang toolchain
-      uses: equeim/action-cmake-build@v9
-      with:
-        cmake-arguments: --preset windows-msvc-clang-vcpkg -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed -D TREMOTESF_QT6=ON
-        output-directories-suffix: -msvc-clang
+        cmake-arguments: --preset ${{ matrix.toolchain == 'msvc-clang' && 'windows-msvc-clang-vcpkg' || 'windows-msvc-vcpkg' }} -D VCPKG_MANIFEST_INSTALL=OFF -D VCPKG_INSTALLED_DIR=C:\vcpkg_installed
 
     - name: Archive vcpkg logs
       uses: actions/upload-artifact@v3
       if: always()
       with:
-        name: vcpkg-logs
-        retention-days: ${{ github.event_name == 'push' && github.retention_days || 3 }}
+        name: ${{ matrix.toolchain == 'msvc-clang' && 'windows-msvc-clang-vcpkg-logs' || 'windows-msvc-vcpkg-logs' }}
+        retention-days: ${{ github.event_name == 'push' && 7 || 3 }}
         path: ${{env.VCPKG_ROOT}}\buildtrees\*\*.log
 
   build-windows-mingw:
