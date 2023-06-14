@@ -4,35 +4,61 @@
 
 require "etc"
 
-def get_cpus
-  cpus = Etc.nprocessors
-  puts "VM CPUs: #{cpus}"
-  cpus
+def min(a, b)
+  b < a ? b : a
+end
+
+VM_CPUS = min 4, Etc.nprocessors
+puts "VM CPUs: #{VM_CPUS}"
+
+def get_total_memory_linux
+  meminfo = File.read("/proc/meminfo")
+  match = /^MemTotal:\s*([0-9]+).*$/.match(meminfo)
+  raise "Total system memory is unknown" unless match and match[1]
+  total_kibibytes = match[1].to_i
+  raise "Total system memory is unknown" unless total_kibibytes > 0
+  total_mebibytes = total_kibibytes / 1024
+  total_mebibytes
+end
+
+def get_total_memory_macos
+  command = ["sysctl", "-n", "hw.memsize"]
+  total_bytes = IO.popen(command) { |io| io.read.strip.to_i }
+  raise "Failed to run #{command}: #{$?}" unless $?.exitstatus == 0
+  raise "Total system memory is unknown" unless total_bytes > 0
+  total_mebibytes = total_bytes / 1048576
+  total_mebibytes
 end
 
 def get_memory
-  command = ["sysctl", "-n", "hw.memsize"]
-  memsize_bytes = IO.popen(command) { |io| io.read.strip.to_i }
-  raise "Failed to run #{command}: #{$?}" unless $?.exitstatus == 0
-  raise "Total system memory is unknown" unless memsize_bytes > 0
-  memsize_mibs = memsize_bytes / 1048576
-  puts "Total system memory is #{memsize_mibs} MiB"
-  vm_memory = memsize_mibs - 1024
-  if vm_memory < 1024
-    vm_memory = 1024
+  sysname = Etc.uname[:sysname]
+  total_mebibytes = case Etc.uname[:sysname]
+    when "Darwin"
+      get_total_memory_macos()
+    when "Linux"
+      get_total_memory_linux()
+    else
+      raise "This Vagrantfile can be used only on Linux and macOS"
   end
-  puts "VM memory: #{vm_memory} MiB"
-  vm_memory
+  puts "Total system memory: #{total_mebibytes} MiB"
+  min 4096, total_mebibytes
 end
 
-raise "This Vagrantfile can be used only on macOS" unless Etc.uname[:sysname] == "Darwin"
+VM_MEMORY = get_memory
+puts "VM memory: #{VM_MEMORY} MiB"
 
 Vagrant.configure("2") do |config|
-  config.vm.box = "generic/freebsd#{ENV["FREEBSD_VERSION"]}"
+  config.vm.box = "freebsd/FreeBSD-#{ENV["FREEBSD_VERSION"]}-STABLE"
+  config.vm.boot_timeout = 600
+
+  config.vm.provider "virtualbox" do |vm|
+    vm.cpus = VM_CPUS
+    vm.memory = VM_MEMORY
+  end
+
   config.vm.synced_folder ".", "/vagrant", type: "rsync"
-  config.vm.synced_folder ENV["GITHUB_WORKSPACE"], "/workspace", type: "rsync"
-  config.vm.provider "virtualbox" do |v|
-    v.cpus = get_cpus
-    v.memory = get_memory
+  github_workspace = ENV["GITHUB_WORKSPACE"]
+  if github_workspace
+    config.vm.synced_folder github_workspace, "/workspace", type: "rsync"
   end
 end
