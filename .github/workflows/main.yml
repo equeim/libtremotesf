@@ -63,7 +63,7 @@ jobs:
       uses: ammaraskar/gcc-problem-matcher@master
 
     - name: Build libtremotesf
-      uses: equeim/action-cmake-build@v9
+      uses: equeim/action-cmake-build@v10
       with:
         cmake-arguments: -D TREMOTESF_QT6=${{ matrix.qt-version == 6 && 'ON' || 'OFF' }} -D CMAKE_CXX_COMPILER=${{ matrix.compiler == 'gcc' && 'g++' || 'clang++' }}
 
@@ -147,7 +147,7 @@ jobs:
         save-cache: ${{ github.event_name != 'pull_request' && matrix.toolchain == 'msvc' }}
 
     - name: Build libtremotesf with ${{ matrix.toolchain == 'msvc-clang' && 'MSVC + Clang' || 'MSVC' }} toolchain
-      uses: equeim/action-cmake-build@v9
+      uses: equeim/action-cmake-build@v10
       with:
         cmake-arguments: --preset ${{ matrix.toolchain == 'msvc-clang' && 'windows-msvc-clang-vcpkg' || 'windows-msvc-vcpkg' }} -D VCPKG_INSTALLED_DIR=C:/vcpkg_installed
 
