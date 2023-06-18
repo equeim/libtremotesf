@@ -10,13 +10,6 @@ endif()
 cmake_policy(VERSION ${CMAKE_MINIMUM_REQUIRED_VERSION}..3.25)
 
 option(TREMOTESF_QT6 "Build with Qt 6" ON)
-if ((DEFINED VCPKG_TARGET_TRIPLET) AND (NOT DEFINED VCPKG_MANIFEST_FEATURES))
-    if (TREMOTESF_QT6)
-        set(VCPKG_MANIFEST_FEATURES qt6)
-    else()
-        set(VCPKG_MANIFEST_FEATURES qt5)
-    endif()
-endif()
 
 project(libtremotesf CXX)
 
