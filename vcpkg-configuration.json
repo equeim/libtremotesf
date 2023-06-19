@@ -8,7 +8,7 @@
     {
       "kind": "git",
       "repository": "https://github.com/equeim/vcpkg-registry.git",
-      "baseline": "1285ac6f93a11d978ba81e2eb8b60aab58e8c630",
+      "baseline": "ac81e52bcc562973822e05661463fab74e7f18ec",
       "packages": [
         "qtbase-tremotesf-android"
       ]
