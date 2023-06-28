@@ -2,13 +2,13 @@
   "$schema": "https://raw.githubusercontent.com/microsoft/vcpkg-tool/main/docs/vcpkg-configuration.schema.json",
   "default-registry": {
     "kind": "builtin",
-    "baseline": "b4ca42fc6d2388aa68fdb9f68ae50f91dbd93250"
+    "baseline": "a293ce5897b839da7c22fbb2dc07943e3646f58a"
   },
   "registries": [
     {
       "kind": "git",
       "repository": "https://github.com/equeim/vcpkg-registry.git",
-      "baseline": "ac81e52bcc562973822e05661463fab74e7f18ec",
+      "baseline": "1fbdbfca1161169188f231f6e332f6c3456954ac",
       "packages": [
         "qtbase-tremotesf-android"
       ]
